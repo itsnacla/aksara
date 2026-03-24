@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('staffs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('nama_staff', 100);
-            $table->string('jabatan', 50);
+            $table->string('nama_staff', 100)->nullable();
+            $table->string('jabatan', 50)->nullable();
             $table->string('no_whatsapp', 20)->nullable();
             $table->timestamps();
         });
