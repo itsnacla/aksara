@@ -23,7 +23,7 @@ Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data p
 | ------------------- | ---------------------- | -------- |
 | **Framework**       | Laravel                | 12.x     |
 | **Admin Panel**     | Filament PHP           | v3/v5    |
-| **Database**        | PostgreSQL(PG Vector)  | 16+      |
+| **Database**        | PostgreSQL (PG Vector) | 16+      |
 | **Styling**         | Tailwind CSS           | 4.0      |
 | **RBAC**            | Filament Shield        | Latest   |
 | **Runtime**         | PHP                    | 8.4+     |
@@ -37,64 +37,95 @@ Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data p
 
 ---
 
-## ⚙️ Instalasi & Setup
+## ⚙️ Instalasi & Setup Lengkap
 
-Ikuti langkah-langkah di bawah ini untuk menjalankan Aksara di lingkungan lokal Anda:
+Ikuti langkah-langkah di bawah ini untuk menjalankan Aksara di lingkungan lokal Anda. Pastikan sistem Anda memenuhi **Requirement Minimum: PHP 8.4, Node 20+, & PostgreSQL 16**.
 
-### 1. Persiapan Awal
-Pastikan Anda sudah menginstal PHP 8.4+, Composer, Node.js, dan PostgreSQL.
+### 1. Kloning & Instalasi
+Dapatkan kode sumber dan instal semua dependensi yang diperlukan:
 
 ```bash
 # Clone repository
 git clone https://github.com/itsnacla/Aksara.git
 cd Aksara
 
-# Instal dependensi PHP
-composer install
+# Metode A: Setup Otomatis (Direkomendasikan)
+composer setup
 
-# Instal dependensi JavaScript
+# Metode B: Instalasi Manual
+composer install
 npm install
 ```
 
-### 2. Konfigurasi Environment
-Salin file `.env.example` menjadi `.env` dan atur konfigurasi database Anda.
+### 2. Konfigurasi Environment (`.env`)
+Salin file environment dan buat Application Key:
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-### 3. Aktivasi PG Vector (Penting!)
-Pastikan database Anda sudah memiliki ekstensi **pgvector**. Jalankan perintah SQL berikut di database PostgreSQL Anda:
+> [!IMPORTANT]
+> Buka file `.env` dan sesuaikan bagian database:
+> `DB_CONNECTION=pgsql`, `DB_DATABASE=nama_db`, `DB_USERNAME=postgres`, `DB_PASSWORD=password`.
+
+### 3. Aktivasi PG Vector (Krusial)
+Aksara membutuhkan ekstensi **pgvector** untuk fitur AI. Pastikan ekstensi ini diaktifkan di PostgreSQL Anda:
 
 ```sql
+-- Jalankan di SQL Console / pgAdmin
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-### 4. Migrasi & Seeding Database
-Jalankan perintah berikut untuk menyiapkan skema database dan data awal:
+### 4. Link Storage & Filament Assets
+Langkah ini wajib agar UI Filament dan file upload (avatar/media) tampil dengan benar:
 
 ```bash
-# Menjalankan migrasi bersih
+# Menghubungkan storage (untuk media/upload)
+php artisan storage:link
+
+# Re-publish assets Filament terbaru
+php artisan filament:assets
+php artisan filament:upgrade
+```
+
+### 5. Inisialisasi Security & Data Demo
+Bangun skema database dan masukkan data percobaan:
+
+```bash
+# Fresh migration
 php artisan migrate:fresh
 
 # Generate permissions & policies (Filament Shield)
 php artisan shield:generate --all --panel=admin --no-interaction
 
-# Memasukkan data awal (User, Guru, Siswa, Kelas, Master Data)
-php artisan db:seed
+# Seeding data demo (User, Guru, Siswa, Master Data)
+php artisan db:seed --class=UserSeeder
 ```
 
-### 5. Menjalankan Aplikasi
-Buka dua terminal berbeda untuk menjalankan server Laravel dan kompilasi aset:
+---
+
+## 🔑 Akun Akses Default
+Gunakan password default: **`password`** untuk semua akun berikut:
+
+| Role        | Username / Email   | Dasbor Akses         |
+| ----------- | ------------------ | -------------------- |
+| Super Admin | `admin@aksara.com` | `/admin`             |
+| Guru        | `guru@aksara.com`  | `/admin`             |
+| Staff TU    | `staff@aksara.com` | `/admin`             |
+| Wali/Parent | `wali@aksara.com`  | `/dashboard` (Portal)|
+| Siswa       | `siswa@aksara.com` | `/dashboard` (Portal)|
+
+---
+
+## 🚀 Menjalankan Aplikasi
+Gunakan perintah pengembangan simultan (Vite + Server):
 
 ```bash
-# Terminal 1
-php artisan serve
-
-# Terminal 2
-npm run dev
+composer dev
 ```
+
+Aplikasi dapat diakses di `http://localhost:8000/admin` (Admin) atau `http://localhost:8000/dashboard` (Siswa/Wali).
 
 ---
 
