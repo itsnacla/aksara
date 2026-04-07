@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Permission extends Model
+class LeaveRequest extends Model
 {
     protected $fillable = [
         'user_id',

@@ -22,8 +22,9 @@ class UsersTable
                 TextColumn::make('email')
                     ->label('Email Address')
                     ->searchable(),
-                TextColumn::make('role_user')
+                TextColumn::make('roles.name')
                     ->label('Role')
+                    ->badge()
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->label('Created At')

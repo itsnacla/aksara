@@ -26,15 +26,11 @@ class UserForm
                     ->label('Password')
                     ->password()
                     ->required(),
-                Select::make('role_user')
-                    ->label('Role')
-                    ->options([
-                        'admin' => 'Admin',
-                        'staff' => 'Staff',
-                        'guru' => 'Guru',
-                        'siswa' => 'Siswa',
-                        'wali' => 'Wali'
-                    ])
+                Select::make('roles')
+                    ->label('Roles')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
                     ->required(),
             ]);
     }
