@@ -12,6 +12,8 @@ use Filament\Panel;
 class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
+    
+    protected $guard_name = 'web';
 
     protected $fillable = [
         'name',
