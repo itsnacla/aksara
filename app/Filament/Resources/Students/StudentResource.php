@@ -5,7 +5,9 @@ namespace App\Filament\Resources\Students;
 use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Filament\Resources\Students\Pages\EditStudent;
 use App\Filament\Resources\Students\Pages\ListStudents;
+use App\Filament\Resources\Students\Pages\ViewStudent;
 use App\Filament\Resources\Students\Schemas\StudentForm;
+use App\Filament\Resources\Students\Schemas\StudentInfoList;
 use App\Filament\Resources\Students\Tables\StudentsTable;
 use App\Models\Student;
 use BackedEnum;
@@ -25,11 +27,16 @@ class StudentResource extends Resource
 
     protected static ?int $navigationSort = 13;
 
-    protected static ?string $recordTitleAttribute = 'nama_siswa';
+        protected static ?string $recordTitleAttribute = 'nama_siswa';
 
     public static function form(Schema $schema): Schema
     {
         return StudentForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return StudentInfoList::configure($schema);
     }
 
     public static function table(Table $table): Table
@@ -49,6 +56,7 @@ class StudentResource extends Resource
         return [
             'index' => ListStudents::route('/'),
             'create' => CreateStudent::route('/create'),
+            'view' => ViewStudent::route('/{record}'),
             'edit' => EditStudent::route('/{record}/edit'),
         ];
     }
