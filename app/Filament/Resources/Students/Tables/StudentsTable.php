@@ -28,6 +28,10 @@ class StudentsTable
                 TextColumn::make('parent.nama_wali')
                     ->label('Orang Tua')
                     ->searchable(),
+                TextColumn::make('user.email')
+                    ->label('Email Akun')
+                    ->description(fn ($record) => $record->user?->username)
+                    ->searchable(),
             ])
             ->filters([
                 //

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Staff\Schemas;
 
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Schema;
 
 class StaffForm
@@ -11,18 +12,45 @@ class StaffForm
     {
         return $schema
             ->components([
-                TextInput::make('user_id')
-                    ->label('User ID')
-                    ->disabled()
-                    ->dehydrated(),
-                TextInput::make('nama_staff')
-                    ->label('Nama Lengkap Staff')
-                    ->required(),
-                TextInput::make('jabatan')
-                    ->label('Jabatan')
-                    ->required(),
-                TextInput::make('no_whatsapp')
-                    ->label('No WhatsApp'), 
+                Fieldset::make('Data Akun User')
+                    ->schema([
+                        TextInput::make('user_name')
+                            ->label('Nama Lengkap')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('user_username')
+                            ->label('Username')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(table: 'users', column: 'username', ignoreRecord: true),
+                        TextInput::make('user_email')
+                            ->label('Email')
+                            ->email()
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(table: 'users', column: 'email', ignoreRecord: true),
+                        TextInput::make('user_password')
+                            ->label('Password')
+                            ->password()
+                            ->required(fn (string $operation): bool => $operation === 'create')
+                            ->dehydrated(fn (?string $state) => filled($state))
+                            ->maxLength(255)
+                            ->helperText(fn (string $operation): string => $operation === 'edit' ? 'Kosongkan jika tidak ingin mengubah password' : ''),
+                    ])
+                    ->columns(2),
+
+                Fieldset::make('Data Staff')
+                    ->schema([
+
+                        TextInput::make('jabatan')
+                            ->label('Jabatan')
+                            ->required(),
+                        TextInput::make('no_whatsapp')
+                            ->label('No WhatsApp')
+                            ->tel()
+                            ->maxLength(20),
+                    ])
+                    ->columns(2),
             ]);
     }
 }

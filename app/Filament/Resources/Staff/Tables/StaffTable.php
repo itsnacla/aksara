@@ -15,9 +15,10 @@ class StaffTable
     {
         return $table
             ->columns([
-                TextColumn::make('user_id')
-                    ->label('User ID')
-                    ->numeric()
+                TextColumn::make('user.email')
+                    ->label('Email Akun')
+                    ->description(fn ($record) => $record->user?->username)
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('nama_staff')
                     ->label('Nama Lengkap Staff')

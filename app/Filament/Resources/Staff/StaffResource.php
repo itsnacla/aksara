@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Staff;
 
 
+use App\Filament\Resources\Staff\Pages\CreateStaff;
 use App\Filament\Resources\Staff\Pages\EditStaff;
 use App\Filament\Resources\Staff\Pages\ListStaff;
 use App\Filament\Resources\Staff\Pages\ViewStaff;
@@ -55,6 +56,7 @@ class StaffResource extends Resource
     {
         return [
             'index' => ListStaff::route('/'),
+            'create' => CreateStaff::route('/create'),
             'view' => ViewStaff::route('/{record}'),
             'edit' => EditStaff::route('/{record}/edit'),
         ];

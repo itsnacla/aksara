@@ -11,9 +11,12 @@ class StaffInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('user_id')
-                    ->label('User ID')
-                    ->numeric(),
+                TextEntry::make('user.name')
+                    ->label('Nama Akun User'),
+                TextEntry::make('user.username')
+                    ->label('Username'),
+                TextEntry::make('user.email')
+                    ->label('Email'),
                 TextEntry::make('nama_staff')
                     ->label('Nama Lengkap Staff'),
                 TextEntry::make('jabatan')
