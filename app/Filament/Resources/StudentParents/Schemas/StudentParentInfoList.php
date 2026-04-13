@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filament\Resources\Staff\Schemas;
+namespace App\Filament\Resources\StudentParents\Schemas;
 
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 
-class StaffInfolist
+class StudentParentInfoList
 {
     public static function configure(Schema $schema): Schema
     {
@@ -17,18 +17,10 @@ class StaffInfolist
                     ->label('Username'),
                 TextEntry::make('user.email')
                     ->label('Email'),
-                TextEntry::make('jabatan')
-                    ->label('Jabatan'),
+                TextEntry::make('hubungan')
+                    ->label('Hubungan'),
                 TextEntry::make('no_whatsapp')
-                    ->label('No WhatsApp')
-                    ->placeholder('-'),
-                TextEntry::make('created_at')
-                    ->label('Created At')
-                    ->dateTime()
-                    ->placeholder('-'),
-                TextEntry::make('updated_at')
-                    ->dateTime()
-                    ->placeholder('-'),
+                    ->label('No WhatsApp'),
             ]);
     }
 }

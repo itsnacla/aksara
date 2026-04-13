@@ -12,13 +12,11 @@ class StudentInfoList
         return $schema
             ->components([
                 TextEntry::make('user.name')
-                    ->label('Nama Akun User'),
+                    ->label('Nama Lengkap'),
                 TextEntry::make('user.username')
                     ->label('Username'),
                 TextEntry::make('user.email')
                     ->label('Email'),
-                TextEntry::make('nama_siswa')
-                    ->label('Nama Lengkap Siswa'),
                 TextEntry::make('nisn')
                     ->label('NISN'),
                 TextEntry::make('classroom.nama_kelas')

@@ -5,7 +5,9 @@ namespace App\Filament\Resources\StudentParents;
 use App\Filament\Resources\StudentParents\Pages\CreateStudentParent;
 use App\Filament\Resources\StudentParents\Pages\EditStudentParent;
 use App\Filament\Resources\StudentParents\Pages\ListStudentParents;
+use App\Filament\Resources\StudentParents\Pages\ViewStudentParent;
 use App\Filament\Resources\StudentParents\Schemas\StudentParentForm;
+use App\Filament\Resources\StudentParents\Schemas\StudentParentInfoList;
 use App\Filament\Resources\StudentParents\Tables\StudentParentsTable;
 use App\Models\StudentParent;
 use BackedEnum;
@@ -34,6 +36,11 @@ class StudentParentResource extends Resource
         return StudentParentForm::configure($schema);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return StudentParentInfoList::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return StudentParentsTable::configure($table);
@@ -51,6 +58,7 @@ class StudentParentResource extends Resource
         return [
             'index' => ListStudentParents::route('/'),
             'create' => CreateStudentParent::route('/create'),
+            'view' => ViewStudentParent::route('/{record}'),
             'edit' => EditStudentParent::route('/{record}/edit'),
         ];
     }
