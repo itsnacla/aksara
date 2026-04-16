@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Classrooms\Schemas;
 
+use App\Models\AcademicYear;
 use App\Models\Level;
 use App\Models\Teacher;
 use Filament\Forms\Components\TextInput;
@@ -14,6 +15,11 @@ class ClassroomForm
     {
         return $schema
             ->components([
+                Select::make('academic_year_id')
+                    ->label('Tahun Ajaran')
+                    ->relationship('academicYear', 'tahun_ajaran')
+                    ->required()
+                    ->searchable(),
                 Select::make('level_id')
                     ->label('Tingkatan/Level')
                     ->relationship('level', 'nama_tingkatan')

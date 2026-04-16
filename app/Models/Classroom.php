@@ -10,6 +10,7 @@ class Classroom extends Model
         'level_id',
         'nama_kelas',
         'walikelas_id',
+        'academic_year_id',
     ];
 
     public function level()
@@ -30,5 +31,10 @@ class Classroom extends Model
     public function schedules()
     {
         return $this->hasMany(Schedule::class);
+    }
+
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
     }
 }

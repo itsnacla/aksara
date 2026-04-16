@@ -14,6 +14,9 @@ class ClassroomsTable
     {
         return $table
             ->columns([
+                TextColumn::make('academicYear.tahun_ajaran')
+                    ->label('Tahun Ajaran')
+                    ->sortable(),
                 TextColumn::make('nama_kelas')
                     ->searchable()
                     ->sortable(),
