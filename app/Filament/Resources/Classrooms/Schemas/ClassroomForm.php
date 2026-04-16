@@ -25,7 +25,7 @@ class ClassroomForm
                     ->placeholder('X-IPA-1'),
                 Select::make('walikelas_id')
                     ->label('Wali Kelas')
-                    ->options(fn () => \App\Models\Teacher::with('user')->get()->pluck('user.name', 'id'))
+                    ->options(fn () => \App\Models\Teacher::with('user')->where('is_walikelas', true)->get()->pluck('user.name', 'id'))
                     ->required()
                     ->searchable(),
             ]);
