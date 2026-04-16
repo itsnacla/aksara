@@ -40,7 +40,6 @@ class CreateUser extends CreateRecord
             'guru' => Teacher::create([
                 'user_id' => $user->id,
                 'nip' => $data['teacher_nip'] ?? '',
-                'nama_guru' => $data['teacher_nama_guru'] ?? $user->name,
                 'spesialisasi' => $data['teacher_spesialisasi'] ?? null,
                 'no_whatsapp' => $data['teacher_no_whatsapp'] ?? null,
                 'is_walikelas' => $data['teacher_is_walikelas'] ?? false,
@@ -48,20 +47,17 @@ class CreateUser extends CreateRecord
             ]),
             'staff' => Staff::create([
                 'user_id' => $user->id,
-                'nama_staff' => $data['staff_nama_staff'] ?? $user->name,
                 'jabatan' => $data['staff_jabatan'] ?? null,
                 'no_whatsapp' => $data['staff_no_whatsapp'] ?? null,
             ]),
             'siswa' => Student::create([
                 'user_id' => $user->id,
                 'nisn' => $data['student_nisn'] ?? '',
-                'nama_siswa' => $data['student_nama_siswa'] ?? $user->name,
                 'classroom_id' => $data['student_classroom_id'],
                 'parent_id' => $data['student_parent_id'],
             ]),
             'wali' => StudentParent::create([
                 'user_id' => $user->id,
-                'nama_wali' => $data['parent_nama_wali'] ?? $user->name,
                 'hubungan' => $data['parent_hubungan'] ?? 'wali',
                 'no_whatsapp' => $data['parent_no_whatsapp'] ?? null,
             ]),

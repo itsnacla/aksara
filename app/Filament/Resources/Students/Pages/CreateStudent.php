@@ -23,9 +23,6 @@ class CreateStudent extends CreateRecord
             'password' => $data['user_password'],
         ];
 
-        // Auto-fill nama_siswa from user_name
-        $data['nama_siswa'] = $data['user_name'];
-
         // Remove user fields from data, keep only student fields
         unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
 

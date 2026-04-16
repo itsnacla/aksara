@@ -10,7 +10,6 @@ class StudentParent extends Model
 
     protected $fillable = [
         'user_id',
-        'nama_wali',
         'no_whatsapp',
         'hubungan',
     ];

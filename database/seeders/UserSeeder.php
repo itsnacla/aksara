@@ -59,7 +59,6 @@ class UserSeeder extends Seeder
         Staff::firstOrCreate(
             ['user_id' => $staffUser->id],
             [
-                'nama_staff' => 'Staff TU Demo',
                 'jabatan' => 'Administrasi Umum',
                 'no_whatsapp' => '081234567890'
             ]
@@ -79,7 +78,6 @@ class UserSeeder extends Seeder
             ['user_id' => $guruUser->id],
             [
                 'nip' => '19870101202001',
-                'nama_guru' => 'Guru Demo, S.Pd',
                 'spesialisasi' => 'Matematika',
                 'is_walikelas' => true,
                 'no_whatsapp' => '082345678901'
@@ -105,7 +103,6 @@ class UserSeeder extends Seeder
         $parent = StudentParent::firstOrCreate(
             ['user_id' => $waliUser->id],
             [
-                'nama_wali' => 'Bpk. Orang Tua Demo',
                 'hubungan' => 'ayah',
                 'no_whatsapp' => '083456789012'
             ]
@@ -127,7 +124,6 @@ class UserSeeder extends Seeder
                 'classroom_id' => $classroom->id,
                 'parent_id' => $parent->id,
                 'nisn' => '0012345678',
-                'nama_siswa' => 'Siswa Percobaan Aksara',
             ]
         );
     }

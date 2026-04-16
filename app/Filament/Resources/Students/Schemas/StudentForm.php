@@ -57,7 +57,7 @@ class StudentForm
                             ->searchable(),
                         Select::make('parent_id')
                             ->label('Orang Tua/Wali')
-                            ->relationship('parent', 'nama_wali')
+                            ->options(fn () => \App\Models\StudentParent::with('user')->get()->pluck('user.name', 'id'))
                             ->required()
                             ->searchable(),
                         TextInput::make('qr_code')

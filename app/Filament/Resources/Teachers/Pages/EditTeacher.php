@@ -41,9 +41,6 @@ class EditTeacher extends EditRecord
             'password' => $data['user_password'] ?? null,
         ];
 
-        // Auto-fill nama_guru from user_name
-        $data['nama_guru'] = $data['user_name'] ?? $this->record->nama_guru;
-
         // Remove user fields from teacher data
         unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
 

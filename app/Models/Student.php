@@ -11,7 +11,6 @@ class Student extends Model
         'classroom_id',
         'parent_id',
         'nisn',
-        'nama_siswa',
         'qr_code',
     ];
 

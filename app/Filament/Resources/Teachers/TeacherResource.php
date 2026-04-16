@@ -27,7 +27,7 @@ class TeacherResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
-    protected static ?string $recordTitleAttribute = 'nama_guru';
+    protected static ?string $recordTitleAttribute = 'user.name';
 
     public static function form(Schema $schema): Schema
     {

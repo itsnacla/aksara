@@ -21,7 +21,7 @@ class StudentInfoList
                     ->label('NISN'),
                 TextEntry::make('classroom.nama_kelas')
                     ->label('Kelas'),
-                TextEntry::make('parent.nama_wali')
+                TextEntry::make('parent.user.name')
                     ->label('Orang Tua/Wali'),
                 TextEntry::make('qr_code')
                     ->label('QR Code ID')

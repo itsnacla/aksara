@@ -46,7 +46,6 @@ class EditUser extends EditRecord
         $teacher = $user->teacher;
         if ($teacher) {
             $data['teacher_nip'] = $teacher->nip;
-            $data['teacher_nama_guru'] = $teacher->nama_guru;
             $data['teacher_spesialisasi'] = $teacher->spesialisasi;
             $data['teacher_no_whatsapp'] = $teacher->no_whatsapp;
             $data['teacher_is_walikelas'] = $teacher->is_walikelas;
@@ -58,7 +57,6 @@ class EditUser extends EditRecord
     {
         $staff = $user->staff;
         if ($staff) {
-            $data['staff_nama_staff'] = $staff->nama_staff;
             $data['staff_jabatan'] = $staff->jabatan;
             $data['staff_no_whatsapp'] = $staff->no_whatsapp;
         }
@@ -69,7 +67,6 @@ class EditUser extends EditRecord
         $student = $user->student;
         if ($student) {
             $data['student_nisn'] = $student->nisn;
-            $data['student_nama_siswa'] = $student->nama_siswa;
             $data['student_classroom_id'] = $student->classroom_id;
             $data['student_parent_id'] = $student->parent_id;
         }
@@ -79,7 +76,6 @@ class EditUser extends EditRecord
     {
         $parent = $user->parent;
         if ($parent) {
-            $data['parent_nama_wali'] = $parent->nama_wali;
             $data['parent_hubungan'] = $parent->hubungan;
             $data['parent_no_whatsapp'] = $parent->no_whatsapp;
         }
@@ -124,7 +120,6 @@ class EditUser extends EditRecord
                 ['user_id' => $user->id],
                 [
                     'nip' => $data['teacher_nip'] ?? '',
-                    'nama_guru' => $data['teacher_nama_guru'] ?? $user->name,
                     'spesialisasi' => $data['teacher_spesialisasi'] ?? null,
                     'no_whatsapp' => $data['teacher_no_whatsapp'] ?? null,
                     'is_walikelas' => $data['teacher_is_walikelas'] ?? false,
@@ -134,7 +129,6 @@ class EditUser extends EditRecord
             'staff' => Staff::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'nama_staff' => $data['staff_nama_staff'] ?? $user->name,
                     'jabatan' => $data['staff_jabatan'] ?? null,
                     'no_whatsapp' => $data['staff_no_whatsapp'] ?? null,
                 ]
@@ -143,7 +137,6 @@ class EditUser extends EditRecord
                 ['user_id' => $user->id],
                 [
                     'nisn' => $data['student_nisn'] ?? '',
-                    'nama_siswa' => $data['student_nama_siswa'] ?? $user->name,
                     'classroom_id' => $data['student_classroom_id'],
                     'parent_id' => $data['student_parent_id'],
                 ]
@@ -151,7 +144,6 @@ class EditUser extends EditRecord
             'wali' => StudentParent::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'nama_wali' => $data['parent_nama_wali'] ?? $user->name,
                     'hubungan' => $data['parent_hubungan'] ?? 'wali',
                     'no_whatsapp' => $data['parent_no_whatsapp'] ?? null,
                 ]

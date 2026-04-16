@@ -20,7 +20,7 @@ class StudentsTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('nama_siswa')
+                TextColumn::make('user.name')
                     ->label('Nama Siswa')
                     ->searchable()
                     ->sortable(),
@@ -30,7 +30,7 @@ class StudentsTable
                     ->badge()
                     ->sortable(),
 
-                TextColumn::make('parent.nama_wali')
+                TextColumn::make('parent.user.name')
                     ->label('Orang Tua')
                     ->searchable(),
 

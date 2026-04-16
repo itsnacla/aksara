@@ -20,7 +20,7 @@ class TeachersTable
                     ->label('NIP')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('nama_guru')
+                TextColumn::make('user.name')
                     ->label('Nama Guru')
                     ->searchable()
                     ->sortable(),

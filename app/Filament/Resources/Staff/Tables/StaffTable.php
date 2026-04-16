@@ -20,7 +20,7 @@ class StaffTable
                     ->description(fn ($record) => $record->user?->username)
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('nama_staff')
+                TextColumn::make('user.name')
                     ->label('Nama Lengkap Staff')
                     ->searchable(),
                 TextColumn::make('jabatan')

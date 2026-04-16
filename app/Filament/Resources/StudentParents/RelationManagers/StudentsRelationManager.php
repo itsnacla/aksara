@@ -13,7 +13,7 @@ class StudentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'students';
 
-    protected static ?string $recordTitleAttribute = 'nama_siswa';
+    protected static ?string $recordTitleAttribute = 'nisn';
 
     public function form(Schema $schema): Schema
     {
@@ -22,9 +22,6 @@ class StudentsRelationManager extends RelationManager
                 TextInput::make('nisn')
                     ->required()
                     ->maxLength(10),
-                TextInput::make('nama_siswa')
-                    ->required()
-                    ->maxLength(100),
             ]);
     }
 
@@ -34,7 +31,7 @@ class StudentsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('nisn')
                     ->label('NISN'),
-                TextColumn::make('nama_siswa')
+                TextColumn::make('user.name')
                     ->label('Nama Siswa'),
                 TextColumn::make('classroom.nama_kelas')
                     ->label('Kelas'),

@@ -48,19 +48,7 @@ class UserForm
                                 'wali' => 'Orang Tua / Wali',
                             ])
                             ->required()
-                            ->live()
-                            ->afterStateUpdated(function ($state, callable $set, Get $get) {
-                                $name = $get('name');
-                                if ($name) {
-                                    match ($state) {
-                                        'guru' => $set('teacher_nama_guru', $name),
-                                        'staff' => $set('staff_nama_staff', $name),
-                                        'siswa' => $set('student_nama_siswa', $name),
-                                        'wali' => $set('parent_nama_wali', $name),
-                                        default => null,
-                                    };
-                                }
-                            }),
+                            ->live(),
                     ])
                     ->columns(2),
 
@@ -70,10 +58,6 @@ class UserForm
                             ->label('NIP')
                             ->required(fn (Get $get): bool => $get('selected_role') === 'guru')
                             ->maxLength(20),
-                        TextInput::make('teacher_nama_guru')
-                            ->label('Nama Lengkap Guru')
-                            ->required(fn (Get $get): bool => $get('selected_role') === 'guru')
-                            ->maxLength(100),
                         TextInput::make('teacher_spesialisasi')
                             ->label('Spesialisasi')
                             ->maxLength(50),
@@ -91,10 +75,6 @@ class UserForm
 
                 Fieldset::make('Data Staff')
                     ->schema([
-                        TextInput::make('staff_nama_staff')
-                            ->label('Nama Lengkap Staff')
-                            ->required(fn (Get $get): bool => $get('selected_role') === 'staff')
-                            ->maxLength(100),
                         TextInput::make('staff_jabatan')
                             ->label('Jabatan')
                             ->required(fn (Get $get): bool => $get('selected_role') === 'staff')
@@ -113,10 +93,6 @@ class UserForm
                             ->label('NISN')
                             ->required(fn (Get $get): bool => $get('selected_role') === 'siswa')
                             ->maxLength(10),
-                        TextInput::make('student_nama_siswa')
-                            ->label('Nama Siswa')
-                            ->required(fn (Get $get): bool => $get('selected_role') === 'siswa')
-                            ->maxLength(100),
                         Select::make('student_classroom_id')
                             ->label('Kelas')
                             ->options(fn () => \App\Models\Classroom::pluck('nama_kelas', 'id'))
@@ -125,7 +101,7 @@ class UserForm
                             ->required(fn (Get $get): bool => $get('selected_role') === 'siswa'),
                         Select::make('student_parent_id')
                             ->label('Orang Tua / Wali')
-                            ->options(fn () => \App\Models\StudentParent::pluck('nama_wali', 'id'))
+                            ->options(fn () => \App\Models\StudentParent::with('user')->get()->pluck('user.name', 'id'))
                             ->searchable()
                             ->preload()
                             ->required(fn (Get $get): bool => $get('selected_role') === 'siswa'),
@@ -135,10 +111,6 @@ class UserForm
 
                 Fieldset::make('Data Orang Tua / Wali')
                     ->schema([
-                        TextInput::make('parent_nama_wali')
-                            ->label('Nama Wali')
-                            ->required(fn (Get $get): bool => $get('selected_role') === 'wali')
-                            ->maxLength(100),
                         Select::make('parent_hubungan')
                             ->label('Hubungan')
                             ->options([

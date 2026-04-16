@@ -43,9 +43,6 @@ class EditStaff extends EditRecord
             'password' => $data['user_password'] ?? null,
         ];
 
-        // Auto-fill nama_staff from user_name
-        $data['nama_staff'] = $data['user_name'] ?? $this->record->nama_staff;
-
         // Remove user fields from staff data
         unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
 

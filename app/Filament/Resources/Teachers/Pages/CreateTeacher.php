@@ -23,9 +23,6 @@ class CreateTeacher extends CreateRecord
             'password' => $data['user_password'],
         ];
 
-        // Auto-fill nama_guru from user_name
-        $data['nama_guru'] = $data['user_name'];
-
         // Remove user fields from data
         unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
 

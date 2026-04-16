@@ -20,7 +20,7 @@ class ClassroomsTable
                 TextColumn::make('level.nama_tingkatan')
                     ->label('Tingkatan')
                     ->sortable(),
-                TextColumn::make('waliKelas.nama_guru')
+                TextColumn::make('waliKelas.user.name')
                     ->label('Wali Kelas')
                     ->searchable()
                     ->sortable(),

@@ -23,9 +23,6 @@ class CreateStaff extends CreateRecord
             'password' => $data['user_password'],
         ];
 
-        // Auto-fill nama_staff from user_name
-        $data['nama_staff'] = $data['user_name'];
-
         // Remove user fields from data
         unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
 

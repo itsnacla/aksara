@@ -15,7 +15,8 @@ class StudentParentsTable
     {
         return $table
             ->columns([
-                TextColumn::make('nama_wali')
+                TextColumn::make('user.name')
+                    ->label('Nama Wali')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('hubungan')

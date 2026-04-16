@@ -41,9 +41,6 @@ class EditStudent extends EditRecord
             'password' => $data['user_password'] ?? null,
         ];
 
-        // Auto-fill nama_siswa from user_name
-        $data['nama_siswa'] = $data['user_name'] ?? $this->record->nama_siswa;
-
         // Remove user fields from student data
         unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
 
