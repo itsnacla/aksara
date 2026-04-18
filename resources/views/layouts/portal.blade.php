@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Aksara Portal - @yield('title', 'Dashboard')</title>
 
     <!-- Tailwind 4 Styles -->
@@ -41,5 +42,8 @@
             &copy; {{ date('Y') }} Samasta Teknologi Nuswantara. Built with Intellectual Calm.
         </footer>
     </div>
+
+    {{-- Floating AI Chatbot --}}
+    @include('components.chatbot')
 </body>
 </html>

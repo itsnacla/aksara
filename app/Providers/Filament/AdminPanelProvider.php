@@ -67,6 +67,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::head.done',
                 fn (): string => Blade::render("@vite(['resources/css/app.css'])"),
+            )
+            ->renderHook(
+                'panels::body.end',
+                fn (): string => Blade::render('<x-chatbot />'),
             );
     }
 }
