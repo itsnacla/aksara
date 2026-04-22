@@ -33,6 +33,8 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->brandName('AKSARA')
+            ->brandLogo(asset('images/logo-nobg.png'))
+            ->brandLogoHeight('3rem')
             ->plugins([
                 FilamentShieldPlugin::make(),
             ])
