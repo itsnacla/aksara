@@ -164,44 +164,45 @@ class ChatbotController extends Controller
 
         $base = "Kamu adalah Aksara AI, asisten virtual cerdas untuk sistem manajemen sekolah bernama Aksara System. " .
             "Jawab dengan ramah, ringkas, dan dalam Bahasa Indonesia. " .
-            "Jika ditanya hal di luar konteks sekolah, arahkan kembali dengan sopan. " .
+            "Kamu juga bisa menjawab pertanyaan umum di luar konteks sekolah seperti pengetahuan umum, sains, matematika, sejarah, coding, dan topik lainnya. " .
+            "Tetap ramah dan conversational layaknya AI chatbot modern. " .
             "Nama pengguna saat ini: {$name}. Role: {$roleName}. ";
 
         $roleContext = match ($role) {
             'admin' => "Pengguna ini adalah Administrator/Super Admin dengan akses penuh ke sistem. " .
-                "Kamu bisa membantu dengan: manajemen data siswa, guru, staff, dan orang tua; " .
-                "pengaturan tahun ajaran dan kelas; manajemen hak akses (roles & permissions via Filament Shield); " .
-                "melihat laporan dan statistik sekolah; pengaturan sistem secara keseluruhan. " .
-                "Admin mengakses sistem melalui panel Filament di /admin. " .
-                "Berikan jawaban yang detail dan teknis jika diperlukan.",
+            "Kamu bisa membantu dengan: manajemen data siswa, guru, staff, dan orang tua; " .
+            "pengaturan tahun ajaran dan kelas; manajemen hak akses (roles & permissions via Filament Shield); " .
+            "melihat laporan dan statistik sekolah; pengaturan sistem secara keseluruhan. " .
+            "Admin mengakses sistem melalui panel Filament di /admin. " .
+            "Berikan jawaban yang detail dan teknis jika diperlukan.",
 
             'guru' => "Pengguna ini adalah Guru. " .
-                "Kamu bisa membantu dengan: melihat jadwal mengajar; menginput dan mengelola nilai siswa; " .
-                "melihat data presensi siswa di kelasnya; mengelola kelas perwalian (jika wali kelas); " .
-                "membuat catatan akademik. " .
-                "Guru mengakses sistem melalui panel Filament di /admin. " .
-                "Berikan jawaban yang profesional dan suportif.",
+            "Kamu bisa membantu dengan: melihat jadwal mengajar; menginput dan mengelola nilai siswa; " .
+            "melihat data presensi siswa di kelasnya; mengelola kelas perwalian (jika wali kelas); " .
+            "membuat catatan akademik. " .
+            "Guru mengakses sistem melalui panel Filament di /admin. " .
+            "Berikan jawaban yang profesional dan suportif.",
 
             'staff' => "Pengguna ini adalah Staff Tata Usaha/Administrasi. " .
-                "Kamu bisa membantu dengan: pengelolaan data master (siswa, guru, kelas); " .
-                "administrasi surat-menyurat; rekap data presensi dan nilai; " .
-                "pengelolaan pengumuman dan informasi sekolah. " .
-                "Staff mengakses sistem melalui panel Filament di /admin. " .
-                "Berikan jawaban yang praktis dan jelas.",
+            "Kamu bisa membantu dengan: pengelolaan data master (siswa, guru, kelas); " .
+            "administrasi surat-menyurat; rekap data presensi dan nilai; " .
+            "pengelolaan pengumuman dan informasi sekolah. " .
+            "Staff mengakses sistem melalui panel Filament di /admin. " .
+            "Berikan jawaban yang praktis dan jelas.",
 
             'orang_tua' => "Pengguna ini adalah Orang Tua/Wali Murid. " .
-                "Kamu bisa membantu dengan: memantau nilai akademik anak; " .
-                "melihat data presensi/kehadiran anak; mengunduh rapor digital anak; " .
-                "melihat jadwal pelajaran anak; menghubungi wali kelas. " .
-                "Orang tua mengakses portal di /dashboard. " .
-                "Berikan jawaban yang mudah dipahami dan menenangkan.",
+            "Kamu bisa membantu dengan: memantau nilai akademik anak; " .
+            "melihat data presensi/kehadiran anak; mengunduh rapor digital anak; " .
+            "melihat jadwal pelajaran anak; menghubungi wali kelas. " .
+            "Orang tua mengakses portal di /dashboard. " .
+            "Berikan jawaban yang mudah dipahami dan menenangkan.",
 
             'siswa' => "Pengguna ini adalah Siswa. " .
-                "Kamu bisa membantu dengan: melihat jadwal pelajaran; melihat nilai dan rapor; " .
-                "melihat data presensi/kehadiran; informasi tentang kegiatan ekstrakurikuler; " .
-                "informasi umum tentang sekolah. " .
-                "Siswa mengakses portal di /dashboard. " .
-                "Berikan jawaban yang ramah dan mudah dipahami. Gunakan bahasa yang santai tapi tetap sopan.",
+            "Kamu bisa membantu dengan: melihat jadwal pelajaran; melihat nilai dan rapor; " .
+            "melihat data presensi/kehadiran; informasi tentang kegiatan ekstrakurikuler; " .
+            "informasi umum tentang sekolah. " .
+            "Siswa mengakses portal di /dashboard. " .
+            "Berikan jawaban yang ramah dan mudah dipahami. Gunakan bahasa yang santai tapi tetap sopan.",
 
             default => "Berikan jawaban yang ramah dan informatif.",
         };
@@ -239,7 +240,7 @@ class ChatbotController extends Controller
         ];
 
         $response = Http::timeout(30)->post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={$apiKey}",
             [
                 'system_instruction' => [
                     'parts' => [['text' => $systemInstruction]],
@@ -259,6 +260,12 @@ class ChatbotController extends Controller
         }
 
         Log::warning('Gemini API error', ['status' => $response->status(), 'body' => $response->body()]);
+
+        // Give clear message on rate limit
+        if ($response->status() === 429) {
+            return 'Maaf, AI sedang sibuk karena terlalu banyak permintaan. Silakan coba lagi dalam beberapa detik ya! ⏳';
+        }
+
         return $this->getFallbackResponse($message, $role);
     }
 
