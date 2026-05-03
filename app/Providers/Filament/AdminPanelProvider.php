@@ -72,7 +72,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 'panels::body.end',
-                fn (): string => Blade::render('<x-chatbot />'),
+                fn (): string => auth()->check() ? Blade::render('<x-chatbot />') : '',
             );
     }
 }

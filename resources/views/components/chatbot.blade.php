@@ -1,4 +1,5 @@
-{{-- Floating AI Chatbot Component --}}
+{{-- Floating AI Chatbot Component (only for authenticated users) --}}
+@auth
 <div id="chatbot-backdrop" class="chatbot-backdrop"></div>
 <div id="aksara-chatbot" class="chatbot-wrapper">
     {{-- Floating Toggle Button --}}
@@ -778,3 +779,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+@endauth
