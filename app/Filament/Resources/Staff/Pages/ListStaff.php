@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Staff\Pages;
 
 use App\Filament\Resources\Staff\StaffResource;
+use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListStaff extends ListRecords
@@ -11,6 +12,8 @@ class ListStaff extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [];
+        return [
+            Actions\CreateAction::make(),
+        ];
     }
 }
