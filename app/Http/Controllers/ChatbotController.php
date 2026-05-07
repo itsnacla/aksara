@@ -3,8 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\Grade;
+use App\Models\Attendance;
+use App\Models\Schedule;
+use App\Models\Classroom;
+use App\Models\EReport;
+use App\Services\Chatbot\ChatbotService;
+use Illuminate\Support\Facades\Storage;
 
 class ChatbotController extends Controller
 {
@@ -64,7 +70,6 @@ class ChatbotController extends Controller
 
         $roleName = $user->roles->first()?->name ?? '';
 
-        // Map Spatie role names to chatbot role keys
         return match (true) {
             str_contains(strtolower($roleName), 'super_admin'),
             str_contains(strtolower($roleName), 'admin') => 'admin',
@@ -80,9 +85,6 @@ class ChatbotController extends Controller
         };
     }
 
-    /**
-     * Get display name for a role.
-     */
     private function getRoleDisplayName(string $role): string
     {
         return match ($role) {
@@ -95,9 +97,6 @@ class ChatbotController extends Controller
         };
     }
 
-    /**
-     * Get role-specific greeting message.
-     */
     private function getRoleGreeting(string $role, $user): string
     {
         $name = $user->name ?? 'Pengguna';
@@ -112,9 +111,6 @@ class ChatbotController extends Controller
         };
     }
 
-    /**
-     * Get role-specific quick action chips.
-     */
     private function getRoleChips(string $role): array
     {
         return match ($role) {
@@ -154,9 +150,6 @@ class ChatbotController extends Controller
         };
     }
 
-    /**
-     * Build role-specific system instruction for the AI.
-     */
     private function buildSystemInstruction(string $role, $user): string
     {
         $name = $user->name ?? 'Pengguna';
@@ -207,76 +200,262 @@ class ChatbotController extends Controller
             default => "Berikan jawaban yang ramah dan informatif.",
         };
 
-        return $base . $roleContext;
+        return $base . $roleContext . " Jika kamu memerlukan data spesifik untuk menjawab pertanyaan (seperti nilai, jadwal, atau daftar siswa), gunakan tool yang tersedia. JANGAN menebak data jika tidak ada.";
     }
 
     /**
-     * Get response from AI provider (Google Gemini).
+     * Get normalized tool definitions based on user role.
+     */
+    private function getToolDefinitions(string $role): array
+    {
+        $tools = [
+            [
+                'name' => 'get_academic_data',
+                'description' => 'Mendapatkan data nilai (tugas, UTS, UAS) dan absensi siswa untuk analisis atau informasi.',
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'student_id' => [
+                            'type' => 'integer',
+                            'description' => 'ID siswa (opsional jika siswa menanyakan miliknya sendiri).',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'get_schedule_data',
+                'description' => 'Mendapatkan jadwal pelajaran berdasarkan kelas atau guru.',
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'classroom_id' => [
+                            'type' => 'integer',
+                            'description' => 'ID kelas (opsional).',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'get_report_link',
+                'description' => 'Mendapatkan link unduh rapor digital (PDF) siswa.',
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'student_id' => [
+                            'type' => 'integer',
+                            'description' => 'ID siswa (opsional).',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        if (in_array($role, ['admin', 'guru', 'staff'])) {
+            $tools[] = [
+                'name' => 'get_classroom_info',
+                'description' => 'Mendapatkan daftar siswa dalam suatu kelas (untuk guru/admin).',
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'classroom_id' => [
+                            'type' => 'integer',
+                            'description' => 'ID kelas.',
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        return $tools;
+    }
+
+    /**
+     * Handle function calls from AI — dispatches to secure fetchers.
+     */
+    private function handleFunctionCall(string $name, array $args, $user)
+    {
+        $role = $this->getUserRole($user);
+
+        return match ($name) {
+            'get_academic_data' => $this->fetchAcademicData($args['student_id'] ?? null, $user, $role),
+            'get_schedule_data' => $this->fetchScheduleData($args['classroom_id'] ?? null, $user, $role),
+            'get_classroom_info' => $this->fetchClassroomInfo($args['classroom_id'] ?? null, $user, $role),
+            'get_report_link' => $this->fetchReportLink($args['student_id'] ?? null, $user, $role),
+            default => ['error' => 'Fungsi tidak ditemukan.'],
+        };
+    }
+
+    // ========================================================================
+    // SECURE DATA FETCHERS — filtered by authenticated user
+    // ========================================================================
+
+    private function fetchAcademicData(?int $studentId, $user, string $role)
+    {
+        $query = Grade::with(['subject', 'academicYear']);
+
+        if ($role === 'siswa') {
+            $student = $user->student;
+            if (!$student) return ['error' => 'Data siswa tidak ditemukan.'];
+            $query->where('student_id', $student->id);
+        } elseif ($role === 'orang_tua') {
+            $parent = $user->parent;
+            if (!$parent) return ['error' => 'Data orang tua tidak ditemukan.'];
+            $childIds = $parent->students->pluck('id')->toArray();
+            if ($studentId && in_array($studentId, $childIds)) {
+                $query->where('student_id', $studentId);
+            } else {
+                $query->whereIn('student_id', $childIds);
+            }
+        } elseif ($role === 'guru') {
+            if ($studentId) {
+                $query->where('student_id', $studentId);
+            } else {
+                return ['error' => 'Mohon tentukan ID siswa.'];
+            }
+        } elseif ($role === 'admin') {
+            if ($studentId) $query->where('student_id', $studentId);
+        }
+
+        $grades = $query->latest()->limit(20)->get()->map(fn($g) => [
+            'subject' => $g->subject->nama_pelajaran ?? 'N/A',
+            'tugas' => $g->nilai_tugas,
+            'uts' => $g->nilai_uts,
+            'uas' => $g->nilai_uas,
+            'tahun' => $g->academicYear->tahun ?? 'N/A',
+        ]);
+
+        $attendanceQuery = Attendance::query();
+        if ($role === 'siswa') $attendanceQuery->where('student_id', $user->student->id);
+        elseif ($role === 'orang_tua') $attendanceQuery->whereIn('student_id', $user->parent->students->pluck('id')->toArray());
+        elseif ($studentId) $attendanceQuery->where('student_id', $studentId);
+
+        $attendance = $attendanceQuery->selectRaw('status, count(*) as count')->groupBy('status')->get();
+
+        return [
+            'grades' => $grades,
+            'attendance_summary' => $attendance,
+            'context' => 'Data ini rahasia dan hanya boleh ditampilkan kepada user yang berhak.',
+        ];
+    }
+
+    private function fetchScheduleData(?int $classroomId, $user, string $role)
+    {
+        $query = Schedule::with(['subject', 'classroom', 'teacher.user']);
+
+        if ($role === 'siswa') {
+            $query->where('classroom_id', $user->student->classroom_id ?? 0);
+        } elseif ($role === 'guru') {
+            $query->where('teacher_id', $user->teacher->id ?? 0);
+        } elseif ($classroomId) {
+            $query->where('classroom_id', $classroomId);
+        }
+
+        return $query->get()->map(fn($s) => [
+            'hari' => $s->hari,
+            'jam' => "{$s->jam_mulai} - {$s->jam_selesai}",
+            'mapel' => $s->subject->nama_pelajaran ?? 'N/A',
+            'kelas' => $s->classroom->nama_kelas ?? 'N/A',
+            'guru' => $s->teacher->user->name ?? 'N/A',
+        ]);
+    }
+
+    private function fetchClassroomInfo(?int $classroomId, $user, string $role)
+    {
+        if (!in_array($role, ['admin', 'guru', 'staff'])) return ['error' => 'Unauthorized'];
+
+        $query = Classroom::with('students.user');
+
+        if ($role === 'guru') {
+            $query->where('walikelas_id', $user->teacher->id ?? 0);
+        } elseif ($classroomId) {
+            $query->where('id', $classroomId);
+        }
+
+        $classroom = $query->first();
+        if (!$classroom) return ['error' => 'Kelas tidak ditemukan.'];
+
+        return [
+            'nama_kelas' => $classroom->nama_kelas,
+            'total_siswa' => $classroom->students->count(),
+            'daftar_siswa' => $classroom->students->map(fn($s) => [
+                'id' => $s->id,
+                'nama' => $s->user->name,
+                'nisn' => $s->nisn,
+            ]),
+        ];
+    }
+
+    private function fetchReportLink(?int $studentId, $user, string $role)
+    {
+        $query = EReport::with('academicYear');
+
+        if ($role === 'siswa') {
+            $query->where('student_id', $user->student->id ?? 0);
+        } elseif ($role === 'orang_tua') {
+            $childIds = $user->parent->students->pluck('id')->toArray();
+            if ($studentId && in_array($studentId, $childIds)) {
+                $query->where('student_id', $studentId);
+            } else {
+                $query->whereIn('student_id', $childIds);
+            }
+        } elseif ($studentId) {
+            $query->where('student_id', $studentId);
+        }
+
+        $report = $query->latest()->first();
+        if (!$report) return ['error' => 'Rapor tidak ditemukan.'];
+
+        return [
+            'semester' => $report->semester,
+            'tahun_ajaran' => $report->academicYear->tahun ?? 'N/A',
+            'download_url' => url(Storage::url($report->file_path)),
+            'keterangan' => 'Berikan link ini kepada user untuk diunduh.',
+        ];
+    }
+
+    // ========================================================================
+    // AI RESPONSE — uses ChatbotService with multi-provider support
+    // ========================================================================
+
+    /**
+     * Get response from AI using the configured provider (with auto-fallback).
      */
     private function getAIResponse(string $message, array $history, $user): string
     {
-        $apiKey = config('services.gemini.api_key');
         $role = $this->getUserRole($user);
+        $service = new ChatbotService();
 
-        if (empty($apiKey)) {
+        if (!$service->isActive() || !$service->getProvider()) {
             return $this->getFallbackResponse($message, $role);
         }
 
         $systemInstruction = $this->buildSystemInstruction($role, $user);
+        $tools = $this->getToolDefinitions($role);
 
-        // Build Gemini API conversation format
+        // Normalize history to provider-agnostic format
         $contents = [];
-
         foreach ($history as $entry) {
             $contents[] = [
                 'role' => $entry['role'] === 'user' ? 'user' : 'model',
-                'parts' => [['text' => $entry['text']]],
+                'content' => $entry['text'],
             ];
         }
+        $contents[] = ['role' => 'user', 'content' => $message];
 
-        $contents[] = [
-            'role' => 'user',
-            'parts' => [['text' => $message]],
-        ];
+        // Function executor callback — keeps security logic in the controller
+        $functionExecutor = fn(string $name, array $args) => $this->handleFunctionCall($name, $args, $user);
 
-        $response = Http::timeout(30)->post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={$apiKey}",
-            [
-                'system_instruction' => [
-                    'parts' => [['text' => $systemInstruction]],
-                ],
-                'contents' => $contents,
-                'generationConfig' => [
-                    'temperature' => 0.7,
-                    'maxOutputTokens' => 2048,
-                ],
-            ]
-        );
-
-        if ($response->successful()) {
-            $data = $response->json();
-            return $data['candidates'][0]['content']['parts'][0]['text']
-                ?? 'Maaf, saya tidak bisa memproses permintaan Anda saat ini.';
-        }
-
-        Log::warning('Gemini API error', ['status' => $response->status(), 'body' => $response->body()]);
-
-        // Give clear message on rate limit
-        if ($response->status() === 429) {
-            return 'Maaf, AI sedang sibuk karena terlalu banyak permintaan. Silakan coba lagi dalam beberapa detik ya! ⏳';
-        }
-
-        return $this->getFallbackResponse($message, $role);
+        return $service->chat($systemInstruction, $contents, $tools, $functionExecutor);
     }
 
-    /**
-     * Role-specific fallback responses when no AI API key is configured.
-     */
+    // ========================================================================
+    // FALLBACK RESPONSES — when no AI provider is available
+    // ========================================================================
+
     private function getFallbackResponse(string $message, string $role): string
     {
         $message = mb_strtolower($message);
 
-        // Role-specific responses
         $roleResponses = match ($role) {
             'admin' => [
                 'siswa' => 'Untuk mengelola data siswa, buka menu **Students** di sidebar panel admin. Anda bisa menambah, mengedit, dan menghapus data siswa.',
@@ -287,65 +466,57 @@ class ChatbotController extends Controller
                 'role' => 'Manajemen roles dan permissions menggunakan Filament Shield. Buka menu **Shield** di sidebar untuk mengatur hak akses.',
             ],
             'guru' => [
-                'jadwal' => 'Jadwal mengajar Anda bisa dilihat di menu **Schedules** pada panel admin. Jadwal diatur per semester oleh bagian kurikulum.',
-                'nilai' => 'Untuk menginput nilai, buka menu **Grades** di sidebar. Pilih mata pelajaran dan kelas, kemudian input nilai per siswa.',
-                'presensi' => 'Data presensi siswa bisa dilihat di menu **Attendances**. Anda bisa memfilter berdasarkan kelas dan tanggal.',
-                'kelas' => 'Jika Anda wali kelas, data kelas perwalian bisa diakses di menu **Classrooms**. Anda bisa melihat daftar siswa di kelas Anda.',
-                'rapor' => 'E-Rapor bisa diakses di menu **E-Reports**. Sebagai guru, Anda bisa meninjau dan menyetujui rapor siswa.',
+                'jadwal' => 'Jadwal mengajar Anda bisa dilihat di menu **Schedules** pada panel admin.',
+                'nilai' => 'Untuk menginput nilai, buka menu **Grades** di sidebar.',
+                'presensi' => 'Data presensi siswa bisa dilihat di menu **Attendances**.',
+                'kelas' => 'Data kelas perwalian bisa diakses di menu **Classrooms**.',
+                'rapor' => 'E-Rapor bisa diakses di menu **E-Reports**.',
             ],
             'staff' => [
-                'data' => 'Data master sekolah (siswa, guru, kelas) bisa dikelola melalui menu masing-masing di sidebar panel admin.',
-                'surat' => 'Fitur surat-menyurat bisa diakses melalui menu administrasi. Anda bisa membuat dan mengelola surat keluar/masuk.',
-                'rekap' => 'Rekap data presensi dan nilai bisa diexport dari menu masing-masing resource di panel admin.',
-                'pengumuman' => 'Pengumuman bisa dibuat melalui menu **Notifications** di panel admin. Pilih target penerima sesuai kebutuhan.',
+                'data' => 'Data master sekolah bisa dikelola melalui menu masing-masing di sidebar panel admin.',
+                'surat' => 'Fitur surat-menyurat bisa diakses melalui menu administrasi.',
+                'rekap' => 'Rekap data bisa diexport dari menu masing-masing resource.',
+                'pengumuman' => 'Pengumuman bisa dibuat melalui menu **Notifications** di panel admin.',
             ],
             'orang_tua' => [
-                'nilai' => 'Nilai anak Anda bisa dilihat di halaman **Dashboard Portal**. Klik menu Nilai untuk melihat detail per mata pelajaran.',
-                'presensi' => 'Kehadiran anak Anda tercatat otomatis. Lihat rekap presensi di halaman Dashboard Portal.',
-                'rapor' => 'Rapor digital anak Anda bisa diunduh di bagian **E-Raport Digital** pada Dashboard Portal.',
-                'jadwal' => 'Jadwal pelajaran anak Anda bisa dilihat di halaman Dashboard Portal. Jadwal diperbarui setiap awal semester.',
-                'guru' => 'Untuk menghubungi wali kelas, silakan lihat informasi kontak di halaman Dashboard Portal.',
+                'nilai' => 'Nilai anak Anda bisa dilihat di halaman **Dashboard Portal**.',
+                'presensi' => 'Kehadiran anak Anda tercatat otomatis. Lihat rekap presensi di Dashboard Portal.',
+                'rapor' => 'Rapor digital bisa diunduh di bagian **E-Raport Digital** pada Dashboard Portal.',
+                'jadwal' => 'Jadwal pelajaran anak bisa dilihat di Dashboard Portal.',
+                'guru' => 'Untuk menghubungi wali kelas, lihat informasi kontak di Dashboard Portal.',
             ],
             'siswa' => [
-                'jadwal' => 'Jadwal pelajaran kamu bisa dilihat di halaman **Dashboard**. Jadwal diperbarui setiap awal semester.',
-                'nilai' => 'Nilai kamu bisa dilihat di halaman **Dashboard**. Klik bagian Nilai untuk lihat detail per mata pelajaran.',
-                'presensi' => 'Data presensi kamu tercatat otomatis. Cek rekap kehadiran di halaman Dashboard.',
-                'rapor' => 'Rapor digital bisa diunduh di bagian **E-Raport Digital** di Dashboard. Kamu bisa unduh rapor semester terakhir.',
-                'ekskul' => 'Informasi ekstrakurikuler bisa dilihat di halaman sekolah. Hubungi guru pembina untuk info pendaftaran.',
+                'jadwal' => 'Jadwal pelajaran kamu bisa dilihat di halaman **Dashboard**.',
+                'nilai' => 'Nilai kamu bisa dilihat di halaman **Dashboard**.',
+                'presensi' => 'Data presensi kamu tercatat otomatis. Cek di Dashboard.',
+                'rapor' => 'Rapor digital bisa diunduh di bagian **E-Raport Digital** di Dashboard.',
+                'ekskul' => 'Informasi ekstrakurikuler bisa dilihat di halaman sekolah.',
             ],
             default => [],
         };
 
-        // Common responses for all roles
         $commonResponses = [
             'halo' => 'Halo! 👋 Ada yang bisa saya bantu?',
             'hai' => 'Hai! 👋 Silakan tanyakan apa saja tentang Aksara System!',
-            'terima kasih' => 'Sama-sama! Senang bisa membantu. Jangan ragu untuk bertanya lagi ya! 😊',
-            'bantuan' => 'Saya bisa membantu dengan pertanyaan seputar penggunaan Aksara System. Coba tanyakan tentang fitur yang ingin Anda gunakan!',
+            'terima kasih' => 'Sama-sama! Senang bisa membantu. 😊',
+            'bantuan' => 'Saya bisa membantu dengan pertanyaan seputar Aksara System. Coba tanyakan tentang fitur yang ingin Anda gunakan!',
         ];
 
-        // Check role-specific responses first
         foreach ($roleResponses as $keyword => $reply) {
-            if (str_contains($message, $keyword)) {
-                return $reply;
-            }
+            if (str_contains($message, $keyword)) return $reply;
         }
 
-        // Then check common responses
         foreach ($commonResponses as $keyword => $reply) {
-            if (str_contains($message, $keyword)) {
-                return $reply;
-            }
+            if (str_contains($message, $keyword)) return $reply;
         }
 
-        // Default fallback per role
         return match ($role) {
-            'admin' => 'Terima kasih atas pertanyaan Anda! Sebagai admin, Anda bisa mengelola semua data sekolah melalui panel admin di /admin. Untuk bantuan spesifik, coba tanyakan tentang fitur yang ingin Anda gunakan.',
-            'guru' => 'Terima kasih atas pertanyaan Anda, Bapak/Ibu Guru! Untuk bantuan lebih lanjut tentang jadwal mengajar, nilai, atau presensi, silakan tanyakan secara spesifik.',
-            'staff' => 'Terima kasih atas pertanyaan Anda! Untuk bantuan administrasi, silakan tanyakan tentang pengelolaan data, surat, atau rekap yang Anda butuhkan.',
-            'orang_tua' => 'Terima kasih atas pertanyaan Anda, Bapak/Ibu! Saya bisa membantu dengan informasi nilai, presensi, rapor, dan jadwal anak Anda. Silakan tanyakan secara spesifik.',
-            'siswa' => 'Terima kasih atas pertanyaanmu! Saya bisa membantu dengan info jadwal, nilai, presensi, dan rapor. Coba tanyakan lebih spesifik ya! 😊',
-            default => 'Terima kasih atas pertanyaan Anda! Silakan tanyakan tentang fitur Aksara System yang ingin Anda gunakan.',
+            'admin' => 'Sebagai admin, Anda bisa mengelola semua data sekolah melalui panel admin di /admin.',
+            'guru' => 'Untuk bantuan tentang jadwal, nilai, atau presensi, silakan tanyakan secara spesifik.',
+            'staff' => 'Untuk bantuan administrasi, silakan tanyakan tentang pengelolaan data yang Anda butuhkan.',
+            'orang_tua' => 'Saya bisa membantu dengan informasi nilai, presensi, rapor, dan jadwal anak Anda.',
+            'siswa' => 'Saya bisa membantu dengan info jadwal, nilai, presensi, dan rapor. Coba tanyakan lebih spesifik ya! 😊',
+            default => 'Silakan tanyakan tentang fitur Aksara System yang ingin Anda gunakan.',
         };
     }
 }
