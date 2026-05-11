@@ -21,13 +21,15 @@ class StudentResource extends Resource
 {
     protected static ?string $model = Student::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen User';
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
 
-    protected static ?int $navigationSort = 13;
+    protected static ?int $navigationSort = 4;
 
-        protected static ?string $recordTitleAttribute = 'user.name';
+    protected static ?string $navigationLabel = 'Data Siswa';
+
+    protected static ?string $recordTitleAttribute = 'user.name';
 
     public static function form(Schema $schema): Schema
     {
@@ -44,6 +46,20 @@ class StudentResource extends Resource
         return StudentsTable::configure($table);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user->hasRole('guru')) {
+            $query->whereHas('studyGroups', function ($q) use ($user) {
+                $q->where('walikelas_id', $user->teacher->id ?? 0);
+            });
+        }
+
+        return $query;
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -55,9 +71,6 @@ class StudentResource extends Resource
     {
         return [
             'index' => ListStudents::route('/'),
-            'create' => CreateStudent::route('/create'),
-            'view' => ViewStudent::route('/{record}'),
-            'edit' => EditStudent::route('/{record}/edit'),
         ];
     }
 }

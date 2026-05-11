@@ -7,18 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class Schedule extends Model
 {
     protected $fillable = [
-        'classroom_id',
+        'study_group_id',
         'subject_id',
         'teacher_id',
-        'academic_year_id',
         'hari',
-        'jam_mulai',
-        'jam_selesai',
+        'start_time_slot_id',
+        'end_time_slot_id',
     ];
 
-    public function classroom()
+    public function studyGroup()
     {
-        return $this->belongsTo(Classroom::class);
+        return $this->belongsTo(StudyGroup::class);
     }
 
     public function subject()
@@ -29,6 +28,16 @@ class Schedule extends Model
     public function teacher()
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    public function startTimeSlot()
+    {
+        return $this->belongsTo(TimeSlot::class, 'start_time_slot_id');
+    }
+
+    public function endTimeSlot()
+    {
+        return $this->belongsTo(TimeSlot::class, 'end_time_slot_id');
     }
 
     public function academicYear()

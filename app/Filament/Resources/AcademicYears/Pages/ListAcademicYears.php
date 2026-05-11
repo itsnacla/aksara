@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\AcademicYears\Pages;
 
 use App\Filament\Resources\AcademicYears\AcademicYearResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Actions\CreateAction;
 
 class ListAcademicYears extends ListRecords
 {

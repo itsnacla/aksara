@@ -21,11 +21,13 @@ class TeacherResource extends Resource
 {
     protected static ?string $model = Teacher::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-briefcase';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen User';
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Data Guru';
 
     protected static ?string $recordTitleAttribute = 'user.name';
 
@@ -55,9 +57,6 @@ class TeacherResource extends Resource
     {
         return [
             'index' => ListTeachers::route('/'),
-            'create' => CreateTeacher::route('/create'),
-            'view' => ViewTeacher::route('/{record}'),
-            'edit' => EditTeacher::route('/{record}/edit'),
         ];
     }
 }

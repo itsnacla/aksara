@@ -22,11 +22,13 @@ class StaffResource extends Resource
 {
     protected static ?string $model = Staff::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-identification';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen User';
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 3;
+
+    protected static ?string $navigationLabel = 'Data Staff';
 
     protected static ?string $recordTitleAttribute = 'Staff';
 
@@ -56,9 +58,6 @@ class StaffResource extends Resource
     {
         return [
             'index' => ListStaff::route('/'),
-            'create' => CreateStaff::route('/create'),
-            'view' => ViewStaff::route('/{record}'),
-            'edit' => EditStaff::route('/{record}/edit'),
         ];
     }
 }

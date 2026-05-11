@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Classrooms\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -14,27 +16,24 @@ class ClassroomsTable
     {
         return $table
             ->columns([
-                TextColumn::make('academicYear.tahun_ajaran')
-                    ->label('Tahun Ajaran')
-                    ->sortable(),
-                TextColumn::make('nama_kelas')
+                TextColumn::make('nama_ruangan')
+                    ->label('Nama Ruangan')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('level.nama_tingkatan')
-                    ->label('Tingkatan')
-                    ->sortable(),
-                TextColumn::make('waliKelas.user.name')
-                    ->label('Wali Kelas')
-                    ->searchable()
-                    ->sortable(),
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
             ])
-            ->recordActions([
-                EditAction::make(),
+            ->actions([
+                ViewAction::make()->modal(),
+                EditAction::make()->modal(),
+                DeleteAction::make()->modal(),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

@@ -19,13 +19,19 @@ class ClassroomResource extends Resource
 {
     protected static ?string $model = Classroom::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
+    protected static ?string $label = 'Ruangan';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static ?string $pluralLabel = 'Ruangan';
+
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-building-office';
+
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $recordTitleAttribute = 'nama_kelas';
+    protected static ?string $navigationLabel = 'Ruangan';
+
+    protected static ?string $recordTitleAttribute = 'nama_ruangan';
 
     public static function form(Schema $schema): Schema
     {
@@ -48,8 +54,6 @@ class ClassroomResource extends Resource
     {
         return [
             'index' => ListClassrooms::route('/'),
-            'create' => CreateClassroom::route('/create'),
-            'edit' => EditClassroom::route('/{record}/edit'),
         ];
     }
 }

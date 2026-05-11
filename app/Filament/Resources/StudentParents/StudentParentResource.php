@@ -23,11 +23,13 @@ class StudentParentResource extends Resource
 {
     protected static ?string $model = StudentParent::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-users';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen User';
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
 
-    protected static ?int $navigationSort = 12;
+    protected static ?int $navigationSort = 5;
+
+    protected static ?string $navigationLabel = 'Data Wali Murid';
 
     protected static ?string $recordTitleAttribute = 'user.name';
 
@@ -57,9 +59,6 @@ class StudentParentResource extends Resource
     {
         return [
             'index' => ListStudentParents::route('/'),
-            'create' => CreateStudentParent::route('/create'),
-            'view' => ViewStudentParent::route('/{record}'),
-            'edit' => EditStudentParent::route('/{record}/edit'),
         ];
     }
 }

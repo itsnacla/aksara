@@ -1,9 +1,9 @@
 <?php
-
+ 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-
+ 
 return new class extends Migration
 {
     /**
@@ -14,15 +14,20 @@ return new class extends Migration
         Schema::create('students', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('classroom_id')->constrained('classrooms')->cascadeOnDelete();
             $table->foreignId('parent_id')->constrained('parents')->cascadeOnDelete();
+            $table->foreignId('study_group_id')->nullable()->constrained('study_groups')->onDelete('set null');
             $table->string('nisn', 10)->unique();
-            $table->string('nama_siswa', 100);
-            $table->string('qr_code', 100)->nullable()->unique();
+            $table->string('status')->default('aktif'); // aktif, lulus, mutasi, keluar
+            $table->string('pob')->nullable();
+            $table->date('dob')->nullable();
+            $table->enum('gender', ['L', 'P'])->nullable();
+            $table->string('religion')->nullable();
+            $table->string('phone')->nullable();
+            $table->text('address')->nullable();
             $table->timestamps();
         });
     }
-
+ 
     /**
      * Reverse the migrations.
      */

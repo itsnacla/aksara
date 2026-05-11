@@ -21,11 +21,13 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserCircle;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Sistem';
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Manajemen User';
 
     protected static ?string $recordTitleAttribute = 'User';
 
@@ -55,9 +57,6 @@ class UserResource extends Resource
     {
         return [
             'index' => ListUsers::route('/'),
-            'create' => CreateUser::route('/create'),
-            'view' => ViewUser::route('/{record}'),
-            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 }

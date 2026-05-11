@@ -6,11 +6,15 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "bezhansalleh/filament-shield": "^4.2",
         "filament/filament": "~5.0",
-        "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1"
+        "guava/calendar": "^3.1",
+        "laravel/ai": "^0.6.7",
+        "laravel/framework": "^13.0",
+        "laravel/tinker": "^3.0",
+        "pxlrbt/filament-excel": "^3.6",
+        "simplesoftwareio/simple-qrcode": "^4.2"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",
@@ -20,7 +24,7 @@
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^11.5.3"
+        "phpunit/phpunit": "^12.0"
     },
     "autoload": {
         "psr-4": {

@@ -16,6 +16,16 @@ class AcademicYear extends Model
         'is_active' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($academicYear) {
+            if ($academicYear->is_active) {
+                // Deactivate all other academic years
+                static::where('id', '!=', $academicYear->id)->update(['is_active' => false]);
+            }
+        });
+    }
+
     public function grades()
     {
         return $this->hasMany(Grade::class);

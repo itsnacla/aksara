@@ -19,11 +19,13 @@ class LevelResource extends Resource
 {
     protected static ?string $model = Level::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-bars-3-bottom-left';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
 
     protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Tingkatan';
 
     protected static ?string $recordTitleAttribute = 'nama_tingkatan';
 
@@ -48,8 +50,6 @@ class LevelResource extends Resource
     {
         return [
             'index' => ListLevels::route('/'),
-            'create' => CreateLevel::route('/create'),
-            'edit' => EditLevel::route('/{record}/edit'),
         ];
     }
 }

@@ -23,16 +23,17 @@ class StudentParentForm
                             ->label('Username')
                             ->required()
                             ->maxLength(255)
-                            ->unique(table: 'users', column: 'username', ignoreRecord: true),
+                            ->unique(table: 'users', column: 'username', ignorable: fn ($record) => $record?->user),
                         TextInput::make('user_email')
                             ->label('Email')
                             ->email()
                             ->required()
                             ->maxLength(255)
-                            ->unique(table: 'users', column: 'email', ignoreRecord: true),
+                            ->unique(table: 'users', column: 'email', ignorable: fn ($record) => $record?->user),
                         TextInput::make('user_password')
                             ->label('Password')
                             ->password()
+                            ->revealable()
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->dehydrated(fn (?string $state) => filled($state))
                             ->maxLength(255)

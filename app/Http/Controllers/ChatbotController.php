@@ -21,25 +21,34 @@ class ChatbotController extends Controller
     {
         $request->validate([
             'message' => 'required|string|max:1000',
-            'history' => 'nullable|array',
-            'history.*.role' => 'in:user,model',
-            'history.*.text' => 'string|max:2000',
+            'conversation_id' => 'nullable|string', // Used by Laravel AI SDK
         ]);
 
         $userMessage = $request->input('message');
-        $history = $request->input('history', []);
+        $conversationId = $request->input('conversation_id');
         $user = $request->user();
 
         try {
-            $reply = $this->getAIResponse($userMessage, $history, $user);
-        } catch (\Exception $e) {
-            Log::error('Chatbot AI error: ' . $e->getMessage());
-            $reply = $this->getFallbackResponse($userMessage, $this->getUserRole($user));
-        }
+            $agent = new \App\Ai\Agents\AksaraAssistant($user);
+            
+            if ($conversationId) {
+                $response = $agent->continue($conversationId, as: $user)->prompt($userMessage);
+            } else {
+                $response = $agent->forUser($user)->prompt($userMessage);
+            }
 
-        return response()->json([
-            'reply' => $reply,
-        ]);
+            return response()->json([
+                'reply' => (string) $response,
+                'conversation_id' => $response->conversationId,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Chatbot AI SDK error: ' . $e->getMessage());
+            $reply = $this->getFallbackResponse($userMessage, $this->getUserRole($user));
+            
+            return response()->json([
+                'reply' => $reply,
+            ]);
+        }
     }
 
     /**
@@ -228,9 +237,9 @@ class ChatbotController extends Controller
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
-                        'classroom_id' => [
+                        'study_group_id' => [
                             'type' => 'integer',
-                            'description' => 'ID kelas (opsional).',
+                            'description' => 'ID Rombel/Kelas (opsional).',
                         ],
                     ],
                 ],
@@ -257,9 +266,9 @@ class ChatbotController extends Controller
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
-                        'classroom_id' => [
+                        'study_group_id' => [
                             'type' => 'integer',
-                            'description' => 'ID kelas.',
+                            'description' => 'ID Rombel/Kelas.',
                         ],
                     ],
                 ],
@@ -278,8 +287,8 @@ class ChatbotController extends Controller
 
         return match ($name) {
             'get_academic_data' => $this->fetchAcademicData($args['student_id'] ?? null, $user, $role),
-            'get_schedule_data' => $this->fetchScheduleData($args['classroom_id'] ?? null, $user, $role),
-            'get_classroom_info' => $this->fetchClassroomInfo($args['classroom_id'] ?? null, $user, $role),
+            'get_schedule_data' => $this->fetchScheduleData($args['study_group_id'] ?? null, $user, $role),
+            'get_classroom_info' => $this->fetchStudyGroupInfo($args['study_group_id'] ?? null, $user, $role),
             'get_report_link' => $this->fetchReportLink($args['student_id'] ?? null, $user, $role),
             default => ['error' => 'Fungsi tidak ditemukan.'],
         };
@@ -338,46 +347,50 @@ class ChatbotController extends Controller
         ];
     }
 
-    private function fetchScheduleData(?int $classroomId, $user, string $role)
+    private function fetchScheduleData(?int $studyGroupId, $user, string $role)
     {
-        $query = Schedule::with(['subject', 'classroom', 'teacher.user']);
+        $query = Schedule::with(['subject', 'studyGroup.classroom', 'teacher.user']);
 
         if ($role === 'siswa') {
-            $query->where('classroom_id', $user->student->classroom_id ?? 0);
+            $activeRombelId = $user->student->studyGroups()
+                ->whereHas('academicYear', fn($q) => $q->where('is_active', true))
+                ->first()?->id ?? 0;
+            $query->where('study_group_id', $activeRombelId);
         } elseif ($role === 'guru') {
             $query->where('teacher_id', $user->teacher->id ?? 0);
-        } elseif ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+        } elseif ($studyGroupId) {
+            $query->where('study_group_id', $studyGroupId);
         }
 
         return $query->get()->map(fn($s) => [
             'hari' => $s->hari,
             'jam' => "{$s->jam_mulai} - {$s->jam_selesai}",
             'mapel' => $s->subject->nama_pelajaran ?? 'N/A',
-            'kelas' => $s->classroom->nama_kelas ?? 'N/A',
+            'rombel' => $s->studyGroup->nama_rombel ?? 'N/A',
+            'ruangan' => $s->studyGroup->classroom->nama_ruangan ?? 'N/A',
             'guru' => $s->teacher->user->name ?? 'N/A',
         ]);
     }
 
-    private function fetchClassroomInfo(?int $classroomId, $user, string $role)
+    private function fetchStudyGroupInfo(?int $studyGroupId, $user, string $role)
     {
         if (!in_array($role, ['admin', 'guru', 'staff'])) return ['error' => 'Unauthorized'];
 
-        $query = Classroom::with('students.user');
+        $query = \App\Models\StudyGroup::with('students.user');
 
         if ($role === 'guru') {
             $query->where('walikelas_id', $user->teacher->id ?? 0);
-        } elseif ($classroomId) {
-            $query->where('id', $classroomId);
+        } elseif ($studyGroupId) {
+            $query->where('id', $studyGroupId);
         }
 
-        $classroom = $query->first();
-        if (!$classroom) return ['error' => 'Kelas tidak ditemukan.'];
+        $studyGroup = $query->first();
+        if (!$studyGroup) return ['error' => 'Rombel tidak ditemukan.'];
 
         return [
-            'nama_kelas' => $classroom->nama_kelas,
-            'total_siswa' => $classroom->students->count(),
-            'daftar_siswa' => $classroom->students->map(fn($s) => [
+            'nama_rombel' => $studyGroup->nama_rombel,
+            'total_siswa' => $studyGroup->students->count(),
+            'daftar_siswa' => $studyGroup->students->map(fn($s) => [
                 'id' => $s->id,
                 'nama' => $s->user->name,
                 'nisn' => $s->nisn,
@@ -417,36 +430,7 @@ class ChatbotController extends Controller
     // AI RESPONSE — uses ChatbotService with multi-provider support
     // ========================================================================
 
-    /**
-     * Get response from AI using the configured provider (with auto-fallback).
-     */
-    private function getAIResponse(string $message, array $history, $user): string
-    {
-        $role = $this->getUserRole($user);
-        $service = new ChatbotService();
-
-        if (!$service->isActive() || !$service->getProvider()) {
-            return $this->getFallbackResponse($message, $role);
-        }
-
-        $systemInstruction = $this->buildSystemInstruction($role, $user);
-        $tools = $this->getToolDefinitions($role);
-
-        // Normalize history to provider-agnostic format
-        $contents = [];
-        foreach ($history as $entry) {
-            $contents[] = [
-                'role' => $entry['role'] === 'user' ? 'user' : 'model',
-                'content' => $entry['text'],
-            ];
-        }
-        $contents[] = ['role' => 'user', 'content' => $message];
-
-        // Function executor callback — keeps security logic in the controller
-        $functionExecutor = fn(string $name, array $args) => $this->handleFunctionCall($name, $args, $user);
-
-        return $service->chat($systemInstruction, $contents, $tools, $functionExecutor);
-    }
+    // AI SDK implementation replaced manual provider handling
 
     // ========================================================================
     // FALLBACK RESPONSES — when no AI provider is available

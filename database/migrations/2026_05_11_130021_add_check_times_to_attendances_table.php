@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role_user');
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->timestamp('check_in')->nullable()->after('status');
+            $table->timestamp('check_out')->nullable()->after('check_in');
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role_user')->nullable();
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->dropColumn(['check_in', 'check_out']);
         });
     }
 };

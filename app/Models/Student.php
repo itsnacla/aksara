@@ -8,10 +8,19 @@ class Student extends Model
 {
     protected $fillable = [
         'user_id',
-        'classroom_id',
         'parent_id',
         'nisn',
-        'qr_code',
+        'status',
+        'pob',
+        'dob',
+        'gender',
+        'religion',
+        'phone',
+        'address',
+    ];
+
+    protected $casts = [
+        'dob' => 'date',
     ];
 
     public function user()
@@ -19,9 +28,9 @@ class Student extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function classroom()
+    public function studyGroups()
     {
-        return $this->belongsTo(Classroom::class);
+        return $this->belongsToMany(StudyGroup::class, 'study_group_student');
     }
 
     public function parent()

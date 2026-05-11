@@ -14,4 +14,14 @@ class Level extends Model
     {
         return $this->hasMany(Classroom::class);
     }
+
+    public function timeSlots()
+    {
+        return $this->belongsToMany(TimeSlot::class);
+    }
+
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class);
+    }
 }

@@ -2,18 +2,61 @@
 
 namespace App\Filament\Resources\AcademicYears\Tables;
 
+use App\Models\AcademicYear;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
 
 class AcademicYearsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Action::make('sync_automatic')
+                    ->label('Sync Otomatis (Sesuai Kalender)')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->modalHeading('Sinkronisasi Tahun Ajaran')
+                    ->modalDescription('Sistem akan mendeteksi tahun ajaran dan semester yang aktif berdasarkan tanggal hari ini.')
+                    ->action(function () {
+                        $month = (int) date('n');
+                        $year = (int) date('Y');
+
+                        if ($month >= 7) {
+                            $targetTahun = $year . '/' . ($year + 1);
+                            $targetSemester = 'ganjil';
+                        } else {
+                            $targetTahun = ($year - 1) . '/' . $year;
+                            $targetSemester = 'genap';
+                        }
+
+                        $academicYear = AcademicYear::firstOrCreate(
+                            ['tahun_ajaran' => $targetTahun],
+                            ['semester' => $targetSemester]
+                        );
+
+                        // If it already existed, we still want to ensure the semester is synced to the calendar if that's what's requested
+                        $academicYear->update([
+                            'semester' => $targetSemester,
+                            'is_active' => true
+                        ]);
+
+                        Notification::make()
+                            ->title('Sinkronisasi Berhasil!')
+                            ->success()
+                            ->body("Tahun Ajaran {$targetTahun} ({$targetSemester}) sekarang menjadi aktif.")
+                            ->send();
+                    })
+            ])
             ->columns([
                 TextColumn::make('tahun_ajaran')
                     ->searchable()
@@ -25,15 +68,49 @@ class AcademicYearsTable
                         'genap' => 'success',
                     }),
                 IconColumn::make('is_active')
+                    ->label('Status Aktif')
                     ->boolean(),
             ])
             ->filters([
                 //
             ])
-            ->recordActions([
-                EditAction::make(),
+            ->actions([
+                Action::make('activate')
+                    ->label('Aktifkan Tahun')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->link()
+                    ->hidden(fn ($record) => $record->is_active)
+                    ->action(function ($record) {
+                        $record->update(['is_active' => true]);
+                        
+                        Notification::make()
+                            ->title('Tahun Ajaran Diaktifkan')
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('switch_semester')
+                    ->label(fn ($record) => $record->semester === 'ganjil' ? 'Pindah ke Genap' : 'Pindah ke Ganjil')
+                    ->icon('heroicon-o-arrows-right-left')
+                    ->color('warning')
+                    ->link()
+                    ->visible(fn ($record) => $record->is_active)
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $newSemester = $record->semester === 'ganjil' ? 'genap' : 'ganjil';
+                        $record->update(['semester' => $newSemester]);
+                        
+                        Notification::make()
+                            ->title('Semester Berhasil Dipindah')
+                            ->success()
+                            ->body("Sekarang berada di semester " . ucfirst($newSemester))
+                            ->send();
+                    }),
+                ViewAction::make()->modal(),
+                EditAction::make()->modal(),
+                DeleteAction::make()->modal(),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

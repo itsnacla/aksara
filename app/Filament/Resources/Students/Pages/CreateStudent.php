@@ -15,7 +15,38 @@ class CreateStudent extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Extract user data
+        // 1. Handle Parent Creation if requested
+        if (isset($data['create_new_parent']) && $data['create_new_parent']) {
+            $parentUser = User::create([
+                'name' => $data['parent_name'],
+                'username' => $data['parent_username'],
+                'email' => $data['parent_email'],
+                'password' => Hash::make($data['parent_password']),
+            ]);
+
+            $parentUser->syncRoles(['wali']);
+
+            $studentParent = \App\Models\StudentParent::create([
+                'user_id' => $parentUser->id,
+                'no_whatsapp' => $data['parent_whatsapp'] ?? null,
+                'hubungan' => $data['parent_relation'],
+            ]);
+
+            $data['parent_id'] = $studentParent->id;
+        }
+
+        // Clean up parent fields from student data
+        unset(
+            $data['create_new_parent'],
+            $data['parent_name'],
+            $data['parent_username'],
+            $data['parent_email'],
+            $data['parent_password'],
+            $data['parent_relation'],
+            $data['parent_whatsapp']
+        );
+
+        // 2. Handle Student User Creation
         $this->userData = [
             'name' => $data['user_name'],
             'username' => $data['user_username'],

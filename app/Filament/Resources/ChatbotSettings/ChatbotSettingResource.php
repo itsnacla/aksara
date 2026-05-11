@@ -15,17 +15,17 @@ class ChatbotSettingResource extends Resource
 {
     protected static ?string $model = ChatbotSetting::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCpuChip;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-cpu-chip';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
+    protected static UnitEnum|string|null $navigationGroup = 'Sistem & Pengaturan';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Chatbot AI';
 
     protected static ?string $modelLabel = 'Pengaturan Chatbot';
 
     protected static ?string $pluralModelLabel = 'Pengaturan Chatbot';
-
-    protected static ?int $navigationSort = 99;
 
     public static function form(Schema $schema): Schema
     {

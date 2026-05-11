@@ -19,11 +19,13 @@ class AcademicYearResource extends Resource
 {
     protected static ?string $model = AcademicYear::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-flag';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
 
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Tahun Ajaran';
 
     protected static ?string $recordTitleAttribute = 'tahun_ajaran';
 
@@ -48,8 +50,6 @@ class AcademicYearResource extends Resource
     {
         return [
             'index' => ListAcademicYears::route('/'),
-            'create' => CreateAcademicYear::route('/create'),
-            'edit' => EditAcademicYear::route('/{record}/edit'),
         ];
     }
 }

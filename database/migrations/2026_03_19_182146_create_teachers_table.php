@@ -1,9 +1,9 @@
 <?php
-
+ 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-
+ 
 return new class extends Migration
 {
     /**
@@ -13,17 +13,17 @@ return new class extends Migration
     {
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('nip', 20)->unique();
-            $table->string('nama_guru', 100);
-            $table->string('spesialisasi', 50)->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('nip', 20)->nullable()->unique();
+            $table->string('kode_guru', 10)->nullable()->unique();
             $table->boolean('is_walikelas')->default(false);
             $table->boolean('is_kepalasekolah')->default(false);
             $table->string('no_whatsapp', 20)->nullable();
+            $table->string('status')->default('aktif'); // aktif, mutasi, pensiun, berhenti
             $table->timestamps();
         });
     }
-
+ 
     /**
      * Reverse the migrations.
      */

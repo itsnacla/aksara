@@ -20,8 +20,9 @@ class TeacherInfoList
                     ->label('Email'),
                 TextEntry::make('nip')
                     ->label('NIP'),
-                TextEntry::make('spesialisasi')
-                    ->label('Spesialisai'),
+                TextEntry::make('subjects.nama_mapel')
+                    ->label('Mata Pelajaran yang Diampu')
+                    ->badge(),
                 IconEntry::make('is_walikelas')
                     ->label('Wali Kelas')
                     ->boolean(),
