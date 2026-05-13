@@ -25,13 +25,7 @@ class QrScanStandalone extends Component
         $this->school = SchoolSetting::current();
     }
 
-    public function updatedScannedId($value)
-    {
-        if (empty($value)) return;
-
-        $this->processScan($value);
-        $this->scanned_id = ''; // Reset for next scan
-    }
+    // Removed updatedScannedId to prevent double-triggering
 
     public function processScan($token)
     {
@@ -65,20 +59,30 @@ class QrScanStandalone extends Component
                 return;
             }
 
-            $attendance = Attendance::updateOrCreate(
-                [
+            $attendance = Attendance::where('student_id', $student->id)
+                ->where('study_group_id', $rombelId)
+                ->where('tanggal', $today)
+                ->first();
+
+            if ($attendance) {
+                $attendance->update([
+                    'status' => 'hadir',
+                    'catatan' => $attendance->catatan . ' | Scan ulang pada ' . now()->format('H:i:s'),
+                ]);
+            } else {
+                $attendance = Attendance::create([
                     'student_id' => $student->id,
                     'study_group_id' => $rombelId,
                     'tanggal' => $today,
-                ],
-                [
                     'status' => 'hadir',
                     'catatan' => 'Scan QR pada ' . now()->format('H:i:s'),
-                ]
-            );
+                ]);
+            }
 
-            // Dispatch WA Notification Job
-            SendWhatsAppAttendanceNotification::dispatch($attendance);
+            // Dispatch WA Notification Job ONLY if not already sent today
+            if (!$attendance->wa_sent_at) {
+                SendWhatsAppAttendanceNotification::dispatch($attendance);
+            }
 
             $this->last_scanned = [
                 'name' => $student->user->name,

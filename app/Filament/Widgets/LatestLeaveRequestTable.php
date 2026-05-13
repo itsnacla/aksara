@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\LeaveRequest;
+use App\Models\StudentLeave;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -10,7 +10,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class LatestLeaveRequestTable extends BaseWidget
 {
-    protected static ?string $heading = 'Pengajuan Izin Terbaru';
+    protected static ?string $heading = 'Pengajuan Izin Siswa Terbaru';
 
     protected static ?int $sort = 6;
 
@@ -23,42 +23,37 @@ class LatestLeaveRequestTable extends BaseWidget
     {
         return $table
             ->query(
-                LeaveRequest::query()
-                    ->with('user')
+                StudentLeave::query()
+                    ->with('student.user')
                     ->latest()
             )
             ->columns([
-                TextColumn::make('user.name')
-                    ->label('Nama')
+                TextColumn::make('student.user.name')
+                    ->label('Nama Siswa')
                     ->searchable()
                     ->weight('bold')
                     ->icon('heroicon-m-user'),
 
-                TextColumn::make('permission')
+                TextColumn::make('type')
                     ->label('Jenis')
                     ->badge()
-                    ->color('info'),
+                    ->color(fn ($state) => $state === 'sakit' ? 'warning' : 'info'),
 
-                TextColumn::make('keterangan')
-                    ->label('Keterangan')
-                    ->limit(40)
-                    ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (strlen($state) <= 40) {
-                            return null;
-                        }
-                        return $state;
-                    }),
+                TextColumn::make('reason')
+                    ->label('Alasan')
+                    ->limit(40),
 
-                TextColumn::make('is_approved')
+                TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => $state ? 'Disetujui' : 'Menunggu')
-                    ->color(fn ($state): string => $state ? 'success' : 'warning')
-                    ->icon(fn ($state): string => $state ? 'heroicon-m-check-circle' : 'heroicon-m-clock'),
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                    }),
 
                 TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label('Waktu')
                     ->since()
                     ->sortable(),
             ])
@@ -66,7 +61,7 @@ class LatestLeaveRequestTable extends BaseWidget
             ->defaultSort('created_at', 'desc')
             ->striped()
             ->emptyStateHeading('Belum ada pengajuan izin')
-            ->emptyStateDescription('Pengajuan izin dari guru dan staff akan tampil disini.')
+            ->emptyStateDescription('Pengajuan izin dari orang tua akan tampil disini.')
             ->emptyStateIcon('heroicon-o-document-text');
     }
 

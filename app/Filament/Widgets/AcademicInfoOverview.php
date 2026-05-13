@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\AcademicYear;
 use App\Models\StudyGroup;
 use App\Models\Schedule;
-use App\Models\LeaveRequest;
+use App\Models\StudentLeave;
 use App\Models\SchoolSetting;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -31,7 +31,7 @@ class AcademicInfoOverview extends BaseWidget
 
         $totalSchedules = Schedule::count();
 
-        $pendingLeaves = LeaveRequest::where('is_approved', false)->count();
+        $pendingLeaves = StudentLeave::where('status', 'pending')->count();
 
         return [
             Stat::make('Tahun Ajaran Aktif', $activeYear ? $activeYear->tahun_ajaran : 'Belum Diatur')

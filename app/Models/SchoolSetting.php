@@ -19,16 +19,20 @@ class SchoolSetting extends Model
         'email',
         'website',
         'motto',
-        'wa_gateway_token',
-        'wa_gateway_provider',
         'is_wa_enabled',
         'wa_gateway_url',
+        'wa_gateway_token',
+        'wa_gateway_provider',
         'wa_gateway_phone_param',
         'wa_gateway_message_param',
+        'wa_notify_attendance',
+        'wa_notify_announcement',
     ];
 
     protected $casts = [
         'is_wa_enabled' => 'boolean',
+        'wa_notify_attendance' => 'boolean',
+        'wa_notify_announcement' => 'boolean',
     ];
 
     /**

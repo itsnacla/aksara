@@ -277,7 +277,7 @@
 
             qrInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
-                    @this.set('scanned_id', qrInput.value);
+                    @this.call('processScan', qrInput.value);
                     qrInput.value = '';
                 }
             });

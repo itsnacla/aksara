@@ -59,9 +59,9 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(Student::class);
     }
 
-    public function leaveRequests()
+    public function studentLeaves()
     {
-        return $this->hasMany(LeaveRequest::class);
+        return $this->hasMany(StudentLeave::class);
     }
 
     public function canAccessPanel(Panel $panel): bool

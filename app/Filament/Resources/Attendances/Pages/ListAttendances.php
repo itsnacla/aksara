@@ -130,8 +130,9 @@ class ListAttendances extends ListRecords
                         ->visible(fn (Get $get) => filled($get('study_group_id'))),
                 ])
                 ->action(function (array $data): void {
+                    $delay = 0;
                     foreach ($data['items'] as $item) {
-                        Attendance::updateOrCreate(
+                        $attendance = Attendance::updateOrCreate(
                             [
                                 'student_id' => $item['student_id'],
                                 'study_group_id' => $data['study_group_id'],
@@ -142,6 +143,14 @@ class ListAttendances extends ListRecords
                                 'catatan' => $item['catatan'],
                             ]
                         );
+
+                        // Send WA Notification for manual batch input
+                        if (!$attendance->wa_sent_at) {
+                            \App\Jobs\SendWhatsAppAttendanceNotification::dispatch($attendance)
+                                ->delay(now()->addSeconds($delay));
+                            
+                            $delay += 2; // Progressive delay for batch
+                        }
                     }
 
                     Notification::make()

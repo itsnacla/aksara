@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Auth;
+
 class PortalController extends Controller
 {
     public function index()
@@ -14,7 +16,7 @@ class PortalController extends Controller
 
     public function logout(Request $request)
     {
-        auth()->logout();
+        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

@@ -11,6 +11,7 @@ class Grade extends Model
         'subject_id',
         'teacher_id',
         'academic_year_id',
+        'study_group_id',
         'nilai_tugas',
         'nilai_uts',
         'nilai_uas',
@@ -25,6 +26,11 @@ class Grade extends Model
     public function student()
     {
         return $this->belongsTo(Student::class);
+    }
+
+    public function studyGroup()
+    {
+        return $this->belongsTo(StudyGroup::class);
     }
 
     public function subject()

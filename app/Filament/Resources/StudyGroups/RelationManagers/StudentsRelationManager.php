@@ -14,10 +14,10 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Actions\ViewAction;
-use Filament\Actions\AssociateAction;
-use Filament\Actions\DissociateAction;
+use Filament\Actions\AttachAction;
+use Filament\Actions\DetachAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DissociateBulkAction;
+use Filament\Actions\DetachBulkAction;
 
 class StudentsRelationManager extends RelationManager
 {
@@ -89,11 +89,11 @@ class StudentsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                AssociateAction::make()
+                AttachAction::make()
                     ->label('Tambah Siswa ke Rombel')
                     ->modalHeading('Pilih Siswa')
                     ->recordSelect(
-                        fn (AssociateAction $action, RelationManager $livewire) => 
+                        fn (AttachAction $action, RelationManager $livewire) => 
                         Select::make('recordId')
                             ->label('Pilih Siswa')
                             ->options(function () use ($livewire) {
@@ -114,12 +114,12 @@ class StudentsRelationManager extends RelationManager
             ])
             ->actions([
                 ViewAction::make()->modal()->modalWidth('4xl'),
-                DissociateAction::make()
+                DetachAction::make()
                     ->label('Keluarkan dari Rombel'),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DissociateBulkAction::make(),
+                    DetachBulkAction::make(),
                 ]),
             ]);
     }

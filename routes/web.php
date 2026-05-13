@@ -17,6 +17,14 @@ Route::get('/login', function () {
 // Portal (Students/Parents)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [PortalController::class, 'index'])->name('dashboard');
+
+    // Student Leaves (Permissions)
+    Route::get('/leaves', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'index'])->name('leaves.index');
+    Route::get('/leaves/create', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'create'])->name('leaves.create');
+    Route::post('/leaves', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'store'])->name('leaves.store');
+    Route::get('/leaves/{leave}/edit', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'edit'])->name('leaves.edit');
+    Route::put('/leaves/{leave}', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'update'])->name('leaves.update');
+
     Route::post('/logout', [PortalController::class, 'logout'])->name('logout');
 
     // AI Chatbot

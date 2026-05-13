@@ -16,6 +16,12 @@ class Attendance extends Model
         'check_out',
         'tanggal',
         'catatan',
+        'wa_sent_at',
+    ];
+
+    protected $casts = [
+        'wa_sent_at' => 'datetime',
+        'tanggal' => 'date',
     ];
 
     public function student(): BelongsTo

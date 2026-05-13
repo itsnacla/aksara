@@ -40,6 +40,14 @@ class Student extends Model
         return $this->belongsToMany(StudyGroup::class, 'study_group_student');
     }
 
+    public function currentStudyGroup()
+    {
+        return $this->studyGroups()
+            ->whereHas('academicYear', function($q) {
+                $q->where('is_active', true);
+            })->first();
+    }
+
     public function parent()
     {
         return $this->belongsTo(StudentParent::class, 'parent_id');

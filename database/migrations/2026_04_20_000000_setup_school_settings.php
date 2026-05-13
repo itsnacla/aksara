@@ -24,9 +24,12 @@ return new class extends Migration
             $table->string('motto')->nullable();
             
             // WA Settings
+            $table->boolean('is_wa_enabled')->default(false);
+            $table->string('wa_gateway_provider')->default('fonnte');
             $table->string('wa_gateway_url')->nullable();
-            $table->string('wa_api_key')->nullable();
-            $table->string('wa_number')->nullable();
+            $table->string('wa_gateway_token')->nullable();
+            $table->string('wa_gateway_phone_param')->default('target');
+            $table->string('wa_gateway_message_param')->default('message');
             $table->boolean('wa_notify_attendance')->default(false);
             $table->boolean('wa_notify_announcement')->default(false);
             
