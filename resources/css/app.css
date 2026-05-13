@@ -68,4 +68,56 @@
     .fi-ta-row:nth-child(even) {
         @apply !bg-[var(--color-surface-container-low)];
     }
+
+    /* ─── Admin Dashboard Premium Styles ─── */
+    
+    /* Stat Cards - Elevated with subtle hover animation */
+    .fi-wi-stats-overview-stat {
+        @apply !rounded-2xl !border-none transition-all duration-300 ease-out;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .fi-wi-stats-overview-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 93, 167, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Stat card icon container */
+    .fi-wi-stats-overview-stat-icon {
+        @apply !rounded-xl;
+    }
+
+    /* Chart Widgets - Clean card look */
+    .fi-wi-chart {
+        @apply !rounded-2xl !border-none !overflow-hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Table Widgets - Polished card */
+    .fi-wi-table {
+        @apply !rounded-2xl !border-none !overflow-hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Dashboard heading area */
+    .fi-wi-chart .fi-wi-chart-header,
+    .fi-wi-table .fi-ta-header-ctn {
+        @apply !border-b-0;
+    }
+
+    /* Smooth chart canvas transitions */
+    .fi-wi-chart canvas {
+        @apply transition-opacity duration-500;
+    }
+
+    /* Stats overview grid spacing */
+    .fi-wi-stats-overview-stats {
+        @apply !gap-4 lg:!gap-6;
+    }
+
+    /* Widget section spacing on dashboard */
+    .fi-page-dashboard .fi-widgets {
+        @apply !gap-6;
+    }
 }
+
