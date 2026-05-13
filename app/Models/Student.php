@@ -10,6 +10,7 @@ class Student extends Model
         'user_id',
         'parent_id',
         'nisn',
+        'nis',
         'status',
         'pob',
         'dob',
@@ -17,6 +18,12 @@ class Student extends Model
         'religion',
         'phone',
         'address',
+        'village',
+        'district',
+        'city',
+        'province',
+        'lives_with_parent',
+        'previous_school',
     ];
 
     protected $casts = [

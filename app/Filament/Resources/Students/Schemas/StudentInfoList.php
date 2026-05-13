@@ -30,6 +30,10 @@ class StudentInfoList
                     ->schema([
                         TextEntry::make('nisn')
                             ->label('NISN'),
+                        TextEntry::make('nis')
+                            ->label('NIS'),
+                        TextEntry::make('previous_school')
+                            ->label('Pendidikan Sebelumnya'),
                         TextEntry::make('gender')
                             ->label('Jenis Kelamin')
                             ->formatStateUsing(fn ($state) => $state === 'L' ? 'Laki-laki' : 'Perempuan'),
@@ -43,19 +47,59 @@ class StudentInfoList
                         TextEntry::make('phone')
                             ->label('No. Telepon'),
                         TextEntry::make('address')
-                            ->label('Alamat Lengkap')
+                            ->label('Alamat Lengkap Siswa')
+                            ->formatStateUsing(function ($state, $record) {
+                                if ($record->lives_with_parent && $record->parent) {
+                                    $p = $record->parent;
+                                    $full = "{$p->address}, Desa {$p->village}, Kec. {$p->district}, {$p->city}, {$p->province}";
+                                    return $full . " (Ikut Orang Tua)";
+                                }
+                                return "{$state}, Desa {$record->village}, Kec. {$record->district}, {$record->city}, {$record->province}";
+                            })
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                Section::make('Akademik & Keluarga')
+                Section::make('Data Orang Tua Kandung')
                     ->schema([
-                        TextEntry::make('studyGroup.nama_rombel')
-                            ->label('Rombel Current')
+                        TextEntry::make('parent.father_name')
+                            ->label('Nama Ayah'),
+                        TextEntry::make('parent.father_occupation')
+                            ->label('Pekerjaan Ayah'),
+                        TextEntry::make('parent.mother_name')
+                            ->label('Nama Ibu'),
+                        TextEntry::make('parent.mother_occupation')
+                            ->label('Pekerjaan Ibu'),
+                        TextEntry::make('parent.address')
+                            ->label('Alamat Orang Tua')
+                            ->columnSpanFull(),
+                        TextEntry::make('parent.village')
+                            ->label('Desa/Kel'),
+                        TextEntry::make('parent.district')
+                            ->label('Kecamatan'),
+                        TextEntry::make('parent.city')
+                            ->label('Kab/Kota'),
+                        TextEntry::make('parent.province')
+                            ->label('Provinsi'),
+                    ])->columns(2),
+
+                Section::make('Data Wali (Opsional)')
+                    ->schema([
+                        TextEntry::make('parent.guardian_name')
+                            ->label('Nama Wali'),
+                        TextEntry::make('parent.guardian_occupation')
+                            ->label('Pekerjaan Wali'),
+                        TextEntry::make('parent.guardian_address')
+                            ->label('Alamat Wali')
+                            ->columnSpanFull(),
+                    ])->columns(2),
+
+                Section::make('Akun Sistem & Rombel')
+                    ->schema([
+                        TextEntry::make('studyGroups.nama_rombel')
+                            ->label('Rombel Aktif')
                             ->badge(),
-                        TextEntry::make('studyGroup.academicYear.tahun_ajaran')
-                            ->label('Tahun Ajaran'),
                         TextEntry::make('parent.user.name')
-                            ->label('Orang Tua/Wali'),
+                            ->label('Tersambung Akun Login'),
                     ])->columns(2),
             ]);
     }

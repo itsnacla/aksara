@@ -16,6 +16,7 @@ class ListStudentParents extends ListRecords
     {
         return [
             CreateAction::make()
+                ->modalWidth('7xl')
                 ->mutateFormDataUsing(function (array $data): array {
                     // Create User account
                     $user = User::create([

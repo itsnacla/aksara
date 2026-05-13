@@ -12,6 +12,18 @@ class StudentParent extends Model
         'user_id',
         'no_whatsapp',
         'hubungan',
+        'father_name',
+        'mother_name',
+        'father_occupation',
+        'mother_occupation',
+        'address',
+        'village',
+        'district',
+        'city',
+        'province',
+        'guardian_name',
+        'guardian_occupation',
+        'guardian_address',
     ];
 
     public function user()

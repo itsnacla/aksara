@@ -14,6 +14,10 @@ class LevelForm
                 TextInput::make('nama_tingkatan')
                     ->required()
                     ->maxLength(50),
+                \Filament\Forms\Components\Toggle::make('is_last_level')
+                    ->label('Tingkatan Terakhir?')
+                    ->helperText('Jika aktif, siswa yang naik dari tingkat ini akan otomatis berstatus Lulus.')
+                    ->default(false),
             ]);
     }
 }

@@ -41,7 +41,7 @@ class MasterDataSeeder extends Seeder
  
     private function seedRooms(): void
     {
-        $rooms = ['Ruang 1', 'Ruang 2A', 'Ruang 2B', 'Ruang 3', 'Ruang 4', 'Ruang 5', 'Ruang 6'];
+        $rooms = ['A', 'B'];
         foreach ($rooms as $roomName) {
             Classroom::firstOrCreate(['nama_ruangan' => $roomName]);
         }
@@ -55,7 +55,10 @@ class MasterDataSeeder extends Seeder
         ];
         $levelModels = [];
         foreach ($levels as $name => $sort) {
-            $levelModels[$sort] = Level::firstOrCreate(['nama_tingkatan' => $name]);
+            $levelModels[$sort] = Level::updateOrCreate(
+                ['nama_tingkatan' => $name],
+                ['is_last_level' => ($sort === 6)]
+            );
         }
         return $levelModels;
     }

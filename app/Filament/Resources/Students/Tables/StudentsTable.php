@@ -41,6 +41,11 @@ class StudentsTable
                 ->searchable()
                 ->sortable(),
 
+            TextColumn::make('nis')
+                ->label('NIS')
+                ->searchable()
+                ->sortable(),
+
             TextColumn::make('user.name')
                 ->label('Nama Siswa')
                 ->searchable()
@@ -72,6 +77,21 @@ class StudentsTable
     protected static function getFilters(): array
     {
         return [
+            SelectFilter::make('academic_year')
+                ->label('Tahun Ajaran')
+                ->options(fn () => AcademicYear::query()
+                    ->get()
+                    ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)])
+                )
+                ->query(function ($query, array $data) {
+                    if (empty($data['value'])) {
+                        return $query;
+                    }
+                    return $query->whereHas('studyGroups', function ($q) use ($data) {
+                        $q->where('academic_year_id', $data['value']);
+                    });
+                })
+                ->default(fn () => AcademicYear::where('is_active', true)->first()?->id),
             SelectFilter::make('status')
                 ->options([
                     'aktif' => 'Aktif',
@@ -80,8 +100,14 @@ class StudentsTable
                     'keluar' => 'Keluar',
                 ]),
             SelectFilter::make('studyGroups')
-                ->relationship('studyGroups', 'nama_rombel')
-                ->label('Filter Rombel'),
+                ->label('Filter Rombel')
+                ->relationship('studyGroups', 'nama_rombel', function ($query, $get) {
+                    $academicYearId = $get('academic_year');
+                    if ($academicYearId) {
+                        return $query->where('academic_year_id', $academicYearId);
+                    }
+                    return $query;
+                }),
         ];
     }
 
@@ -90,6 +116,7 @@ class StudentsTable
         return [
             ViewAction::make()
                 ->modal()
+                ->modalWidth('7xl')
                 ->mutateRecordDataUsing(function (array $data, $record): array {
                     $user = $record->user;
                     if ($user) {
@@ -98,11 +125,16 @@ class StudentsTable
                         $data['user_email'] = $user->email;
                         $data['user_photo'] = $user->photo;
                         $data['user_is_active'] = $user->is_active;
+                    }
+                    $parent = $record->parent;
+                    if ($parent) {
+                        $data['parent'] = $parent->toArray();
                     }
                     return $data;
                 }),   
             EditAction::make()
                 ->modal()
+                ->modalWidth('7xl')
                 ->mutateRecordDataUsing(function (array $data, $record): array {
                     $user = $record->user;
                     if ($user) {
@@ -112,30 +144,41 @@ class StudentsTable
                         $data['user_photo'] = $user->photo;
                         $data['user_is_active'] = $user->is_active;
                     }
+                    $parent = $record->parent;
+                    if ($parent) {
+                        $data['parent'] = $parent->toArray();
+                    }
                     return $data;
                 })
                 ->mutateFormDataUsing(function (array $data, $record): array {
+                    // 1. Handle User Update
                     $user = $record->user;
                     if ($user) {
-                        $updateData = array_filter([
-                            'name' => $data['user_name'] ?? null,
-                            'username' => $data['user_username'] ?? null,
-                            'email' => $data['user_email'] ?? null,
+                        $updateUserData = [
+                            'name' => $data['user_name'] ?? $user->name,
+                            'username' => $data['user_username'] ?? $user->username,
+                            'email' => $data['user_email'] ?? $user->email,
                             'is_active' => $data['user_is_active'] ?? true,
-                        ]);
+                        ];
 
                         if (!empty($data['user_password'])) {
-                            $updateData['password'] = Hash::make($data['user_password']);
+                            $updateUserData['password'] = Hash::make($data['user_password']);
                         }
 
                         if (isset($data['user_photo'])) {
-                            $updateData['photo'] = $data['user_photo'];
+                            $updateUserData['photo'] = $data['user_photo'];
                         }
 
-                        $user->update($updateData);
+                        $user->update($updateUserData);
                     }
 
-                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['user_photo'], $data['user_is_active']);
+                    // 2. Handle Parent Update
+                    $parent = $record->parent;
+                    if ($parent && isset($data['parent'])) {
+                        $parent->update($data['parent']);
+                    }
+
+                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['user_photo'], $data['user_is_active'], $data['parent']);
 
                     return $data;
                 }),
@@ -185,13 +228,36 @@ class StudentsTable
                             ->live(),
                         Select::make('study_group_id')
                             ->label('Pilih Rombel Baru')
-                            ->options(fn (Get $get) => StudyGroup::where('academic_year_id', $get('academic_year_id'))->pluck('nama_rombel', 'id'))
-                            ->required(),
+                            ->helperText('Kosongkan pilihan Rombel jika siswa akan diluluskan (berlaku untuk siswa tingkat akhir).')
+                            ->options(fn (Get $get) => StudyGroup::where('academic_year_id', $get('academic_year_id'))->pluck('nama_rombel', 'id')),
                     ])
                     ->action(function (Collection $records, array $data): void {
+                        $graduatedCount = 0;
+                        $promotedCount = 0;
+
                         foreach ($records as $record) {
-                            $record->studyGroups()->syncWithoutDetaching([$data['study_group_id']]);
+                            if (empty($data['study_group_id'])) {
+                                // Check if student is in the last level
+                                $currentRombel = $record->studyGroups()->whereHas('academicYear', fn($q) => $q->where('is_active', true))->first();
+                                if ($currentRombel && $currentRombel->level && $currentRombel->level->is_last_level) {
+                                    $record->update(['status' => 'lulus']);
+                                    $graduatedCount++;
+                                }
+                            } else {
+                                $record->studyGroups()->syncWithoutDetaching([$data['study_group_id']]);
+                                $record->update(['status' => 'aktif']);
+                                $promotedCount++;
+                            }
                         }
+
+                        $message = "Proses selesai. ";
+                        if ($promotedCount > 0) $message .= "{$promotedCount} siswa naik kelas. ";
+                        if ($graduatedCount > 0) $message .= "{$graduatedCount} siswa diluluskan.";
+
+                        \Filament\Notifications\Notification::make()
+                            ->title($message)
+                            ->success()
+                            ->send();
                     }),
                 BulkAction::make('print_cards_bulk')
                     ->label('Cetak Kartu Massal')

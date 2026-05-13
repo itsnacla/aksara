@@ -8,6 +8,11 @@ class Level extends Model
 {
     protected $fillable = [
         'nama_tingkatan',
+        'is_last_level',
+    ];
+
+    protected $casts = [
+        'is_last_level' => 'boolean',
     ];
 
     public function classrooms()

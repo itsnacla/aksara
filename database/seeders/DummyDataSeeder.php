@@ -34,13 +34,13 @@ class DummyDataSeeder extends Seeder
     protected function seedWaliKelas()
     {
         $data = [
-            ['name' => 'Eni Nuryanti, S.Pd, Gr.', 'username' => 'eni', 'level' => 'Kelas 1', 'room' => 'Ruang 1'],
-            ['name' => 'Rustiningsih, S.Pd', 'username' => 'rusti', 'level' => 'Kelas 2', 'room' => 'Ruang 2A', 'rombel_suffix' => 'A'],
-            ['name' => 'Fertiko Yoga Lukmana S.Pd', 'username' => 'fertiko', 'level' => 'Kelas 2', 'room' => 'Ruang 2B', 'rombel_suffix' => 'B'],
-            ['name' => 'Alex Nicho Bastyan, S.Pd', 'username' => 'alex', 'level' => 'Kelas 3', 'room' => 'Ruang 3'],
-            ['name' => 'Drs. Imam Fahrudin', 'username' => 'imam', 'level' => 'Kelas 4', 'room' => 'Ruang 4'],
-            ['name' => 'Yusril Lufi Habibi, S.Pd', 'username' => 'yusril', 'level' => 'Kelas 5', 'room' => 'Ruang 5'],
-            ['name' => 'Farid Ruridra, S.Pd', 'username' => 'farid', 'level' => 'Kelas 6', 'room' => 'Ruang 6'],
+            ['name' => 'Eni Nuryanti, S.Pd, Gr.', 'username' => 'eni', 'level' => 'Kelas 1', 'room' => 'A'],
+            ['name' => 'Rustiningsih, S.Pd', 'username' => 'rusti', 'level' => 'Kelas 2', 'room' => 'A'],
+            ['name' => 'Fertiko Yoga Lukmana S.Pd', 'username' => 'fertiko', 'level' => 'Kelas 2', 'room' => 'B'],
+            ['name' => 'Alex Nicho Bastyan, S.Pd', 'username' => 'alex', 'level' => 'Kelas 3', 'room' => 'A'],
+            ['name' => 'Drs. Imam Fahrudin', 'username' => 'imam', 'level' => 'Kelas 4', 'room' => 'A'],
+            ['name' => 'Yusril Lufi Habibi, S.Pd', 'username' => 'yusril', 'level' => 'Kelas 5', 'room' => 'A'],
+            ['name' => 'Farid Ruridra, S.Pd', 'username' => 'farid', 'level' => 'Kelas 6', 'room' => 'A'],
         ];
 
         foreach ($data as $item) {
@@ -176,7 +176,17 @@ class DummyDataSeeder extends Seeder
                 'is_active' => false,
             ]);
             $uWali->assignRole('wali');
-            $parent = StudentParent::create(['user_id' => $uWali->id, 'hubungan' => 'ayah']);
+            $parent = StudentParent::create([
+                'user_id' => $uWali->id, 
+                'hubungan' => 'ayah',
+                'father_name' => "Ayah $name",
+                'mother_name' => "Ibu $name",
+                'address' => 'Jl. Pendidikan No. ' . $j,
+                'province' => 'JAWA TIMUR',
+                'city' => 'KABUPATEN BANYUWANGI',
+                'district' => 'KABAT',
+                'village' => 'KABAT',
+            ]);
 
             // User Siswa
             $u = User::create([
@@ -200,25 +210,55 @@ class DummyDataSeeder extends Seeder
 
     protected function createStudent($rombelIds, $index, $namaRombel)
     {
-        $name = "Siswa " . $namaRombel . " No " . $index;
-        $username = strtolower(str_replace([' ', '.'], '', $name));
+        $firstNames = ['Ahmad', 'Budi', 'Cici', 'Dedi', 'Eka', 'Fani', 'Gani', 'Hani', 'Indra', 'Jaka', 'Kiki', 'Lulu', 'Maman', 'Nina', 'Oki', 'Putri', 'Rian', 'Siti', 'Tono', 'Umar'];
+        $lastNames = ['Saputra', 'Wijaya', 'Lestari', 'Hidayat', 'Kusuma', 'Santoso', 'Pratiwi', 'Fauzi', 'Ramadhan', 'Sari'];
+        $religions = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha'];
+        $places = ['Banyuwangi', 'Jakarta', 'Surabaya', 'Malang', 'Bandung', 'Yogyakarta'];
+        
+        $name = $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
+        $uniqueId = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+        $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name)) . '_' . $uniqueId . '_' . $index;
 
-        // Parent
+        // Parent Data
+        $fatherName = "Bapak " . $firstNames[array_rand($firstNames)] . " " . $lastNames[array_rand($lastNames)];
+        $motherName = "Ibu " . $firstNames[array_rand($firstNames)] . " " . $lastNames[array_rand($lastNames)];
+
+        // Parent Account
         $parentUser = User::create([
-            'name' => 'Wali ' . $name,
-            'username' => 'wali' . $username,
-            'email' => 'wali' . $username . '@aksara.com',
+            'name' => $fatherName,
+            'username' => 'wali_' . $username,
+            'email' => 'wali_' . $username . '@aksara.samastanuswantara.com',
             'password' => Hash::make('password'),
             'is_active' => true,
         ]);
         $parentUser->assignRole('wali');
-        $parent = StudentParent::create(['user_id' => $parentUser->id, 'hubungan' => 'ayah']);
 
-        // Student
+        $occupations = ['PNS', 'Karyawan Swasta', 'Wiraswasta', 'Petani', 'Buruh', 'Guru', 'Pedagang'];
+
+        $parent = StudentParent::create([
+            'user_id' => $parentUser->id, 
+            'hubungan' => 'ayah',
+            'father_name' => $fatherName,
+            'father_occupation' => $occupations[array_rand($occupations)],
+            'mother_name' => $motherName,
+            'mother_occupation' => $occupations[array_rand($occupations)],
+            'no_whatsapp' => '08' . rand(100000000, 999999999),
+            'address' => 'Jl. Mawar No. ' . rand(1, 100),
+            'province' => 'JAWA TIMUR',
+            'city' => 'KABUPATEN BANYUWANGI',
+            'district' => 'BANYUWANGI',
+            'village' => 'PENGANJURAN',
+            // Guardian data (dummy for consistency)
+            'guardian_name' => ($index % 5 == 0) ? 'Wali ' . $name : null,
+            'guardian_occupation' => ($index % 5 == 0) ? $occupations[array_rand($occupations)] : null,
+            'guardian_address' => ($index % 5 == 0) ? 'Jl. Wali No. ' . rand(1, 10) : null,
+        ]);
+
+        // Student Account
         $studentUser = User::create([
             'name' => $name,
             'username' => $username,
-            'email' => $username . '@aksara.com',
+            'email' => $username . '@aksara.samastanuswantara.com',
             'password' => Hash::make('password'),
             'is_active' => true,
         ]);
@@ -228,11 +268,19 @@ class DummyDataSeeder extends Seeder
             'user_id' => $studentUser->id,
             'parent_id' => $parent->id,
             'status' => 'aktif',
-            'nisn' => rand(1000000000, 9999999999),
+            'nisn' => '00' . rand(10000000, 99999999),
+            'nis' => rand(1000, 9999),
             'gender' => ($index % 2 == 0) ? 'L' : 'P',
+            'pob' => $places[array_rand($places)],
+            'dob' => now()->subYears(rand(7, 12))->subDays(rand(1, 365)),
+            'religion' => $religions[array_rand($religions)],
+            'phone' => '08' . rand(100000000, 999999999),
+            'lives_with_parent' => true, // Defaulting to true for demo
+            'address' => null, // Inherited from parent
+            'previous_school' => 'TK Dharma Wanita ' . rand(1, 5),
         ]);
 
-        // Hubungkan ke semua Rombel tahun ini
+        // Connect to Rombels
         $student->studyGroups()->sync($rombelIds);
     }
 }

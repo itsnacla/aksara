@@ -17,15 +17,24 @@ Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data p
 
 ---
 
+## 🌟 Pembaruan & Peningkatan Sistem Terkini
+
+-   **Pusat Kendali WhatsApp Gateway Terintegrasi**: Halaman manajemen **WA Notifikasi** mandiri di dalam panel Filament yang mendukung multi-provider (Fonnte & Custom API Gateway) lengkap dengan kustomisasi parameter dan token otorisasi.
+-   **Notifikasi Absensi Latar Belakang (Real-time Queued)**: Pengiriman otomatis pesan WhatsApp terformat rapi ke orang tua/wali murid saat siswa memindai kartu presensi (masuk/pulang). Dilengkapi dengan penamaan sekolah dinamis pada *header* dan *branding* elegan (`Powered by Aksara | Tateta`) pada *footer*, diproses asinkron di latar belakang (*Job/Queue*) tanpa membebani kecepatan pemindaian.
+-   **Pemindai QR Mandiri Anti-Duplikasi (Kiosk Mode)**: Modul pemindai presensi mandiri yang dapat diakses di tab terpisah untuk mencegah bentrok elemen Livewire. Dilengkapi dengan proteksi ganda berupa **Cooldown Klien (5 detik)** dan **Cooldown Server (10 detik)** guna mengatasi *race condition*, serta memprioritaskan privasi siswa dengan menghapus *fallback* avatar pihak ketiga.
+-   **Mesin Siaran Pengumuman (Broadcast Engine)**: Memungkinkan staf atau pengelola sekolah untuk mengirimkan pengumuman penting secara massal ke seluruh orang tua, maupun difilter spesifik berdasarkan **Rombel/Kelas** tertentu.
+
+---
+
 ## 🛠️ Tech Stack
 
 | Komponen            | Teknologi              | Versi    |
 | ------------------- | ---------------------- | -------- |
-| **Framework**       | Laravel                | 12.x     |
-| **Admin Panel**     | Filament PHP           | v3/v5    |
+| **Framework**       | Laravel                | 13.x     |
+| **Admin Panel**     | Filament PHP           | ~5.0     |
 | **Database**        | PostgreSQL (PG Vector) | 16+      |
 | **Styling**         | Tailwind CSS           | 4.0      |
-| **RBAC**            | Filament Shield        | Latest   |
+| **RBAC**            | Filament Shield        | ^4.2     |
 | **Runtime**         | PHP                    | 8.4+     |
 | **Dev Tool**        | Laravel IDE Helper     | ^3.7     |
 
@@ -90,17 +99,14 @@ php artisan filament:upgrade
 ```
 
 ### 5. Inisialisasi Security & Data Demo
-Bangun skema database dan masukkan data percobaan:
+Bangun skema database dan jalankan seeder utama yang mencakup *Master Data*, *Waktu/Jam Pelajaran*, *Peran*, dan data sampel:
 
 ```bash
-# Fresh migration
-php artisan migrate:fresh
+# Fresh migration dan jalankan seluruh seeder otomatis
+php artisan migrate:fresh --seed
 
 # Generate permissions & policies (Filament Shield)
 php artisan shield:generate --all --panel=admin --no-interaction
-
-# Seeding data demo (User, Guru, Siswa, Master Data)
-php artisan db:seed --class=UserSeeder
 ```
 
 ---
@@ -108,18 +114,22 @@ php artisan db:seed --class=UserSeeder
 ## 🔑 Akun Akses Default
 Gunakan password default: **`password`** untuk semua akun berikut:
 
-| Role        | Username / Email   | Dasbor Akses         |
-| ----------- | ------------------ | -------------------- |
-| Super Admin | `admin@aksara.com` | `/admin`             |
-| Guru        | `guru@aksara.com`  | `/admin`             |
-| Staff TU    | `staff@aksara.com` | `/admin`             |
-| Wali/Parent | `wali@aksara.com`  | `/dashboard` (Portal)|
-| Siswa       | `siswa@aksara.com` | `/dashboard` (Portal)|
+| Role        | Username / Email                     | Dasbor Akses         | Keterangan           |
+| ----------- | ------------------------------------ | -------------------- | -------------------- |
+| Super Admin | `admin@aksara.com`                   | `/admin`             | Akses penuh          |
+| Guru Wali   | `eni@aksara.com`                     | `/admin`             | Wali Kelas 1         |
+| Guru Mapel  | `beni@aksara.com`                    | `/admin`             | Guru PJOK            |
+| Staff TU    | `sarah@aksara.com`                   | `/admin`             | Bendahara            |
+| Wali/Parent | `walisiswakelas1-ruang1no1@aksara.com`| `/dashboard` (Portal)| Orang Tua Siswa No 1 |
+| Siswa       | `siswakelas1-ruang1no1@aksara.com`   | `/dashboard` (Portal)| Siswa Kelas 1 No 1   |
+
+> [!NOTE]
+> Tersedia juga puluhan akun guru lain (seperti `rusti@aksara.com`, `alex@aksara.com`) serta siswa dari nomor 1 hingga 20 di setiap kelas.
 
 ---
 
 ## 🚀 Menjalankan Aplikasi
-Gunakan perintah pengembangan simultan (Vite + Server):
+Gunakan skrip pengembangan terpadu dari Composer yang akan otomatis menjalankan **Server Laravel**, **Queue Worker** (untuk notifikasi WA), dan **Vite** secara serentak dalam satu terminal:
 
 ```bash
 composer dev

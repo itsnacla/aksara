@@ -19,6 +19,10 @@ class LevelsTable
                 TextColumn::make('nama_tingkatan')
                     ->searchable()
                     ->sortable(),
+                \Filament\Tables\Columns\IconColumn::make('is_last_level')
+                    ->label('Tingkat Terakhir')
+                    ->boolean()
+                    ->sortable(),
             ])
             ->filters([
                 //

@@ -41,4 +41,21 @@ class StudentCardController extends Controller
             'school' => $school
         ]);
     }
+
+    public function allPrint(Request $request)
+    {
+        $query = Student::query()->with('user');
+        
+        if ($request->has('academic_year_id')) {
+            $query->whereHas('studyGroups', fn($q) => $q->where('academic_year_id', $request->academic_year_id));
+        }
+
+        $students = $query->get();
+        $school = SchoolSetting::current();
+
+        return view('students.print-card', [
+            'students' => $students,
+            'school' => $school
+        ]);
+    }
 }

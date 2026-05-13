@@ -8,8 +8,13 @@ class SchoolSetting extends Model
 {
     protected $fillable = [
         'name',
+        'npsn',
         'logo',
         'address',
+        'village',
+        'district',
+        'city',
+        'province',
         'phone',
         'email',
         'website',

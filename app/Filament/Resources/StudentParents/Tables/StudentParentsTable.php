@@ -35,6 +35,7 @@ class StudentParentsTable
             ->actions([
                 ViewAction::make()
                     ->modal()
+                    ->modalWidth('7xl')
                     ->mutateRecordDataUsing(function (array $data, $record): array {
                         $user = $record->user;
                         if ($user) {
@@ -46,6 +47,7 @@ class StudentParentsTable
                     }),
                 EditAction::make()
                     ->modal()
+                    ->modalWidth('7xl')
                     ->mutateRecordDataUsing(function (array $data, $record): array {
                         $user = $record->user;
                         if ($user) {
@@ -76,7 +78,8 @@ class StudentParentsTable
                         return $data;
                     }),
                 DeleteAction::make()
-                    ->modal(),
+                    ->modal()
+                    ->modalWidth('7xl'),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

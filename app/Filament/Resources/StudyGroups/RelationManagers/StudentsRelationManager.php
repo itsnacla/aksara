@@ -6,9 +6,17 @@ use Filament\Schemas\Schema;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
 use Filament\Actions\ViewAction;
 use Filament\Actions\AssociateAction;
 use Filament\Actions\DissociateAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DissociateBulkAction;
 
 class StudentsRelationManager extends RelationManager
@@ -19,44 +27,31 @@ class StudentsRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
-        // We reuse the StudentForm but maybe simplify it if creating from here
         return $schema->components([
-            \Filament\Forms\Components\TextInput::make('user_name')
-                ->label('Nama Lengkap')
-                ->formatStateUsing(fn ($record) => $record?->user?->name)
-                ->disabled(),
-            \Filament\Forms\Components\TextInput::make('nisn')
-                ->label('NISN')
-                ->disabled(),
-            \Filament\Forms\Components\TextInput::make('pob')
-                ->label('Tempat Lahir')
-                ->placeholder('-')
-                ->disabled(),
-            \Filament\Forms\Components\DatePicker::make('dob')
-                ->label('Tanggal Lahir')
-                ->placeholder('-')
-                ->disabled(),
-            \Filament\Forms\Components\TextInput::make('gender')
-                ->label('Jenis Kelamin')
-                ->formatStateUsing(fn ($state) => $state === 'L' ? 'Laki-laki' : ($state === 'P' ? 'Perempuan' : '-'))
-                ->disabled(),
-            \Filament\Forms\Components\TextInput::make('religion')
-                ->label('Agama')
-                ->placeholder('-')
-                ->disabled(),
-            \Filament\Forms\Components\TextInput::make('phone')
-                ->label('No. Telepon')
-                ->placeholder('-')
-                ->disabled(),
-            \Filament\Forms\Components\TextInput::make('parent_name')
-                ->label('Orang Tua / Wali')
-                ->formatStateUsing(fn ($record) => $record?->parent?->user?->name ?? '-')
-                ->disabled(),
-            \Filament\Forms\Components\Textarea::make('address')
-                ->label('Alamat Lengkap')
-                ->placeholder('-')
-                ->disabled(),
+            Grid::make(2)
+                ->schema([
+                    FileUpload::make('user.photo')
+                        ->label('Foto')
+                        ->avatar()
+                        ->disabled(),
+                    Group::make([
+                        TextInput::make('user.name')
+                            ->label('Nama Lengkap')
+                            ->disabled(),
+                        TextInput::make('nisn')
+                            ->label('NISN')
+                            ->disabled(),
+                        TextInput::make('nis')
+                            ->label('NIS')
+                            ->disabled(),
+                    ]),
+                ]),
         ]);
+    }
+
+    public function infolist(Schema $schema): Schema
+    {
+        return \App\Filament\Resources\Students\Schemas\StudentInfoList::configure($schema);
     }
 
     public function table(Table $table): Table
@@ -64,13 +59,31 @@ class StudentsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('user.name')
             ->columns([
+                Tables\Columns\ImageColumn::make('user.photo')
+                    ->label('Foto')
+                    ->circular(),
+                Tables\Columns\TextColumn::make('nisn')
+                    ->label('NISN')
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('nis')
+                    ->label('NIS')
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Nama Siswa')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('nisn')
-                    ->label('NISN')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'aktif' => 'success',
+                        'lulus' => 'info',
+                        'mutasi' => 'warning',
+                        'keluar' => 'danger',
+                        default => 'gray',
+                    }),
             ])
             ->filters([
                 //
@@ -80,12 +93,16 @@ class StudentsRelationManager extends RelationManager
                     ->label('Tambah Siswa ke Rombel')
                     ->modalHeading('Pilih Siswa')
                     ->recordSelect(
-                        fn (\Filament\Forms\Components\Select $select) => $select
-                            ->options(function ($get, $record) {
-                                return \App\Models\Student::with('user')
+                        fn (AssociateAction $action, RelationManager $livewire) => 
+                        Select::make('recordId')
+                            ->label('Pilih Siswa')
+                            ->options(function () use ($livewire) {
+                                $rombel = $livewire->getOwnerRecord();
+                                return \App\Models\Student::query()
+                                    ->with('user')
                                     ->where('status', 'aktif')
-                                    ->whereDoesntHave('studyGroups', function ($q) use ($record) {
-                                        $q->where('study_groups.id', $record->id);
+                                    ->whereDoesntHave('studyGroups', function ($q) use ($rombel) {
+                                        $q->where('study_groups.id', $rombel->id);
                                     })
                                     ->get()
                                     ->mapWithKeys(fn ($student) => [
@@ -96,12 +113,12 @@ class StudentsRelationManager extends RelationManager
                     ),
             ])
             ->actions([
-                ViewAction::make()->modal()->modalWidth('xl'),
+                ViewAction::make()->modal()->modalWidth('4xl'),
                 DissociateAction::make()
                     ->label('Keluarkan dari Rombel'),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
+                BulkActionGroup::make([
                     DissociateBulkAction::make(),
                 ]),
             ]);
