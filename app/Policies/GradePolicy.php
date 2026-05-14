@@ -14,55 +14,32 @@ class GradePolicy
     
     public function viewAny(AuthUser $authUser): bool
     {
-        return $authUser->can('view_any_grade') || $authUser->hasRole('guru');
+        return $authUser->can('ViewAny:Grade');
     }
 
     public function view(AuthUser $authUser, Grade $grade): bool
     {
-        if ($authUser->can('view_grade')) return true;
-        
-        if ($authUser->hasRole('guru') && $authUser->teacher) {
-            $teacherId = $authUser->teacher->id;
-            
-            // Allow if Subject Teacher OR Homeroom Teacher
-            return $grade->teacher_id === $teacherId || 
-                   $grade->studyGroup?->walikelas_id === $teacherId;
-        }
-
-        return false;
+        return $authUser->can('View:Grade');
     }
 
     public function create(AuthUser $authUser): bool
     {
-        return $authUser->can('create_grade') || $authUser->hasRole('guru');
+        return $authUser->can('Create:Grade');
     }
 
     public function update(AuthUser $authUser, Grade $grade): bool
     {
-        if ($authUser->can('update_grade')) return true;
-
-        if ($authUser->hasRole('guru') && $authUser->teacher) {
-            $teacherId = $authUser->teacher->id;
-            
-            // Subject Teacher can update their own subjects
-            if ($grade->teacher_id === $teacherId) return true;
-            
-            // Homeroom Teacher can update anything in their rombel? 
-            // Usually only Subject Teacher, but maybe user wants it.
-            return $grade->studyGroup?->walikelas_id === $teacherId;
-        }
-
-        return false;
+        return $authUser->can('Update:Grade');
     }
 
     public function delete(AuthUser $authUser, Grade $grade): bool
     {
-        return $authUser->can('delete_grade');
+        return $authUser->can('Delete:Grade');
     }
 
     public function deleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('delete_any_grade');
+        return $authUser->can('DeleteAny:Grade');
     }
 
     public function restore(AuthUser $authUser, Grade $grade): bool

@@ -42,7 +42,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/schedule', [\App\Http\Controllers\ReportController::class, 'schedule'])->name('reports.schedule');
 
     // Standalone QR Scan
-    Route::get('/scan-presensi', \App\Livewire\QrScanStandalone::class)->name('scan-presensi');
+    Route::get('/scan-presensi', \App\Livewire\QrScanStandalone::class)
+        ->name('scan-presensi')
+        ->middleware(['auth', 'can:scan_attendance']);
 
     // Download Template Multi-Format untuk Impor Massal (CSV, XLSX, XLS)
     Route::get('/download-template/{type}/{format?}', function (string $type, string $format = 'csv') {
