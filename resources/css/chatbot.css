@@ -23,7 +23,8 @@
     --cb-typing-dot: #94a3b8;
     --cb-input-border-top: rgba(0, 0, 0, 0.05);
     --cb-input-area-bg: rgba(255, 255, 255, 0.6);
-    --cb-shadow: 0 24px 80px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.06);
+    --cb-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.06);
     --cb-scrollbar: rgba(0, 93, 167, 0.15);
 }
 
@@ -56,7 +57,7 @@
     bottom: 24px;
     right: 24px;
     z-index: 9999;
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* --- Floating Action Button --- */
@@ -104,8 +105,15 @@
 }
 
 @keyframes chatbot-pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0; }
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0;
+    }
 }
 
 /* --- Chat Window --- */
@@ -167,7 +175,7 @@
 }
 
 .chatbot-title {
-    font-family: 'Manrope', 'Inter', sans-serif;
+    font-family: "Manrope", "Inter", sans-serif;
     font-size: 15px;
     font-weight: 800;
     letter-spacing: -0.01em;
@@ -194,8 +202,13 @@
 }
 
 @keyframes chatbot-status-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
 }
 
 .chatbot-header-actions {
@@ -330,8 +343,12 @@
 }
 
 @keyframes chatbot-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* --- Messages Area --- */
@@ -364,8 +381,14 @@
 }
 
 @keyframes chatbot-msg-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .chatbot-msg-bot {
@@ -432,12 +455,24 @@
     animation: chatbot-typing-bounce 1.4s ease-in-out infinite;
 }
 
-.chatbot-typing-dot:nth-child(2) { animation-delay: 0.16s; }
-.chatbot-typing-dot:nth-child(3) { animation-delay: 0.32s; }
+.chatbot-typing-dot:nth-child(2) {
+    animation-delay: 0.16s;
+}
+.chatbot-typing-dot:nth-child(3) {
+    animation-delay: 0.32s;
+}
 
 @keyframes chatbot-typing-bounce {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-6px); opacity: 1; }
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
 }
 
 /* --- Quick Action Chips --- */
@@ -556,7 +591,7 @@
     overflow: hidden;
 }
 
-.chatbot-msg-bubble th, 
+.chatbot-msg-bubble th,
 .chatbot-msg-bubble td {
     border: 1px solid var(--cb-border);
     padding: 8px 10px;
@@ -577,7 +612,7 @@
     background: rgba(255, 255, 255, 0.02);
 }
 
-.chatbot-msg-bubble ul, 
+.chatbot-msg-bubble ul,
 .chatbot-msg-bubble ol {
     padding-left: 20px;
     margin: 8px 0;

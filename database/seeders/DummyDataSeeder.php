@@ -34,13 +34,13 @@ class DummyDataSeeder extends Seeder
     protected function seedWaliKelas()
     {
         $data = [
-            ['name' => 'Eni Nuryanti, S.Pd, Gr.', 'username' => 'eni', 'level' => 'Kelas 1', 'room' => 'A'],
-            ['name' => 'Rustiningsih, S.Pd', 'username' => 'rusti', 'level' => 'Kelas 2', 'room' => 'A'],
-            ['name' => 'Fertiko Yoga Lukmana S.Pd', 'username' => 'fertiko', 'level' => 'Kelas 2', 'room' => 'B'],
-            ['name' => 'Alex Nicho Bastyan, S.Pd', 'username' => 'alex', 'level' => 'Kelas 3', 'room' => 'A'],
-            ['name' => 'Drs. Imam Fahrudin', 'username' => 'imam', 'level' => 'Kelas 4', 'room' => 'A'],
-            ['name' => 'Yusril Lufi Habibi, S.Pd', 'username' => 'yusril', 'level' => 'Kelas 5', 'room' => 'A'],
-            ['name' => 'Farid Ruridra, S.Pd', 'username' => 'farid', 'level' => 'Kelas 6', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Eni Nuryanti', 'gb' => 'S.Pd, Gr.', 'username' => 'eni', 'level' => 'Kelas 1', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Rustiningsih', 'gb' => 'S.Pd', 'username' => 'rusti', 'level' => 'Kelas 2', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Fertiko Yoga Lukmana', 'gb' => 'S.Pd', 'username' => 'fertiko', 'level' => 'Kelas 2', 'room' => 'B'],
+            ['gd' => '', 'name' => 'Alex Nicho Bastyan', 'gb' => 'S.Pd', 'username' => 'alex', 'level' => 'Kelas 3', 'room' => 'A'],
+            ['gd' => 'Drs.', 'name' => 'Imam Fahrudin', 'gb' => '', 'username' => 'imam', 'level' => 'Kelas 4', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Yusril Lufi Habibi', 'gb' => 'S.Pd', 'username' => 'yusril', 'level' => 'Kelas 5', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Farid Ruridra', 'gb' => 'S.Pd', 'username' => 'farid', 'level' => 'Kelas 6', 'room' => 'A'],
         ];
 
         foreach ($data as $item) {
@@ -55,6 +55,8 @@ class DummyDataSeeder extends Seeder
 
             $this->teachers[$item['username']] = Teacher::create([
                 'user_id' => $user->id,
+                'gelar_depan' => $item['gd'],
+                'gelar_belakang' => $item['gb'],
                 'nip' => (string)rand(1000000000, 9999999999),
                 'is_walikelas' => true,
                 'status' => 'aktif',
@@ -70,9 +72,9 @@ class DummyDataSeeder extends Seeder
     protected function seedGuruMapel()
     {
         $data = [
-            ['name' => 'Beni Putra, S.Pd', 'username' => 'beni', 'subjects' => ['Pendidikan Jasmani, Olahraga dan Kesehatan']],
-            ['name' => 'Angger Wigunaning Aji, S.Pd', 'username' => 'angger', 'subjects' => ['Bahasa Inggris', 'Bahasa Using', 'Bahasa Jawa']],
-            ['name' => 'Moh. Itqonur Risal, S.Pd', 'username' => 'risal', 'subjects' => ['Pendidikan Agama']],
+            ['gd' => '', 'name' => 'Beni Putra', 'gb' => 'S.Pd', 'username' => 'beni', 'subjects' => ['Pendidikan Jasmani, Olahraga dan Kesehatan']],
+            ['gd' => '', 'name' => 'Angger Wigunaning Aji', 'gb' => 'S.Pd', 'username' => 'angger', 'subjects' => ['Bahasa Inggris', 'Bahasa Using', 'Bahasa Jawa']],
+            ['gd' => '', 'name' => 'Moh. Itqonur Risal', 'gb' => 'S.Pd', 'username' => 'risal', 'subjects' => ['Pendidikan Agama']],
         ];
 
         foreach ($data as $item) {
@@ -87,6 +89,8 @@ class DummyDataSeeder extends Seeder
 
             $teacher = Teacher::create([
                 'user_id' => $user->id,
+                'gelar_depan' => $item['gd'],
+                'gelar_belakang' => $item['gb'],
                 'nip' => (string)rand(1000000000, 9999999999),
                 'is_walikelas' => false,
                 'status' => 'aktif',
@@ -98,12 +102,17 @@ class DummyDataSeeder extends Seeder
 
         // CONTOH GURU NON-AKTIF (MUTASI)
         $userMutasi = User::create([
-            'name' => 'Guru Mutasi, S.Pd', 'username' => 'mutasi', 'email' => 'mutasi@aksara.com',
+            'name' => 'Guru Mutasi', 'username' => 'mutasi', 'email' => 'mutasi@aksara.com',
             'password' => Hash::make('password'), 'is_active' => false,
         ]);
         $userMutasi->assignRole('guru');
         Teacher::create([
-            'user_id' => $userMutasi->id, 'nip' => '1234567890', 'is_walikelas' => false, 'status' => 'mutasi'
+            'user_id' => $userMutasi->id, 
+            'gelar_depan' => '', 
+            'gelar_belakang' => 'S.Pd', 
+            'nip' => '1234567890', 
+            'is_walikelas' => false, 
+            'status' => 'mutasi'
         ]);
     }
 
@@ -184,8 +193,8 @@ class DummyDataSeeder extends Seeder
                 'address' => 'Jl. Pendidikan No. ' . $j,
                 'province' => 'JAWA TIMUR',
                 'city' => 'KABUPATEN BANYUWANGI',
-                'district' => 'KABAT',
-                'village' => 'KABAT',
+                'district' => 'PESANGGARAN',
+                'village' => 'PESANGGARAN',
             ]);
 
             // User Siswa
@@ -246,8 +255,8 @@ class DummyDataSeeder extends Seeder
             'address' => 'Jl. Mawar No. ' . rand(1, 100),
             'province' => 'JAWA TIMUR',
             'city' => 'KABUPATEN BANYUWANGI',
-            'district' => 'BANYUWANGI',
-            'village' => 'PENGANJURAN',
+            'district' => 'PESANGGARAN',
+            'village' => 'PESANGGARAN',
             // Guardian data (dummy for consistency)
             'guardian_name' => ($index % 5 == 0) ? 'Wali ' . $name : null,
             'guardian_occupation' => ($index % 5 == 0) ? $occupations[array_rand($occupations)] : null,

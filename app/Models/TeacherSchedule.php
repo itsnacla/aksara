@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Schedule;
+use Illuminate\Database\Eloquent\Attributes\Table;
 
+/**
+ * @property int $id
+ */
+#[Table('schedules')]
 class TeacherSchedule extends Schedule
 {
-    protected $table = 'schedules';
 }

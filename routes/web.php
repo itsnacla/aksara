@@ -52,11 +52,11 @@ Route::middleware(['auth'])->group(function () {
         $examples = [];
 
         if ($type === 'teacher') {
-            $columns = ['nama_lengkap', 'nip', 'status_guru', 'no_whatsapp', 'wali_kelas', 'kepala_sekolah', 'mata_pelajaran'];
+            $columns = ['gelar_depan', 'nama_lengkap', 'gelar_belakang', 'nip', 'status_guru', 'no_whatsapp', 'wali_kelas', 'kepala_sekolah', 'mata_pelajaran'];
             $examples = [
-                ['Budi Santoso, S.Pd.', '198001012005011001', 'aktif', '081234567890', '1', '0', 'Matematika'],
-                ['Dr. Hj. Siti Aminah, M.Si.', '', 'aktif', '08555666777', '0', '1', 'Fisika, Kimia'],
-                ['Ahmad Rivan', '199203032018021002', 'mutasi', '08111222333', '0', '0', 'Bahasa Inggris|Seni Budaya']
+                ['Drs.', 'Budi Santoso', 'S.Pd.', '198001012005011001', 'aktif', '081234567890', '1', '0', 'Matematika'],
+                ['Dr. Hj.', 'Siti Aminah', 'M.Si.', '', 'aktif', '08555666777', '0', '1', 'Fisika, Kimia'],
+                ['', 'Ahmad Rivan', '', '199203032018021002', 'mutasi', '08111222333', '0', '0', 'Bahasa Inggris|Seni Budaya']
             ];
         } elseif ($type === 'student') {
             $columns = [

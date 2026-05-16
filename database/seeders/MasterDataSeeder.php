@@ -6,8 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Level;
 use App\Models\Subject;
 use App\Models\Classroom;
-use App\Models\TimeSlot;
-use App\Models\DayConfig;
+use App\Models\Extracurricular;
 use Illuminate\Database\Seeder;
  
 class MasterDataSeeder extends Seeder
@@ -21,6 +20,35 @@ class MasterDataSeeder extends Seeder
         $this->seedRooms();
         $levelModels = $this->seedLevels();
         $this->seedSubjects($levelModels);
+        $this->seedExtracurriculars();
+        $this->seedChatbotSettings();
+    }
+
+    private function seedChatbotSettings(): void
+    {
+        \App\Models\ChatbotSetting::updateOrCreate(
+            ['id' => 1],
+            [
+                'is_active' => true,
+                'primary_provider' => 'google',
+                'fallback_providers' => 'groq,openai',
+                'settings' => [
+                    'google' => [
+                        'key' => env('GOOGLE_AI_API_KEY', ''),
+                        'model' => 'gemini-2.0-flash',
+                    ],
+                    'openai' => [
+                        'key' => env('OPENAI_API_KEY', ''),
+                        'model' => 'gpt-4o-mini',
+                        'url' => 'https://api.openai.com/v1',
+                    ],
+                    'groq' => [
+                        'key' => env('GROQ_API_KEY', ''),
+                        'model' => 'llama-3.3-70b-versatile',
+                    ]
+                ]
+            ]
+        );
     }
  
     private function seedAcademicYears(): void
@@ -50,14 +78,22 @@ class MasterDataSeeder extends Seeder
     private function seedLevels(): array
     {
         $levels = [
-            'Kelas 1' => 1, 'Kelas 2' => 2, 'Kelas 3' => 3,
-            'Kelas 4' => 4, 'Kelas 5' => 5, 'Kelas 6' => 6
+            'Kelas 1' => ['sort' => 1, 'fase' => 'A'],
+            'Kelas 2' => ['sort' => 2, 'fase' => 'A'],
+            'Kelas 3' => ['sort' => 3, 'fase' => 'B'],
+            'Kelas 4' => ['sort' => 4, 'fase' => 'B'],
+            'Kelas 5' => ['sort' => 5, 'fase' => 'C'],
+            'Kelas 6' => ['sort' => 6, 'fase' => 'C'],
         ];
+
         $levelModels = [];
-        foreach ($levels as $name => $sort) {
-            $levelModels[$sort] = Level::updateOrCreate(
+        foreach ($levels as $name => $data) {
+            $levelModels[$data['sort']] = Level::updateOrCreate(
                 ['nama_tingkatan' => $name],
-                ['is_last_level' => ($sort === 6)]
+                [
+                    'fase' => $data['fase'],
+                    'is_last_level' => ($data['sort'] === 6)
+                ]
             );
         }
         return $levelModels;
@@ -93,5 +129,18 @@ class MasterDataSeeder extends Seeder
             $subject->levels()->sync($ids);
         }
     }
- 
+
+    private function seedExtracurriculars(): void
+    {
+        $ekskuls = [
+            ['nama_ekskul' => 'Pramuka', 'kategori' => 'wajib', 'pembina' => 'Eni Nuryanti, S.Pd', 'nilai_minimum' => 'B', 'deskripsi' => 'Kegiatan kepanduan wajib untuk melatih kedisiplinan dan kemandirian.'],
+            ['nama_ekskul' => 'Futsal', 'kategori' => 'pilihan', 'pembina' => 'Beni Putra, S.Pd', 'nilai_minimum' => 'C', 'deskripsi' => 'Olahraga minat bakat sepak bola dalam ruangan.'],
+            ['nama_ekskul' => 'Tari Tradisional', 'kategori' => 'pilihan', 'pembina' => 'Siti Sarah', 'nilai_minimum' => 'B', 'deskripsi' => 'Melestarikan seni budaya melalui tarian daerah.'],
+            ['nama_ekskul' => 'PMR', 'kategori' => 'pilihan', 'pembina' => 'Bambang Irawan', 'nilai_minimum' => 'B', 'deskripsi' => 'Pelatihan pertolongan pertama dan kesehatan sekolah.'],
+        ];
+
+        foreach ($ekskuls as $e) {
+            Extracurricular::updateOrCreate(['nama_ekskul' => $e['nama_ekskul']], $e);
+        }
+    }
 }

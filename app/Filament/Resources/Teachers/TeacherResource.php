@@ -29,7 +29,10 @@ class TeacherResource extends Resource
 
     protected static ?string $navigationLabel = 'Data Guru';
 
-    protected static ?string $recordTitleAttribute = 'user.name';
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return $record?->user?->name;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -51,6 +54,11 @@ class TeacherResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return TeacherInfoList::configure($schema);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     public static function getPages(): array

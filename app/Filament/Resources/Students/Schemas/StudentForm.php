@@ -196,35 +196,41 @@ class StudentForm
                             ->required(fn (Get $get) => !$get('lives_with_parent')),
                         Select::make('province')
                             ->label('Provinsi')
-                            ->options(RegionService::getProvinces())
+                            ->options(fn () => RegionService::getProvinces())
                             ->searchable()
                             ->live()
+                            ->afterStateUpdated(function ($set) {
+                                $set('city', null);
+                                $set('district', null);
+                                $set('village', null);
+                            })
                             ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                            ->required(fn (Get $get) => !$get('lives_with_parent'))
-                            ->dehydrateStateUsing(fn ($state) => RegionService::getProvinceName($state)),
+                            ->required(fn (Get $get) => !$get('lives_with_parent')),
                         Select::make('city')
                             ->label('Kota')
                             ->options(fn (Get $get) => RegionService::getRegencies($get('province')))
                             ->searchable()
                             ->live()
+                            ->afterStateUpdated(function ($set) {
+                                $set('district', null);
+                                $set('village', null);
+                            })
                             ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                            ->required(fn (Get $get) => !$get('lives_with_parent'))
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getRegencyName($state, $get('province'))),
+                            ->required(fn (Get $get) => !$get('lives_with_parent')),
                         Select::make('district')
                             ->label('Kecamatan')
                             ->options(fn (Get $get) => RegionService::getDistricts($get('city')))
                             ->searchable()
                             ->live()
+                            ->afterStateUpdated(fn ($set) => $set('village', null))
                             ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                            ->required(fn (Get $get) => !$get('lives_with_parent'))
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getDistrictName($state, $get('city'))),
+                            ->required(fn (Get $get) => !$get('lives_with_parent')),
                         Select::make('village')
                             ->label('Desa')
-                            ->options(fn (Get $get) => RegionService::getVillages($get('district')))
+                            ->options(fn (Get $get) => RegionService::getVillages($get('district'), $get('city')))
                             ->searchable()
                             ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                            ->required(fn (Get $get) => !$get('lives_with_parent'))
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getVillageName($state, $get('district'))),
+                            ->required(fn (Get $get) => !$get('lives_with_parent')),
                     ])
                     ->columnSpan(1),
 
@@ -250,31 +256,39 @@ class StudentForm
                             ->columnSpanFull(),
                         Select::make('parent.province')
                             ->label('Provinsi')
-                            ->options(RegionService::getProvinces())
+                            ->options(fn () => RegionService::getProvinces())
                             ->required()
                             ->searchable()
                             ->live()
-                            ->dehydrateStateUsing(fn ($state) => RegionService::getProvinceName($state)),
+                            ->afterStateUpdated(function ($set) {
+                                $set('parent.city', null);
+                                $set('parent.district', null);
+                                $set('parent.village', null);
+                            }),
                         Select::make('parent.city')
                             ->label('Kota')
                             ->options(fn (Get $get) => RegionService::getRegencies($get('parent.province')))
                             ->required()
                             ->searchable()
                             ->live()
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getRegencyName($state, $get('parent.province'))),
+                            ->afterStateUpdated(function ($set) {
+                                $set('parent.district', null);
+                                $set('parent.village', null);
+                            }),
                         Select::make('parent.district')
                             ->label('Kecamatan')
                             ->options(fn (Get $get) => RegionService::getDistricts($get('parent.city')))
                             ->required()
                             ->searchable()
                             ->live()
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getDistrictName($state, $get('parent.city'))),
+                            ->afterStateUpdated(function ($set) {
+                                $set('parent.village', null);
+                            }),
                         Select::make('parent.village')
                             ->label('Desa')
-                            ->options(fn (Get $get) => RegionService::getVillages($get('parent.district')))
+                            ->options(fn (Get $get) => RegionService::getVillages($get('parent.district'), $get('parent.city')))
                             ->required()
-                            ->searchable()
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getVillageName($state, $get('parent.district'))),
+                            ->searchable(),
                     ])
                     ->columnSpan(1),
 

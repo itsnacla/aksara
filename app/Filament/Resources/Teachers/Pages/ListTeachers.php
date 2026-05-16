@@ -170,6 +170,8 @@ class ListTeachers extends ListRecords
 
                                 $previewRows[] = [
                                     'name' => $name,
+                                    'gelar_depan' => trim($data['gelar_depan'] ?? ''),
+                                    'gelar_belakang' => trim($data['gelar_belakang'] ?? ''),
                                     'nip' => $nip,
                                     'is_auto_nip' => $isAutoNip,
                                     'is_duplicate' => $isDuplicate,
@@ -349,6 +351,8 @@ class ListTeachers extends ListRecords
                         $status = trim($rowData['status_guru'] ?? '') ?: 'aktif';
                         $teacher = Teacher::create([
                             'user_id' => $user->id,
+                            'gelar_depan' => trim($rowData['gelar_depan'] ?? null) ?: null,
+                            'gelar_belakang' => trim($rowData['gelar_belakang'] ?? null) ?: null,
                             'nip' => $nip,
                             'status' => strtolower($status),
                             'no_whatsapp' => trim($rowData['no_whatsapp'] ?? '') ?: null,

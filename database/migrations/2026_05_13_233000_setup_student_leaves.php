@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('attachment')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('study_group_id')->nullable()->constrained('study_groups')->nullOnDelete();
             $table->text('rejection_note')->nullable();
             $table->timestamps();
         });

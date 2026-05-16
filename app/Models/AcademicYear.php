@@ -2,16 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $tahun_ajaran
+ * @property string $semester
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
+#[Fillable(['tahun_ajaran', 'semester', 'is_active'])]
 class AcademicYear extends Model
 {
-    protected $fillable = [
-        'tahun_ajaran',
-        'semester',
-        'is_active',
-    ];
-
     protected $casts = [
         'is_active' => 'boolean',
     ];

@@ -31,7 +31,10 @@ class StudentParentResource extends Resource
 
     protected static ?string $navigationLabel = 'Data Wali Murid';
 
-    protected static ?string $recordTitleAttribute = 'user.name';
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return $record?->user?->name;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -46,6 +49,11 @@ class StudentParentResource extends Resource
     public static function table(Table $table): Table
     {
         return StudentParentsTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     public static function getRelations(): array

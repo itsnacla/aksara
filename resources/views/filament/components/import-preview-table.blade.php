@@ -178,7 +178,9 @@
             <thead>
                 <tr>
                     @if($type === 'teacher')
+                        <th>Gelar Depan</th>
                         <th>Nama Lengkap</th>
+                        <th>Gelar Belakang</th>
                         <th>NIP</th>
                         <th>Status</th>
                         <th>Username (Auto)</th>
@@ -207,7 +209,9 @@
                     @endphp
                     <tr class="{{ $isDuplicate ? 'import-row-duplicate' : '' }}">
                         @if($type === 'teacher')
+                            <td style="opacity: 0.7;">{{ $p['gelar_depan'] ?: '-' }}</td>
                             <td style="font-weight: 500;">{{ $p['name'] ?? '-' }}</td>
+                            <td style="opacity: 0.7;">{{ $p['gelar_belakang'] ?: '-' }}</td>
                             <td>
                                 @if(!empty($p['is_auto_nip']))
                                     <span class="import-badge-warning" title="Dihasilkan otomatis karena kosong">{{ $p['nip'] ?? '-' }}</span>

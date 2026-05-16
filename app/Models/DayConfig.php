@@ -2,21 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $academic_year_id
+ * @property string $day
+ * @property bool $is_closed
+ * @property array $level_ids
+ * @property int|null $max_time_slot_id
+ * @property int|null $mandatory_subject_id
+ * @property int|null $mandatory_time_slot_id
+ */
+#[Fillable([
+    'academic_year_id',
+    'day',
+    'is_closed',
+    'level_ids',
+    'max_time_slot_id',
+    'mandatory_subject_id',
+    'mandatory_time_slot_id',
+])]
 class DayConfig extends Model
 {
-    protected $fillable = [
-        'academic_year_id',
-        'day',
-        'is_closed',
-        'level_ids',
-        'max_time_slot_id',
-        'mandatory_subject_id',
-        'mandatory_time_slot_id',
-    ];
-
     protected $casts = [
         'level_ids' => 'array',
         'is_closed' => 'boolean',

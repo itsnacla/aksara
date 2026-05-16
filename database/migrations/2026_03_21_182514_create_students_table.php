@@ -17,13 +17,20 @@ return new class extends Migration
             $table->foreignId('parent_id')->constrained('parents')->cascadeOnDelete();
             $table->foreignId('study_group_id')->nullable()->constrained('study_groups')->onDelete('set null');
             $table->string('nisn', 10)->unique();
+            $table->string('nis')->nullable();
             $table->string('status')->default('aktif'); // aktif, lulus, mutasi, keluar
             $table->string('pob')->nullable();
             $table->date('dob')->nullable();
             $table->enum('gender', ['L', 'P'])->nullable();
             $table->string('religion')->nullable();
             $table->string('phone')->nullable();
+            $table->boolean('lives_with_parent')->default(true);
             $table->text('address')->nullable();
+            $table->string('village')->nullable();
+            $table->string('district')->nullable();
+            $table->string('city')->nullable();
+            $table->string('province')->nullable();
+            $table->string('previous_school')->nullable();
             $table->timestamps();
         });
     }

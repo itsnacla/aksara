@@ -2,18 +2,38 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $nama_mapel
+ * @property string $kode_mapel
+ * @property bool $is_umum
+ * @property int $total_jp
+ * @property int $kkm
+ * @property int|null $level_id
+ * @property bool $is_one_day_finish
+ * @property int $scheduling_priority
+ */
+#[Fillable([
+    'nama_mapel',
+    'kode_mapel',
+    'is_umum',
+    'total_jp',
+    'kkm',
+    'level_id',
+    'is_one_day_finish',
+    'scheduling_priority',
+])]
 class Subject extends Model
 {
-    protected static function boot()
+    protected static function booted()
     {
-        parent::boot();
         static::creating(function ($model) {
             if (empty($model->kode_mapel)) {
                 $name = $model->nama_mapel;
                 
-                // Mappings Khusus (Standar Nasional)
                 $mappings = [
                     'Ilmu Pengetahuan Alam dan Sosial' => 'IPAS',
                     'Ilmu Pengetahuan Alam' => 'IPA',
@@ -32,7 +52,6 @@ class Subject extends Model
                 }
                 
                 if (empty($prefix)) {
-                    // Penyederhanaan Kata Utama
                     $prefix = str_ireplace(['Pendidikan', 'Bahasa'], ['Pend.', 'Bhs.'], $name);
                 }
                 
@@ -43,16 +62,6 @@ class Subject extends Model
             }
         });
     }
-    protected $fillable = [
-        'nama_mapel',
-        'kode_mapel',
-        'is_umum',
-        'total_jp',
-        'kkm',
-        'level_id',
-        'is_one_day_finish',
-        'scheduling_priority',
-    ];
 
     protected $casts = [
         'is_umum' => 'boolean',

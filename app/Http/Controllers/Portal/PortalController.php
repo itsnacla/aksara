@@ -29,6 +29,7 @@ class PortalController extends Controller
             'children' => collect(),
             'attendanceStats' => ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0],
             'recentGrades' => collect(),
+            'extracurriculars' => collect(),
         ], $data));
     }
 
@@ -57,6 +58,9 @@ class PortalController extends Controller
                 ->latest()
                 ->take(3)
                 ->get(),
+            'extracurriculars' => \App\Models\Extracurricular::orderBy('kategori', 'asc')
+                ->orderBy('nama_ekskul', 'asc')
+                ->get(),
         ];
     }
 
@@ -76,12 +80,15 @@ class PortalController extends Controller
             'parent' => $user->parent,
             'children' => $user->parent?->students()->with(['user', 'attendances' => function($q) {
                 $q->where('tanggal', now()->toDateString());
-            }])->get(),
+            }])->get() ?? collect(),
             'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
             'recentGrades' => \App\Models\Grade::whereIn('student_id', $childIds)
                 ->with(['student.user', 'subject'])
                 ->latest()
                 ->take(3)
+                ->get(),
+            'extracurriculars' => \App\Models\Extracurricular::orderBy('kategori', 'asc')
+                ->orderBy('nama_ekskul', 'asc')
                 ->get(),
         ];
     }

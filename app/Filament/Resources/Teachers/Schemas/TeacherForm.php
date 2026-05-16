@@ -50,11 +50,21 @@ class TeacherForm
 
                 Fieldset::make('Data Guru')
                     ->schema([
+                        TextInput::make('gelar_depan')
+                            ->label('Gelar Depan')
+                            ->placeholder('Contoh: Drs., Dra., Ir.')
+                            ->maxLength(20),
+
                         TextInput::make('nip')
                             ->label('NIP')
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(20),
+
+                        TextInput::make('gelar_belakang')
+                            ->label('Gelar Belakang')
+                            ->placeholder('Contoh: S.Pd., M.Pd.')
+                            ->maxLength(50),
                         
                         Select::make('status')
                             ->label('Status Guru')

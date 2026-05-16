@@ -9,8 +9,17 @@ use App\Models\Subject;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
+use Livewire\Attributes\On;
+
 class AdminStatsOverview extends BaseWidget
 {
+    #[On('echo:stats,StatsUpdated')]
+    public function refreshStats($event)
+    {
+        // This will trigger getStats() to be called again
+        $this->dispatch('refreshStats');
+    }
+
     protected static ?int $sort = -3;
 
     protected int | string | array $columnSpan = 'full';

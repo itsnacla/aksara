@@ -6,10 +6,24 @@ use App\Models\Attendance;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Livewire\Attributes\On;
 
 class LatestAttendanceTable extends BaseWidget
 {
+    #[On('echo:attendance,AttendanceLogged')]
+    public function refreshAttendance($event)
+    {
+        Notification::make()
+            ->title('Presensi Masuk!')
+            ->body("{$event['studentName']} baru saja dicatat sebagai {$event['status']}.")
+            ->success()
+            ->send();
+            
+        $this->dispatch('refreshTable');
+    }
+
     protected static ?string $heading = 'Presensi Terbaru';
 
     protected static ?int $sort = 5;

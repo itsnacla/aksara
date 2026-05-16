@@ -9,6 +9,7 @@ use App\Models\Attendance;
 use App\Models\Schedule;
 use App\Models\Classroom;
 use App\Models\EReport;
+use App\Models\Extracurricular;
 use App\Services\Chatbot\ChatbotService;
 use Illuminate\Support\Facades\Storage;
 
@@ -37,9 +38,15 @@ class ChatbotController extends Controller
                 $response = $agent->forUser($user)->prompt($userMessage);
             }
 
+            $reply = (string) $response;
+            $conversationId = $response->conversationId;
+
+            // Dispatch event for real-time update via Reverb
+            event(new \App\Events\MessageSent($conversationId, $reply));
+
             return response()->json([
-                'reply' => (string) $response,
-                'conversation_id' => $response->conversationId,
+                'reply' => $reply,
+                'conversation_id' => $conversationId,
             ]);
         } catch (\Exception $e) {
             Log::error('Chatbot AI SDK error: ' . $e->getMessage());
@@ -192,7 +199,7 @@ class ChatbotController extends Controller
             "Staff mengakses sistem melalui panel Filament di /admin. " .
             "Berikan jawaban yang praktis dan jelas.",
 
-            'orang_tua' => "Pengguna ini adalah Orang Tua/Wali Murid. " .
+            'wali' => "Pengguna ini adalah Orang Tua/Wali Murid. " .
             "Kamu bisa membantu dengan: memantau nilai akademik anak; " .
             "melihat data presensi/kehadiran anak; mengunduh rapor digital anak; " .
             "melihat jadwal pelajaran anak; menghubungi wali kelas. " .
@@ -259,6 +266,20 @@ class ChatbotController extends Controller
             ],
         ];
 
+        $tools[] = [
+            'name' => 'get_extracurricular_data',
+            'description' => 'Mendapatkan data kegiatan ekstrakurikuler siswa beserta nilai kualitatif.',
+            'parameters' => [
+                'type' => 'object',
+                'properties' => [
+                    'student_id' => [
+                        'type' => 'integer',
+                        'description' => 'ID siswa (opsional jika siswa menanyakan miliknya sendiri).',
+                    ],
+                ],
+            ],
+        ];
+
         if (in_array($role, ['admin', 'guru', 'staff'])) {
             $tools[] = [
                 'name' => 'get_classroom_info',
@@ -290,6 +311,7 @@ class ChatbotController extends Controller
             'get_schedule_data' => $this->fetchScheduleData($args['study_group_id'] ?? null, $user, $role),
             'get_classroom_info' => $this->fetchStudyGroupInfo($args['study_group_id'] ?? null, $user, $role),
             'get_report_link' => $this->fetchReportLink($args['student_id'] ?? null, $user, $role),
+            'get_extracurricular_data' => $this->fetchExtracurricularData($args['student_id'] ?? null, $user, $role),
             default => ['error' => 'Fungsi tidak ditemukan.'],
         };
     }
@@ -423,6 +445,27 @@ class ChatbotController extends Controller
             'tahun_ajaran' => $report->academicYear->tahun ?? 'N/A',
             'download_url' => url(Storage::url($report->file_path)),
             'keterangan' => 'Berikan link ini kepada user untuk diunduh.',
+        ];
+    }
+
+    private function fetchExtracurricularData(?int $studentId, $user, string $role)
+    {
+        // Now fetching master data, no longer per student
+        $extracurriculars = Extracurricular::orderBy('kategori', 'asc')
+            ->orderBy('nama_ekskul', 'asc')
+            ->get()
+            ->map(fn($e) => [
+                'nama_ekskul' => $e->nama_ekskul,
+                'kategori' => $e->kategori,
+                'min_nilai' => $e->nilai_minimum ?? 'N/A',
+                'pembina' => $e->pembina ?? 'N/A',
+                'deskripsi' => $e->deskripsi,
+            ]);
+
+        return [
+            'extracurriculars' => $extracurriculars,
+            'total' => $extracurriculars->count(),
+            'context' => 'Daftar kegiatan ekstrakurikuler yang tersedia di sekolah (Master Data).',
         ];
     }
 

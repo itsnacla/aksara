@@ -11,7 +11,7 @@ class StudentCardController extends Controller
     public function print(Student $student)
     {
         $school = SchoolSetting::current();
-        return view('students.print-card', [
+        return view('portal.students.print-card', [
             'students' => collect([$student]),
             'school' => $school
         ]);
@@ -23,7 +23,7 @@ class StudentCardController extends Controller
         $students = Student::whereIn('id', $ids)->with('user')->get();
         $school = SchoolSetting::current();
 
-        return view('students.print-card', [
+        return view('portal.students.print-card', [
             'students' => $students,
             'school' => $school
         ]);
@@ -36,7 +36,7 @@ class StudentCardController extends Controller
             ->get();
         $school = SchoolSetting::current();
 
-        return view('students.print-card', [
+        return view('portal.students.print-card', [
             'students' => $students,
             'school' => $school
         ]);
@@ -53,7 +53,7 @@ class StudentCardController extends Controller
         $students = $query->get();
         $school = SchoolSetting::current();
 
-        return view('students.print-card', [
+        return view('portal.students.print-card', [
             'students' => $students,
             'school' => $school
         ]);

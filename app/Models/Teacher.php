@@ -2,8 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string|null $gelar_depan
+ * @property string|null $gelar_belakang
+ * @property string|null $nip
+ * @property string $kode_guru
+ * @property bool $is_walikelas
+ * @property string $status
+ * @property bool $is_kepalasekolah
+ * @property string|null $no_whatsapp
+ */
+#[Fillable([
+    'user_id',
+    'gelar_depan',
+    'gelar_belakang',
+    'nip',
+    'kode_guru',
+    'is_walikelas',
+    'status',
+    'is_kepalasekolah',
+    'no_whatsapp',
+])]
 class Teacher extends Model
 {
     protected static function booted()
@@ -12,38 +36,29 @@ class Teacher extends Model
             if (empty($model->kode_guru)) {
                 $name = $model->user->name ?? 'Guru';
                 
-                // 1. Hilangkan bagian setelah koma (Gelar belakang biasanya setelah koma)
                 $cleanName = explode(',', $name)[0];
                 
-                // 2. Daftar Gelar Depan (Prefix)
                 $frontTitles = [
                     'Drs\.', 'Dra\.', 'Ir\.', 'H\.', 'Hj\.', 'Prof\.', 'Dr\.', 'Pdt\.', 'St\.'
                 ];
                 
-                // 3. Daftar Gelar Belakang (Suffix) - untuk jaga-jaga jika tidak pakai koma
                 $backTitles = [
                     'S\.Pd\.I', 'S\.Pd', 'M\.Pd', 'S\.Kom', 'S\.T', 'S\.H', 'S\.Si', 'M\.Si', 
                     'S\.E', 'M\.E', 'S\.Sos', 'Gr\.', 'Gr', 'L\.c', 'M\.A', 'B\.A'
                 ];
 
-                // Gabungkan semua gelar untuk pembersihan massal
                 $allTitles = array_merge($frontTitles, $backTitles);
                 
                 foreach ($allTitles as $title) {
-                    // Gunakan regex yang lebih fleksibel untuk menangani titik dan spasi
-                    // Menghapus gelar sebagai kata utuh (case-insensitive)
                     $cleanName = preg_replace('/(?i)\b' . $title . '\b/', '', $cleanName);
-                    // Tambahan: hapus jika gelar diakhiri titik tapi nempel ke kata lain
                     if (str_ends_with($title, '\.')) {
                         $cleanName = preg_replace('/(?i)' . $title . '/', '', $cleanName);
                     }
                 }
                 
-                // 4. Bersihkan karakter non-huruf dan spasi ganda
                 $cleanName = trim(preg_replace('/[^a-zA-Z\s]/', '', $cleanName));
                 $cleanName = preg_replace('/\s+/', ' ', $cleanName);
                 
-                // 5. Ambil Inisial
                 $words = explode(' ', $cleanName);
                 $prefix = '';
                 foreach ($words as $w) {
@@ -52,7 +67,6 @@ class Teacher extends Model
                     }
                 }
                 
-                // Jika setelah dibersihkan ternyata kosong (kasus langka), gunakan default
                 if (empty($prefix)) $prefix = 'G';
 
                 $latest = static::where('kode_guru', 'like', $prefix . '%')->orderBy('kode_guru', 'desc')->first();
@@ -63,21 +77,10 @@ class Teacher extends Model
 
         static::saving(function ($teacher) {
             if ($teacher->is_kepalasekolah) {
-                // Set all other teachers to not be principal
                 static::where('id', '!=', $teacher->id)->update(['is_kepalasekolah' => false]);
             }
         });
     }
-
-    protected $fillable = [
-        'user_id',
-        'nip',
-        'kode_guru',
-        'is_walikelas',
-        'status',
-        'is_kepalasekolah',
-        'no_whatsapp',
-    ];
 
     protected $casts = [
         'is_walikelas' => 'boolean',

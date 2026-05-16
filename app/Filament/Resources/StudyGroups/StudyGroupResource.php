@@ -45,7 +45,7 @@ class StudyGroupResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->with(['academicYear', 'level', 'classroom', 'walikelas.user']);
         $user = auth()->user();
 
         if ($user->hasRole('guru')) {

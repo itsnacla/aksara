@@ -30,7 +30,10 @@ class StaffResource extends Resource
 
     protected static ?string $navigationLabel = 'Data Staff';
 
-    protected static ?string $recordTitleAttribute = 'Staff';
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return $record?->user?->name;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -45,6 +48,11 @@ class StaffResource extends Resource
     public static function table(Table $table): Table
     {
         return StaffTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     public static function getRelations(): array

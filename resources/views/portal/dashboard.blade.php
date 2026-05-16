@@ -202,6 +202,25 @@
                 <p class="text-sm text-orange-700 mb-6">Butuh bantuan terkait akademik anak Anda?</p>
                 <button class="w-full bg-orange-600 text-white py-3 rounded-2xl font-bold text-sm shadow-md">Hubungi Sekolah</button>
             </div>
+
+            <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+                <h3 class="font-bold text-lg mb-4">Ekstrakurikuler</h3>
+                <div class="space-y-4">
+                    @forelse($extracurriculars as $ekskul)
+                    <div class="p-4 bg-gray-50 rounded-2xl">
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="font-bold text-sm">{{ $ekskul->nama_ekskul }}</p>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase
+                                {{ $ekskul->kategori === 'wajib' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}"
+                            >{{ ucwords($ekskul->kategori) }}</span>
+                        </div>
+                        <p class="text-[10px] text-gray-400">Pembina: {{ $ekskul->pembina ?? 'N/A' }}</p>
+                    </div>
+                    @empty
+                    <p class="text-gray-400 text-sm italic text-center p-4">Belum ada daftar ekskul.</p>
+                    @endforelse
+                </div>
+            </div>
         </div>
     </div>
     @endcan
@@ -285,6 +304,35 @@
             <div class="bg-[var(--color-surface-container-low)] py-2 px-4 rounded-full text-xs font-bold inline-block uppercase">LIHAT JADWAL</div>
         </div>
 
+    </div>
+
+    <!-- Extracurricular Section (Student) -->
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+        <h2 class="text-2xl font-bold mb-6">Ekstrakurikuler Saya</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @forelse($extracurriculars as $ekskul)
+            <div class="p-5 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="bg-primary/10 w-10 h-10 rounded-xl flex items-center justify-center text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-sm">{{ $ekskul->nama_ekskul }}</h3>
+                </div>
+                <div class="flex justify-between items-center">
+                    <p class="text-xs text-gray-400 line-clamp-1">Pembina: {{ $ekskul->pembina ?? 'N/A' }}</p>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0 ml-2
+                        {{ $ekskul->kategori === 'wajib' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}"
+                    >{{ ucwords($ekskul->kategori) }}</span>
+                </div>
+            </div>
+            @empty
+            <div class="col-span-full text-center py-8">
+                <p class="text-gray-400 text-sm italic">Belum ada daftar ekskul.</p>
+            </div>
+            @endforelse
+        </div>
     </div>
     @endcan
 

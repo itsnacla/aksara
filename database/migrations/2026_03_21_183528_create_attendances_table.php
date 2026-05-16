@@ -19,6 +19,14 @@ return new class extends Migration
             $table->date('tanggal');
             $table->enum('status', ['hadir', 'sakit', 'izin', 'alpha', 'terlambat']);
             $table->text('catatan')->nullable();
+            $table->timestamp('wa_sent_at')->nullable();
+            
+            // Presensi windows
+            $table->time('check_in_start')->nullable();
+            $table->time('check_in_end')->nullable();
+            $table->time('check_out_start')->nullable();
+            $table->time('check_out_end')->nullable();
+            
             $table->timestamps();
         });
     }

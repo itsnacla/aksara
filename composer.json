@@ -12,6 +12,7 @@
         "guava/calendar": "^3.1",
         "laravel/ai": "^0.6.7",
         "laravel/framework": "^13.0",
+        "laravel/reverb": "^1.0",
         "laravel/tinker": "^3.0",
         "pxlrbt/filament-excel": "^3.6",
         "simplesoftwareio/simple-qrcode": "^4.2"
@@ -19,6 +20,7 @@
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",
         "fakerphp/faker": "^1.23",
+        "laravel/boost": "^2.4",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
         "laravel/sail": "^1.41",

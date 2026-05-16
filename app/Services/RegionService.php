@@ -4,75 +4,205 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Concurrency;
 
 class RegionService
 {
-    protected static $baseUrl = 'https://emsifa.github.io/api-wilayah-indonesia/api';
+    private static function fetchFromBps(string $level, string $parent = '0'): array
+    {
+        $parent = trim((string)$parent);
+        $cacheKey = "bps_region_v6_{$level}_{$parent}";
+        
+        return Cache::remember($cacheKey, 86400, function () use ($level, $parent) {
+            try {
+                // 1. Try BPS First
+                $response = Http::timeout(5)->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept' => 'application/json',
+                ])->get('https://sig.bps.go.id/rest-drop-down/getwilayah', [
+                    'level' => $level,
+                    'parent' => $parent,
+                    'periode_merge' => '2025_1.2025'
+                ]);
 
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $results = [];
+                    foreach ($data as $item) {
+                        if (isset($item['kode']) && isset($item['nama'])) {
+                            $results[(string)$item['kode']] = strtoupper($item['nama']);
+                        }
+                    }
+                    if (!empty($results)) return $results;
+                }
+            } catch (\Exception $e) {
+                // Log or ignore
+            }
+
+            // 2. Fallback to Emsifa API (GitHub Pages)
+            return self::fetchFromEmsifa($level, $parent);
+        });
+    }
+
+    private static function fetchFromEmsifa(string $level, string $parent = '0'): array
+    {
+        $endpoints = [
+            'provinsi' => 'provinces.json',
+            'kabupaten' => "regencies/{$parent}.json",
+            'kecamatan' => "districts/{$parent}.json",
+            'desa' => "villages/{$parent}.json",
+        ];
+
+        if (!isset($endpoints[$level])) return [];
+
+        try {
+            $url = "https://www.emsifa.com/api-wilayah-indonesia/api/" . $endpoints[$level];
+            $response = Http::timeout(10)->get($url);
+
+            if (!$response->successful()) return [];
+
+            $data = $response->json();
+            $results = [];
+            foreach ($data as $item) {
+                // Emsifa uses 'id' instead of 'kode'
+                $code = $item['id'] ?? $item['kode'] ?? null;
+                $name = $item['name'] ?? $item['nama'] ?? null;
+                if ($code && $name) {
+                    $results[(string)$code] = strtoupper($name);
+                }
+            }
+            return $results;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    // INTERNAL: Get [ID => NAME]
+    private static function getRawProvinces(): array { return self::fetchFromBps('provinsi'); }
+    private static function getRawRegencies($pId): array { return self::fetchFromBps('kabupaten', $pId); }
+    private static function getRawDistricts($rId): array { return self::fetchFromBps('kecamatan', $rId); }
+    private static function getRawVillages($dId): array { return self::fetchFromBps('desa', $dId); }
+
+    // PUBLIC: Get [NAME => NAME] for Filament Select
     public static function getProvinces(): array
     {
-        return Cache::remember('provinces', 86400, function () {
-            $response = Http::get(self::$baseUrl . '/provinces.json');
-            if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+        $data = self::getRawProvinces();
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function getRegencies($provinceName): array
+    {
+        if (!$provinceName) return [];
+        $pId = self::findProvinceIdByName($provinceName);
+        if (!$pId) return [];
+        $data = self::getRawRegencies($pId);
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function getDistricts($regencyName): array
+    {
+        if (!$regencyName) return [];
+        $rId = self::findRegencyIdByName(null, $regencyName);
+        if (!$rId) return [];
+        $data = self::getRawDistricts($rId);
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function getVillages($districtName, $regencyName = null): array
+    {
+        if (!$districtName) return [];
+        $dId = self::findDistrictIdByName($regencyName, $districtName);
+        if (!$dId) return [];
+        $data = self::getRawVillages($dId);
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function findProvinceIdByName(?string $name): ?string
+    {
+        if (!$name) return null;
+        $normSearch = self::normalize($name);
+        foreach (self::getRawProvinces() as $id => $v) {
+            if (self::normalize($v) === $normSearch) return (string)$id;
+        }
+        return null;
+    }
+
+    public static function findRegencyIdByName($provinceName, ?string $name): ?string
+    {
+        if (!$name) return null;
+        $normSearch = self::normalize($name);
+        
+        // 1. Try with province context first
+        if ($provinceName) {
+            $pId = is_numeric($provinceName) ? $provinceName : self::findProvinceIdByName($provinceName);
+            if ($pId) {
+                foreach (self::getRawRegencies($pId) as $id => $v) {
+                    if (self::normalize($v) === $normSearch) return (string)$id;
+                }
             }
-            return [];
-        });
-    }
-
-    public static function getRegencies($provinceId): array
-    {
-        if (!$provinceId) return [];
-        return Cache::remember("regencies_{$provinceId}", 86400, function () use ($provinceId) {
-            $response = Http::get(self::$baseUrl . "/regencies/{$provinceId}.json");
-            if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+        }
+        
+        // 2. Global search as fallback (expensive but safe)
+        foreach (self::getRawProvinces() as $pId => $pName) {
+            foreach (self::getRawRegencies($pId) as $id => $v) {
+                if (self::normalize($v) === $normSearch) return (string)$id;
             }
-            return [];
-        });
+        }
+        return null;
     }
 
-    public static function getDistricts($regencyId): array
+    public static function findDistrictIdByName($regencyName, ?string $name): ?string
     {
-        if (!$regencyId) return [];
-        return Cache::remember("districts_{$regencyId}", 86400, function () use ($regencyId) {
-            $response = Http::get(self::$baseUrl . "/districts/{$regencyId}.json");
-            if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+        if (!$name) return null;
+        $normSearch = self::normalize($name);
+        
+        // 1. Try with regency context first
+        if ($regencyName) {
+            $rId = is_numeric($regencyName) ? $regencyName : self::findRegencyIdByName(null, $regencyName);
+            if ($rId) {
+                foreach (self::getRawDistricts($rId) as $id => $v) {
+                    if (self::normalize($v) === $normSearch) return (string)$id;
+                }
             }
-            return [];
-        });
-    }
+        }
 
-    public static function getVillages($districtId): array
-    {
-        if (!$districtId) return [];
-        return Cache::remember("villages_{$districtId}", 86400, function () use ($districtId) {
-            $response = Http::get(self::$baseUrl . "/villages/{$districtId}.json");
-            if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+        // 2. Global search as fallback (if regency context failed or not provided)
+        foreach (self::getRawProvinces() as $pId => $pName) {
+            foreach (self::getRawRegencies($pId) as $rId => $rName) {
+                foreach (self::getRawDistricts($rId) as $id => $v) {
+                    if (self::normalize($v) === $normSearch) return (string)$id;
+                }
             }
-            return [];
-        });
+        }
+        
+        return null;
     }
 
-    public static function getProvinceName($id): ?string
+    public static function findVillageIdByName($districtName, ?string $name): ?string
     {
-        return self::getProvinces()[$id] ?? $id;
+        if (!$name) return null;
+        $normSearch = self::normalize($name);
+        $dId = is_numeric($districtName) ? $districtName : self::findDistrictIdByName(null, $districtName);
+        if (!$dId) return null;
+
+        foreach (self::getRawVillages($dId) as $id => $v) {
+            if (self::normalize($v) === $normSearch) return (string)$id;
+        }
+        return null;
     }
 
-    public static function getRegencyName($id, $provinceId): ?string
+    private static function normalize(?string $name): string
     {
-        return self::getRegencies($provinceId)[$id] ?? $id;
+        if (!$name) return '';
+        // Remove prefixes more aggressively
+        $name = preg_replace('/^(PROV\.|PROP\.|KAB\.|KOTA\.|KEC\.|KEL\.|PROVINSI|KABUPATEN|KOTA|KECAMATAN|DESA|KELURAHAN)\s+/i', '', trim($name));
+        $name = str_replace(['DAERAH ISTIMEWA ', 'D.I. '], 'DI ', strtoupper($name));
+        $name = preg_replace('/\s+/', '', $name); // Remove ALL spaces for comparison
+        return strtoupper(preg_replace('/[^A-Z0-9]/', '', $name));
     }
 
-    public static function getDistrictName($id, $regencyId): ?string
-    {
-        return self::getDistricts($regencyId)[$id] ?? $id;
-    }
-
-    public static function getVillageName($id, $districtId): ?string
-    {
-        return self::getVillages($districtId)[$id] ?? $id;
-    }
+    public static function getProvinceName($id) { return $id; }
+    public static function getRegencyName($id, $pId) { return $id; }
+    public static function getDistrictName($id, $rId) { return $id; }
+    public static function getVillageName($id, $dId) { return $id; }
 }

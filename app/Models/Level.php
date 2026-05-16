@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $nama_tingkatan
+ * @property string|null $fase
+ * @property bool $is_last_level
+ */
+#[Fillable([
+    'nama_tingkatan',
+    'fase',
+    'is_last_level',
+])]
 class Level extends Model
 {
-    protected $fillable = [
-        'nama_tingkatan',
-        'is_last_level',
-    ];
-
     protected $casts = [
         'is_last_level' => 'boolean',
     ];

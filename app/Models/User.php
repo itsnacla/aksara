@@ -2,27 +2,37 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $username
+ * @property string|null $email
+ * @property string $password
+ * @property string|null $photo
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ */
+#[Fillable([
+    'name',
+    'username',
+    'email',
+    'password',
+    'photo',
+    'is_active',
+])]
 class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
     
     protected $guard_name = 'web';
-
-    protected $fillable = [
-        'name',
-        'username',
-        'email',
-        'password',
-        'photo',
-        'is_active',
-    ];
 
     protected $hidden = [
         'password',

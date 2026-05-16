@@ -187,7 +187,7 @@ class AttendanceResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->with(['student.user', 'studyGroup']);
         
         $user = auth()->user();
         if ($user && $user->hasRole('guru') && $user->teacher) {
