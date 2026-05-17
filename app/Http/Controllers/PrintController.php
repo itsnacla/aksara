@@ -67,4 +67,33 @@ class PrintController extends Controller
             'reports' => $studentsData,
         ]);
     }
+
+    /**
+     * Print Buku Induk Bulk for Multiple Students
+     */
+    public function printBukuIndukBulk(Request $request): View
+    {
+        $studentIds = explode(',', $request->input('student_ids'));
+        $school = SchoolSetting::current();
+        $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
+
+        $students = Student::with(['user', 'parent', 'studyGroups.level'])
+            ->whereIn('id', $studentIds)
+            ->get();
+
+        $reports = [];
+        foreach ($students as $student) {
+            $reports[] = [
+                'student' => $student,
+                'school' => $school,
+                'principal' => $principal,
+                'rombel' => $student->currentStudyGroup(),
+            ];
+        }
+
+        return view('reports.buku-induk', [
+            'isBulk' => true,
+            'reports' => $reports,
+        ]);
+    }
 }

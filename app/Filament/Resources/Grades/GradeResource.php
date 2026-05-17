@@ -40,8 +40,13 @@ class GradeResource extends Resource
                 ->relationship('subject', 'nama_mapel', modifyQueryUsing: function ($query) {
                     $query->where('subjects.is_graded', true);
                     $user = auth()->user();
-                    if ($user && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
-                        $query->whereIn('subjects.id', $user->teacher->subjects()->pluck('subjects.id')->toArray());
+                    if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                        $teacherId = $user->teacher->id;
+                        $managedLevelIds = \App\Models\StudyGroup::where('walikelas_id', $teacherId)->pluck('level_id')->toArray();
+                        $query->where(function ($q) use ($teacherId, $managedLevelIds) {
+                            $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
+                              ->orWhereHas('levels', fn ($lq) => $lq->whereIn('levels.id', $managedLevelIds));
+                        });
                     }
                 })
                 ->preload()
@@ -56,7 +61,7 @@ class GradeResource extends Resource
                 ->relationship('studyGroup', 'nama_rombel', modifyQueryUsing: function ($query, callable $get) {
                     $subjectId = $get('subject_id');
                     $user = auth()->user();
-                    if ($user && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                    if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
                         $teacherId = $user->teacher->id;
                         $query->where(function ($q) use ($teacherId, $subjectId) {
                             if ($subjectId) {
@@ -201,7 +206,16 @@ class GradeResource extends Resource
                     ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
                 \Filament\Tables\Filters\SelectFilter::make('study_group_id')
                     ->label('Rombel')
-                    ->relationship('studyGroup', 'nama_rombel'),
+                    ->relationship('studyGroup', 'nama_rombel', modifyQueryUsing: function ($query) {
+                        $user = auth()->user();
+                        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                            $teacherId = $user->teacher->id;
+                            $query->where(function ($q) use ($teacherId) {
+                                $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
+                                  ->orWhere('walikelas_id', $teacherId);
+                            });
+                        }
+                    }),
             ])
             ->actions([
                 EditAction::make()
@@ -221,13 +235,17 @@ class GradeResource extends Resource
         $query = parent::getEloquentQuery();
         $user = auth()->user();
 
-        if ($user && $user->hasRole('guru') && $user->teacher) {
+        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
             $teacherId = $user->teacher->id;
             
             $query->where(function ($q) use ($teacherId) {
-                // Guru Mapel: Only see their subjects/rombel from Schedule
-                $q->whereHas('subject', function ($sq) use ($teacherId) {
-                    $sq->whereHas('schedules', fn ($ssq) => $ssq->where('teacher_id', $teacherId));
+                // Guru Mapel: Only see grades for the specific subject and Rombel they teach in schedules
+                $q->whereExists(function ($subquery) use ($teacherId) {
+                    $subquery->select(\DB::raw(1))
+                        ->from('schedules')
+                        ->where('schedules.teacher_id', $teacherId)
+                        ->whereColumn('schedules.study_group_id', 'grades.study_group_id')
+                        ->whereColumn('schedules.subject_id', 'grades.subject_id');
                 })
                 // Wali Kelas: See all grades for their Rombel
                 ->orWhereHas('studyGroup', fn ($sq) => $sq->where('walikelas_id', $teacherId));

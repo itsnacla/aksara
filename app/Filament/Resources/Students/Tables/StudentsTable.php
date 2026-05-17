@@ -101,8 +101,8 @@ class StudentsTable
                 ]),
             SelectFilter::make('studyGroups')
                 ->label('Filter Rombel')
-                ->relationship('studyGroups', 'nama_rombel', function ($query, $get) {
-                    $academicYearId = $get('academic_year');
+                ->relationship('studyGroups', 'nama_rombel', function ($query, $livewire) {
+                    $academicYearId = $livewire->tableFilters['academic_year']['value'] ?? null;
                     if ($academicYearId) {
                         return $query->where('academic_year_id', $academicYearId);
                     }

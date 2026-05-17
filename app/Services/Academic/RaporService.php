@@ -345,6 +345,8 @@ class RaporService
      */
     public function generateStudentRapor(Student $student, int $academicYearId): StudentRapor
     {
+        $student->loadMissing(['user', 'studyGroups.level']);
+
         $rombel = $student->studyGroups->where('academic_year_id', $academicYearId)->first();
         $level = $rombel?->level;
         

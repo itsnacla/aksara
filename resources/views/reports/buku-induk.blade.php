@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buku Induk Siswa - {{ $student->user->name }}</title>
+    <title>Buku Induk Siswa - {{ isset($isBulk) && $isBulk ? 'Cetak Massal' : $student->user->name }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media print {
@@ -18,6 +18,10 @@
                 padding: 0 !important; 
                 margin: 0 !important; 
                 max-width: 100% !important;
+            }
+            .page-break {
+                page-break-after: always;
+                break-after: page;
             }
         }
         body { font-family: 'Times New Roman', Times, serif; }
@@ -39,20 +43,37 @@
 </head>
 <body class="bg-gray-100 text-black p-8">
 
-    <div class="max-w-4xl mx-auto bg-white p-10 shadow-lg print-container">
+    <!-- Action Buttons (No Print) -->
+    <div class="max-w-4xl mx-auto mb-8 flex justify-end gap-3 no-print border-b pb-4">
+        <button onclick="window.close()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded inline-flex items-center transition">
+            Tutup Halaman
+        </button>
+        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded inline-flex items-center shadow-md transition">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+            </svg>
+            Cetak Buku Induk
+        </button>
+    </div>
+
+    @php
+        $records = isset($isBulk) && $isBulk ? $reports : [[
+            'student' => $student,
+            'school' => $school,
+            'principal' => $principal,
+            'rombel' => $rombel,
+        ]];
+    @endphp
+
+    @foreach ($records as $index => $data)
+        @php
+            $student = $data['student'];
+            $school = $data['school'];
+            $principal = $data['principal'];
+            $rombel = $data['rombel'];
+        @endphp
         
-        <!-- Action Buttons (No Print) -->
-        <div class="mb-8 flex justify-end gap-3 no-print border-b pb-4">
-            <button onclick="window.close()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded inline-flex items-center transition">
-                Tutup Halaman
-            </button>
-            <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded inline-flex items-center shadow-md transition">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                </svg>
-                Cetak Buku Induk
-            </button>
-        </div>
+        <div class="max-w-4xl mx-auto bg-white p-10 shadow-lg print-container mb-8 page-break">
 
         <!-- Kop Surat -->
         <div class="flex items-center border-b-4 border-black pb-4 mb-8">
@@ -276,6 +297,7 @@
         </div>
 
     </div>
+    @endforeach
 
 </body>
 </html>
