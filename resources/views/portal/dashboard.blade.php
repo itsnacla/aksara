@@ -185,7 +185,7 @@
                 <div class="space-y-4">
                     @forelse($recentGrades as $grade)
                     <div class="p-4 bg-gray-50 rounded-2xl">
-                        <p class="text-[10px] text-primary font-bold uppercase tracking-widest mb-1">{{ $grade->subject->nama_pelajaran }}</p>
+                        <p class="text-[10px] text-primary font-bold uppercase tracking-widest mb-1">{{ $grade->subject->nama_mapel }}</p>
                         <div class="flex justify-between items-end">
                             <p class="font-bold text-sm">{{ $grade->student->user->name }}</p>
                             <span class="text-xl font-bold">{{ $grade->nilai_uts ?? $grade->nilai_tugas ?? 0 }}</span>
@@ -256,7 +256,7 @@
                 @forelse($recentGrades as $grade)
                 <div class="flex items-center justify-between border-b border-gray-50 pb-4 last:border-0 last:pb-0">
                     <div>
-                        <p class="font-bold text-sm">{{ $grade->subject->nama_pelajaran }}</p>
+                        <p class="font-bold text-sm">{{ $grade->subject->nama_mapel }}</p>
                         <p class="text-[10px] text-gray-400">Tugas/UTS</p>
                     </div>
                     <div class="bg-primary/5 text-primary w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm">

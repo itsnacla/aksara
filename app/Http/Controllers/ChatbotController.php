@@ -347,7 +347,7 @@ class ChatbotController extends Controller
         }
 
         $grades = $query->latest()->limit(20)->get()->map(fn($g) => [
-            'subject' => $g->subject->nama_pelajaran ?? 'N/A',
+            'subject' => $g->subject->nama_mapel ?? 'N/A',
             'tugas' => $g->nilai_tugas,
             'uts' => $g->nilai_uts,
             'uas' => $g->nilai_uas,
@@ -386,7 +386,7 @@ class ChatbotController extends Controller
         return $query->get()->map(fn($s) => [
             'hari' => $s->hari,
             'jam' => "{$s->jam_mulai} - {$s->jam_selesai}",
-            'mapel' => $s->subject->nama_pelajaran ?? 'N/A',
+            'mapel' => $s->subject->nama_mapel ?? 'N/A',
             'rombel' => $s->studyGroup->nama_rombel ?? 'N/A',
             'ruangan' => $s->studyGroup->classroom->nama_ruangan ?? 'N/A',
             'guru' => $s->teacher->user->name ?? 'N/A',
