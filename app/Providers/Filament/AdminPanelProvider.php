@@ -52,7 +52,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationItem::make('Scan Presensi')
                     ->url(fn (): string => route('scan-presensi'), shouldOpenInNewTab: true)
                     ->icon('heroicon-o-qr-code')
-                    ->sort(1),
+                    ->sort(1)
+                    ->visible(fn (): bool => auth()->user()?->can('ScanAttendance') ?? false),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([])

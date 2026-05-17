@@ -21,11 +21,15 @@ class AcademicYearResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-flag';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Kurikulum & Referensi';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 6;
 
     protected static ?string $navigationLabel = 'Tahun Ajaran';
+
+    protected static ?string $modelLabel = 'Tahun Ajaran';
+
+    protected static ?string $pluralModelLabel = 'Tahun Ajaran';
 
     protected static ?string $recordTitleAttribute = 'tahun_ajaran';
 

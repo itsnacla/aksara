@@ -21,6 +21,8 @@ return new class extends Migration
             $table->integer('nilai_tugas');
             $table->integer('nilai_uts');
             $table->integer('nilai_uas');
+            $table->json('optimal_tp_ids')->nullable();
+            $table->json('improved_tp_ids')->nullable();
             $table->timestamps();
         });
     }

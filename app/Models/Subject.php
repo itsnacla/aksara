@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
     'total_jp',
     'kkm',
     'level_id',
+    'subject_report_group_id',
+    'is_graded',
     'is_one_day_finish',
     'scheduling_priority',
 ])]
@@ -67,9 +69,16 @@ class Subject extends Model
         'is_umum' => 'boolean',
         'kkm' => 'integer',
         'total_jp' => 'integer',
+        'subject_report_group_id' => 'integer',
+        'is_graded' => 'boolean',
         'is_one_day_finish' => 'boolean',
         'scheduling_priority' => 'integer',
     ];
+
+    public function subjectReportGroup()
+    {
+        return $this->belongsTo(SubjectReportGroup::class, 'subject_report_group_id');
+    }
 
     public function levels()
     {

@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Actions\Action;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return $user->hasRole('super_admin') ? true : null;
         });
+
+        // Disable modal close-by-clicking-away globally for all Filament actions (covers both pages and tables under Filament v3!)
+        Action::configureUsing(fn ($action) => $action->closeModalByClickingAway(false));
 
         // Dynamic AI Configuration from Database (General Mode)
         try {

@@ -23,11 +23,15 @@ class TeacherResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-briefcase';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Data Guru';
+
+    protected static ?string $modelLabel = 'Guru';
+
+    protected static ?string $pluralModelLabel = 'Guru';
 
     public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
     {

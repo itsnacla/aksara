@@ -32,6 +32,15 @@ class DayConfig extends Model
         'is_closed' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            if (!$model->academic_year_id) {
+                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            }
+        });
+    }
+
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);

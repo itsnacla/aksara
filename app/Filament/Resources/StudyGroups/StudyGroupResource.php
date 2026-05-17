@@ -21,17 +21,17 @@ class StudyGroupResource extends Resource
 
     protected static ?string $slug = 'rombel';
 
-    protected static ?string $label = 'Rombel';
+    protected static ?string $modelLabel = 'Rombel';
 
-    protected static ?string $pluralLabel = 'Rombel';
+    protected static ?string $pluralModelLabel = 'Rombel';
 
     protected static ?string $navigationLabel = 'Rombel / Kelas';
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user-group';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {

@@ -33,9 +33,11 @@ class StudentLeaveResource extends Resource
 
     protected static ?string $modelLabel = 'Izin Siswa';
 
-    protected static ?string $pluralModelLabel = 'Daftar Izin Siswa';
+    protected static ?string $pluralModelLabel = 'Izin Siswa';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Kesiswaan';
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik & KBM';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

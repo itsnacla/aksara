@@ -19,15 +19,15 @@ class ClassroomResource extends Resource
 {
     protected static ?string $model = Classroom::class;
 
-    protected static ?string $label = 'Ruangan';
+    protected static ?string $modelLabel = 'Ruangan';
 
-    protected static ?string $pluralLabel = 'Ruangan';
+    protected static ?string $pluralModelLabel = 'Ruangan';
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-building-office';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Kurikulum & Referensi';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $navigationLabel = 'Ruangan';
 

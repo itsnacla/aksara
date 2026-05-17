@@ -18,9 +18,9 @@ class TeacherScheduleResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Akademik Saya';
+    protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Jadwal Mengajar';
 

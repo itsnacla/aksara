@@ -18,11 +18,15 @@ class TimeSlotResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-clock';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
-    protected static ?string $label = 'Jam Pelajaran';
+    protected static ?string $navigationLabel = 'Slot Waktu';
+
+    protected static ?string $modelLabel = 'Slot Waktu';
+
+    protected static ?string $pluralModelLabel = 'Slot Waktu';
 
     public static function form(Schema $schema): Schema
     {

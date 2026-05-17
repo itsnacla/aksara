@@ -18,6 +18,36 @@ return new class extends Migration
             $table->foreignId('study_group_id')->nullable()->constrained('study_groups')->onDelete('set null');
             $table->string('nisn', 10)->unique();
             $table->string('nis')->nullable();
+            
+            // Data Identitas Tambahan
+            $table->string('nik', 20)->nullable();
+            $table->string('no_kk', 20)->nullable();
+            $table->string('no_akta_lahir', 50)->nullable();
+            $table->integer('anak_ke')->nullable();
+            $table->integer('jumlah_saudara')->nullable();
+            
+            // Data Kesehatan
+            $table->decimal('tinggi_badan', 5, 2)->nullable();
+            $table->decimal('berat_badan', 5, 2)->nullable();
+            $table->string('golongan_darah', 5)->nullable();
+            
+            // Data Orang Tua Detail
+            $table->string('ayah_nik', 20)->nullable();
+            $table->string('ayah_nama')->nullable();
+            $table->string('ayah_pendidikan')->nullable();
+            $table->string('ayah_pekerjaan')->nullable();
+            $table->string('ayah_penghasilan')->nullable();
+            
+            $table->string('ibu_nik', 20)->nullable();
+            $table->string('ibu_nama')->nullable();
+            $table->string('ibu_pendidikan')->nullable();
+            $table->string('ibu_pekerjaan')->nullable();
+            $table->string('ibu_penghasilan')->nullable();
+            
+            $table->string('wali_nama')->nullable();
+            $table->string('wali_pekerjaan')->nullable();
+            $table->string('wali_hubungan')->nullable();
+
             $table->string('status')->default('aktif'); // aktif, lulus, mutasi, keluar
             $table->string('pob')->nullable();
             $table->date('dob')->nullable();

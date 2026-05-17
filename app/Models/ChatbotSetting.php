@@ -45,4 +45,44 @@ class ChatbotSetting extends Model
     {
         return $this->settings[$provider][$key] ?? $default;
     }
+
+    public function getProviderAttribute(): string
+    {
+        return $this->primary_provider;
+    }
+
+    public function getFallbackProvidersArray(): array
+    {
+        if (empty($this->fallback_providers)) {
+            return [];
+        }
+        if (is_array($this->fallback_providers)) {
+            return $this->fallback_providers;
+        }
+        return array_filter(array_map('trim', explode(',', $this->fallback_providers)));
+    }
+
+    public function getApiKeyFor(string $provider): ?string
+    {
+        return $this->settings[$provider]['key'] ?? null;
+    }
+
+    public function getModelFor(string $provider): ?string
+    {
+        $model = $this->settings[$provider]['model'] ?? null;
+        if (empty($model)) {
+            return match ($provider) {
+                'gemini' => 'gemini-2.0-flash',
+                'openai' => 'gpt-4o-mini',
+                'groq' => 'llama3-8b-8192',
+                default => null,
+            };
+        }
+        return $model;
+    }
+
+    public function getOpenaiBaseUrlAttribute(): ?string
+    {
+        return $this->settings['openai']['url'] ?? null;
+    }
 }

@@ -21,9 +21,11 @@ use App\Jobs\SendWhatsAppBroadcast;
 use UnitEnum;
 use BackedEnum;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 class ManageWhatsApp extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, HasPageShield;
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
@@ -35,9 +37,9 @@ class ManageWhatsApp extends Page implements HasForms
 
     protected static ?string $slug = 'manage-whats-app';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Pengaturan Aplikasi';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 3;
 
     public ?array $data = [];
     public ?array $broadcastData = [];

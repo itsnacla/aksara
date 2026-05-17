@@ -23,38 +23,145 @@ class GradeResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik & KBM';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Nilai Siswa';
+    protected static ?string $navigationLabel = 'Penilaian';
 
-    protected static ?string $label = 'Nilai';
+    protected static ?string $modelLabel = 'Penilaian';
+
+    protected static ?string $pluralModelLabel = 'Penilaian';
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('student_id')
-                ->relationship('student', 'nisn', fn ($query) => $query->with('user'))
-                ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->nisn} - {$record->user->name}")
-                ->searchable()
-                ->required(),
             Select::make('subject_id')
-                ->relationship('subject', 'nama_mapel')
-                ->required(),
+                ->relationship('subject', 'nama_mapel', modifyQueryUsing: function ($query) {
+                    $query->where('subjects.is_graded', true);
+                    $user = auth()->user();
+                    if ($user && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                        $query->whereIn('subjects.id', $user->teacher->subjects()->pluck('subjects.id')->toArray());
+                    }
+                })
+                ->preload()
+                ->searchable()
+                ->required()
+                ->live()
+                ->afterStateUpdated(function (callable $set) {
+                    $set('study_group_id', null);
+                    $set('student_id', null);
+                }),
             Select::make('study_group_id')
-                ->relationship('studyGroup', 'nama_rombel')
-                ->required(),
-            Select::make('academic_year_id')
-                ->relationship('academicYear', 'tahun_ajaran', fn ($query) => $query->where('is_active', true))
-                ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id)
-                ->required(),
+                ->relationship('studyGroup', 'nama_rombel', modifyQueryUsing: function ($query, callable $get) {
+                    $subjectId = $get('subject_id');
+                    $user = auth()->user();
+                    if ($user && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                        $teacherId = $user->teacher->id;
+                        $query->where(function ($q) use ($teacherId, $subjectId) {
+                            if ($subjectId) {
+                                $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId)->where('subject_id', $subjectId));
+                            } else {
+                                $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId));
+                            }
+                            $q->orWhere('walikelas_id', $teacherId);
+                        });
+                    }
+                })
+                ->preload()
+                ->searchable()
+                ->required()
+                ->live()
+                ->afterStateUpdated(function (callable $set) {
+                    $set('student_id', null);
+                }),
+            Select::make('student_id')
+                ->label('Siswa')
+                ->options(function (callable $get) {
+                    $studyGroupId = $get('study_group_id');
+                    if (!$studyGroupId) {
+                        return [];
+                    }
+                    return \App\Models\Student::whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
+                        ->with('user')
+                        ->get()
+                        ->mapWithKeys(fn ($student) => [$student->id => "{$student->nisn} - {$student->user->name}"])
+                        ->toArray();
+                })
+                ->searchable()
+                ->preload()
+                ->required()
+                ->live(),
+            \Filament\Forms\Components\Hidden::make('academic_year_id')
+                ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
             \Filament\Schemas\Components\Grid::make(3)
                 ->schema([
                     TextInput::make('nilai_tugas')->numeric()->minValue(0)->maxValue(100)->required(),
                     TextInput::make('nilai_uts')->numeric()->minValue(0)->maxValue(100)->required(),
                     TextInput::make('nilai_uas')->numeric()->minValue(0)->maxValue(100)->required(),
                 ]),
+                
+            \Filament\Schemas\Components\Section::make('Capaian Kompetensi (Tujuan Pembelajaran)')
+                ->schema([
+                    \Filament\Forms\Components\CheckboxList::make('optimal_tp_ids')
+                        ->label('TP Yang diukur dan Tercapai dengan Optimal')
+                        ->options(function (callable $get) {
+                            $subjectId = $get('subject_id');
+                            $studyGroupId = $get('study_group_id');
+                            if (!$subjectId || !$studyGroupId) {
+                                return [];
+                            }
+                            $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
+                            if (!$studyGroup) {
+                                return [];
+                            }
+                            return \App\Models\LearningObjective::where('subject_id', $subjectId)
+                                ->where('level_id', $studyGroup->level_id)
+                                ->where('is_active', true)
+                                ->get()
+                                ->pluck('description', 'id')
+                                ->mapWithKeys(fn ($desc, $id) => [$id => "{$desc}"])
+                                ->toArray();
+                        })
+                        ->live()
+                        ->afterStateUpdated(function (callable $set, callable $get, $state) {
+                            $improved = $get('improved_tp_ids') ?? [];
+                            $filteredImproved = array_values(array_diff($improved, $state ?? []));
+                            $set('improved_tp_ids', $filteredImproved);
+                        })
+                        ->bulkToggleable()
+                        ->columns(2),
+
+                    \Filament\Forms\Components\CheckboxList::make('improved_tp_ids')
+                        ->label('TP yang diukur dan Perlu Peningkatan')
+                        ->options(function (callable $get) {
+                            $subjectId = $get('subject_id');
+                            $studyGroupId = $get('study_group_id');
+                            if (!$subjectId || !$studyGroupId) {
+                                return [];
+                            }
+                            $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
+                            if (!$studyGroup) {
+                                return [];
+                            }
+                            return \App\Models\LearningObjective::where('subject_id', $subjectId)
+                                ->where('level_id', $studyGroup->level_id)
+                                ->where('is_active', true)
+                                ->get()
+                                ->pluck('description', 'id')
+                                ->mapWithKeys(fn ($desc, $id) => [$id => "{$desc}"])
+                                ->toArray();
+                        })
+                        ->live()
+                        ->afterStateUpdated(function (callable $set, callable $get, $state) {
+                            $optimal = $get('optimal_tp_ids') ?? [];
+                            $filteredOptimal = array_values(array_diff($optimal, $state ?? []));
+                            $set('optimal_tp_ids', $filteredOptimal);
+                        })
+                        ->bulkToggleable()
+                        ->columns(2),
+                ])
+                ->visible(fn (callable $get) => filled($get('subject_id')) && filled($get('study_group_id'))),
         ]);
     }
 
@@ -97,7 +204,9 @@ class GradeResource extends Resource
                     ->relationship('studyGroup', 'nama_rombel'),
             ])
             ->actions([
-                EditAction::make()->modal(),
+                EditAction::make()
+                    ->modalWidth('7xl')
+                    ->closeModalByClickingAway(false),
                 DeleteAction::make(),
             ])
             ->bulkActions([

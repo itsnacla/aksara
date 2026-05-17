@@ -24,13 +24,15 @@ class DayConfigResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-adjustments-vertical';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Aturan Hari';
     
-    protected static ?string $label = 'Aturan Jadwal Harian';
+    protected static ?string $modelLabel = 'Aturan Hari';
+
+    protected static ?string $pluralModelLabel = 'Aturan Hari';
 
     public static function form(Schema $schema): Schema
     {

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password', 255);
             $table->string('photo')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->rememberToken();
             $table->timestamp('created_at')->nullable();
         });
  

@@ -110,7 +110,12 @@ class Student extends Model
         return $this->belongsToMany(StudyGroup::class, 'study_group_student');
     }
 
-    public function currentStudyGroup()
+    /**
+     * Get the student's active study group (rombel) for the current academic year.
+     * 
+     * @return \App\Models\StudyGroup|null
+     */
+    public function currentStudyGroup(): ?StudyGroup
     {
         return $this->studyGroups()
             ->whereHas('academicYear', function($q) {
@@ -141,5 +146,10 @@ class Student extends Model
     public function notifications()
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function p5Groups(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(P5Group::class, 'p5_group_student')->withTimestamps();
     }
 }

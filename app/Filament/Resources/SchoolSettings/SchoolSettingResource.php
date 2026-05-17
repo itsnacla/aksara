@@ -17,13 +17,15 @@ class SchoolSettingResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-home-modern';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Sistem & Pengaturan';
+    protected static UnitEnum|string|null $navigationGroup = 'Pengaturan Aplikasi';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Identitas Sekolah';
     
     protected static ?string $modelLabel = 'Identitas Sekolah';
+
+    protected static ?string $pluralModelLabel = 'Identitas Sekolah';
 
     public static function form(Schema $schema): Schema
     {

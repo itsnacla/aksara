@@ -17,7 +17,8 @@ class ManageGrades extends ManageRecords
                 ->label('Batch Input Nilai')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->modalWidth('5xl')
+                ->modalWidth('7xl')
+                ->closeModalByClickingAway(false)
                 ->form([
                     \Filament\Schemas\Components\Section::make('Filter Mata Pelajaran & Rombel')
                         ->schema([
@@ -60,27 +61,96 @@ class ManageGrades extends ManageRecords
                                 ->label('')
                                 ->schema([
                                     \Filament\Forms\Components\Hidden::make('student_id'),
-                                    \Filament\Forms\Components\TextInput::make('student_name')
-                                        ->label('Siswa')
-                                        ->disabled()
-                                        ->dehydrated(false),
-                                    \Filament\Forms\Components\TextInput::make('nilai_tugas')
-                                        ->label('Tugas')
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->maxValue(100),
-                                    \Filament\Forms\Components\TextInput::make('nilai_uts')
-                                        ->label('UTS')
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->maxValue(100),
-                                    \Filament\Forms\Components\TextInput::make('nilai_uas')
-                                        ->label('UAS')
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->maxValue(100),
+                                    \Filament\Schemas\Components\Grid::make(12)
+                                        ->schema([
+                                            // Left side: Student Name and Grades (4 columns of 12)
+                                            \Filament\Schemas\Components\Grid::make(1)
+                                                ->schema([
+                                                    \Filament\Forms\Components\TextInput::make('student_name')
+                                                        ->label('Siswa')
+                                                        ->disabled()
+                                                        ->dehydrated(false),
+                                                    \Filament\Schemas\Components\Grid::make(3)
+                                                        ->schema([
+                                                            \Filament\Forms\Components\TextInput::make('nilai_tugas')
+                                                                ->label('Tugas')
+                                                                ->numeric()
+                                                                ->minValue(0)
+                                                                ->maxValue(100),
+                                                            \Filament\Forms\Components\TextInput::make('nilai_uts')
+                                                                ->label('UTS')
+                                                                ->numeric()
+                                                                ->minValue(0)
+                                                                ->maxValue(100),
+                                                            \Filament\Forms\Components\TextInput::make('nilai_uas')
+                                                                ->label('UAS')
+                                                                ->numeric()
+                                                                ->minValue(0)
+                                                                ->maxValue(100),
+                                                        ]),
+                                                ])
+                                                ->columnSpan(4),
+
+                                            // Right side: TP Checklists (8 columns of 12)
+                                            \Filament\Schemas\Components\Grid::make(2)
+                                                ->schema([
+                                                    \Filament\Forms\Components\CheckboxList::make('optimal_tp_ids')
+                                                        ->label('TP Tercapai Optimal')
+                                                        ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                                            $subjectId = $get('../../subject_id');
+                                                            $studyGroupId = $get('../../study_group_id');
+                                                            if (!$subjectId || !$studyGroupId) {
+                                                                return [];
+                                                            }
+                                                            $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
+                                                            if (!$studyGroup) {
+                                                                return [];
+                                                            }
+                                                            return \App\Models\LearningObjective::where('subject_id', $subjectId)
+                                                                ->where('level_id', $studyGroup->level_id)
+                                                                ->where('is_active', true)
+                                                                ->get()
+                                                                ->pluck('description', 'id')
+                                                                ->toArray();
+                                                        })
+                                                        ->live()
+                                                        ->afterStateUpdated(function (callable $set, callable $get, $state) {
+                                                            $improved = $get('improved_tp_ids') ?? [];
+                                                            $filteredImproved = array_values(array_diff($improved, $state ?? []));
+                                                            $set('improved_tp_ids', $filteredImproved);
+                                                        })
+                                                        ->bulkToggleable(),
+
+                                                    \Filament\Forms\Components\CheckboxList::make('improved_tp_ids')
+                                                        ->label('TP Perlu Peningkatan')
+                                                        ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                                            $subjectId = $get('../../subject_id');
+                                                            $studyGroupId = $get('../../study_group_id');
+                                                            if (!$subjectId || !$studyGroupId) {
+                                                                return [];
+                                                            }
+                                                            $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
+                                                            if (!$studyGroup) {
+                                                                return [];
+                                                            }
+                                                            return \App\Models\LearningObjective::where('subject_id', $subjectId)
+                                                                ->where('level_id', $studyGroup->level_id)
+                                                                ->where('is_active', true)
+                                                                ->get()
+                                                                ->pluck('description', 'id')
+                                                                ->toArray();
+                                                        })
+                                                        ->live()
+                                                        ->afterStateUpdated(function (callable $set, callable $get, $state) {
+                                                            $optimal = $get('optimal_tp_ids') ?? [];
+                                                            $filteredOptimal = array_values(array_diff($optimal, $state ?? []));
+                                                            $set('optimal_tp_ids', $filteredOptimal);
+                                                        })
+                                                        ->bulkToggleable(),
+                                                ])
+                                                ->columnSpan(8),
+                                        ]),
                                 ])
-                                ->columns(5)
                                 ->addable(false)
                                 ->deletable(false)
                                 ->reorderable(false),
@@ -104,6 +174,8 @@ class ManageGrades extends ManageRecords
                                 'nilai_tugas' => $item['nilai_tugas'] ?? 0,
                                 'nilai_uts' => $item['nilai_uts'] ?? 0,
                                 'nilai_uas' => $item['nilai_uas'] ?? 0,
+                                'optimal_tp_ids' => $item['optimal_tp_ids'] ?? [],
+                                'improved_tp_ids' => $item['improved_tp_ids'] ?? [],
                             ]
                         );
                     }
@@ -113,7 +185,9 @@ class ManageGrades extends ManageRecords
                         ->success()
                         ->send();
                 }),
-            CreateAction::make(),
+            CreateAction::make()
+                ->modalWidth('7xl')
+                ->closeModalByClickingAway(false),
         ];
     }
 
@@ -145,6 +219,8 @@ class ManageGrades extends ManageRecords
             'nilai_tugas' => $existing[$student->id]->nilai_tugas ?? null,
             'nilai_uts' => $existing[$student->id]->nilai_uts ?? null,
             'nilai_uas' => $existing[$student->id]->nilai_uas ?? null,
+            'optimal_tp_ids' => $existing[$student->id]->optimal_tp_ids ?? [],
+            'improved_tp_ids' => $existing[$student->id]->improved_tp_ids ?? [],
         ])->toArray();
 
         $set('items', $items);

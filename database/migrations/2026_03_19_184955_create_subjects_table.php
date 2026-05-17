@@ -20,6 +20,8 @@ return new class extends Migration
             $table->boolean('is_one_day_finish')->default(false);
             $table->integer('scheduling_priority')->default(1);
             $table->foreignId('level_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('subject_report_group_id')->nullable()->constrained('subject_report_groups')->onDelete('set null');
+            $table->boolean('is_graded')->default(true);
             $table->integer('kkm')->default(75);
             $table->timestamps();
         });

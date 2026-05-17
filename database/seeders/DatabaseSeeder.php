@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             TimeSlotSeeder::class,
             DayConfigSeeder::class,
             SuperAdminSeeder::class,
+            GraduateProfileSeeder::class,
             DummyDataSeeder::class,
         ]);
     }

@@ -24,11 +24,15 @@ class StaffResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-identification';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel = 'Data Staff';
+    protected static ?string $navigationLabel = 'Data Staf';
+
+    protected static ?string $modelLabel = 'Staf';
+
+    protected static ?string $pluralModelLabel = 'Staf';
 
     public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
     {

@@ -32,6 +32,15 @@ class StudentGrade extends Model
         'is_achieved' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            if (!$model->academic_year_id) {
+                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            }
+        });
+    }
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);

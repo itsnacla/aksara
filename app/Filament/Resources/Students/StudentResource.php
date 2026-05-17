@@ -23,11 +23,15 @@ class StudentResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $navigationLabel = 'Data Siswa';
+
+    protected static ?string $modelLabel = 'Siswa';
+
+    protected static ?string $pluralModelLabel = 'Siswa';
 
     public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
     {

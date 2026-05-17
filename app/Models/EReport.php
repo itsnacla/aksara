@@ -22,6 +22,21 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class EReport extends Model
 {
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
+            if ($activeYear) {
+                if (!$model->academic_year_id) {
+                    $model->academic_year_id = $activeYear->id;
+                }
+                if (!$model->semester) {
+                    $model->semester = $activeYear->semester;
+                }
+            }
+        });
+    }
+
     public function student()
     {
         return $this->belongsTo(Student::class);

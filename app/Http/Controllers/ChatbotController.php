@@ -10,7 +10,6 @@ use App\Models\Schedule;
 use App\Models\Classroom;
 use App\Models\EReport;
 use App\Models\Extracurricular;
-use App\Services\Chatbot\ChatbotService;
 use Illuminate\Support\Facades\Storage;
 
 class ChatbotController extends Controller

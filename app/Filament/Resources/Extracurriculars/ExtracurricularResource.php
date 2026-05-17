@@ -18,11 +18,15 @@ class ExtracurricularResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-trophy';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Pengembangan Diri & P5';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel = 'Ekstrakurikuler';
+
+    protected static ?string $modelLabel = 'Ekstrakurikuler';
+
+    protected static ?string $pluralModelLabel = 'Ekstrakurikuler';
 
     protected static ?string $recordTitleAttribute = 'nama_ekskul';
 

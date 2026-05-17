@@ -41,7 +41,12 @@ class LearningObjectiveTable
             ])
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('subject_id')
-                    ->relationship('subject', 'nama_mapel')
+                    ->relationship('subject', 'nama_mapel', modifyQueryUsing: function ($query) {
+                        $user = auth()->user();
+                        if ($user && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                            $query->whereIn('subjects.id', $user->teacher->subjects()->pluck('subjects.id')->toArray());
+                        }
+                    })
                     ->label('Mata Pelajaran'),
                 \Filament\Tables\Filters\SelectFilter::make('level_id')
                     ->relationship('level', 'nama_tingkatan')

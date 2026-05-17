@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Model;
     'nilai_tugas',
     'nilai_uts',
     'nilai_uas',
+    'optimal_tp_ids',
+    'improved_tp_ids',
 ])]
 class Grade extends Model
 {
@@ -32,7 +34,18 @@ class Grade extends Model
         'nilai_tugas' => 'integer',
         'nilai_uts' => 'integer',
         'nilai_uas' => 'integer',
+        'optimal_tp_ids' => 'array',
+        'improved_tp_ids' => 'array',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            if (!$model->academic_year_id) {
+                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            }
+        });
+    }
 
     public function student()
     {

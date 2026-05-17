@@ -23,13 +23,15 @@ class AttendanceResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-check-badge';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik & KBM';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Presensi Siswa';
 
-    protected static ?string $label = 'Presensi';
+    protected static ?string $modelLabel = 'Presensi Siswa';
+
+    protected static ?string $pluralModelLabel = 'Presensi Siswa';
 
     public static function form(Schema $schema): Schema
     {

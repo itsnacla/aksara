@@ -21,11 +21,15 @@ class ScheduleResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $navigationLabel = 'Jadwal Pelajaran';
+
+    protected static ?string $modelLabel = 'Jadwal Pelajaran';
+
+    protected static ?string $pluralModelLabel = 'Jadwal Pelajaran';
 
     public static function form(Schema $schema): Schema
     {

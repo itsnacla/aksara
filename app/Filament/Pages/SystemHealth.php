@@ -8,8 +8,11 @@ use Illuminate\Contracts\Support\Htmlable;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 class SystemHealth extends Page
 {
+    use HasPageShield;
     protected string $view = 'filament.pages.system-health';
 
     public static function getNavigationIcon(): string|\BackedEnum|null
