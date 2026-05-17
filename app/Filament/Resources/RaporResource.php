@@ -104,7 +104,16 @@ class RaporResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $table = $table->columns([
+        return $table
+            ->columns(static::getTableColumns())
+            ->filters(static::getTableFilters())
+            ->actions(static::getTableActions())
+            ->bulkActions(static::getTableBulkActions());
+    }
+
+    protected static function getTableColumns(): array
+    {
+        return [
             TextColumn::make('nisn')
                 ->label('NISN')
                 ->searchable()
@@ -140,17 +149,134 @@ class RaporResource extends Resource
                         ->where('academic_year_id', $activeYearId)
                         ->exists();
                 }),
-        ]);
+        ];
+    }
 
-        $table = $table->filters([
-            //
-        ]);
+    protected static function getTableFilters(): array
+    {
+        return [
+            \Filament\Tables\Filters\Filter::make('rombel_filter')
+                ->form([
+                    \Filament\Forms\Components\Select::make('academic_year_id')
+                        ->label('Tahun Ajaran')
+                        ->options(fn () => \App\Models\AcademicYear::all()->mapWithKeys(fn ($year) => [
+                            $year->id => "Tahun Ajaran {$year->tahun_ajaran} (" . ucfirst($year->semester) . ")"
+                        ]))
+                        ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id)
+                        ->live(),
+                    \Filament\Forms\Components\Select::make('study_group_id')
+                        ->label('Rombel')
+                        ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                            $academicYearId = $get('academic_year_id');
+                            if (!$academicYearId) return \App\Models\StudyGroup::pluck('nama_rombel', 'id');
+                            return \App\Models\StudyGroup::where('academic_year_id', $academicYearId)->pluck('nama_rombel', 'id');
+                        })
+                        ->searchable(),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when(
+                            $data['academic_year_id'] ?? null,
+                            fn (Builder $query, $value): Builder => $query->whereHas('studyGroups', fn ($q) => $q->where('academic_year_id', $value))
+                        )
+                        ->when(
+                            $data['study_group_id'] ?? null,
+                            fn (Builder $query, $value): Builder => $query->whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $value))
+                        );
+                })
+                ->indicateUsing(function (array $data): array {
+                    $indicators = [];
+                    if ($data['academic_year_id'] ?? null) {
+                        $year = \App\Models\AcademicYear::find($data['academic_year_id']);
+                        if ($year) {
+                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Tahun Ajaran: ' . $year->tahun_ajaran)
+                                ->removeField('academic_year_id');
+                        }
+                    }
+                    if ($data['study_group_id'] ?? null) {
+                        $rombel = \App\Models\StudyGroup::find($data['study_group_id']);
+                        if ($rombel) {
+                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Rombel: ' . $rombel->nama_rombel)
+                                ->removeField('study_group_id');
+                        }
+                    }
+                    return $indicators;
+                }),
+        ];
+    }
 
-        $table = $table->actions([
+    protected static function getTableActions(): array
+    {
+        return [
             Action::make('generate_rapor')
                 ->label('Generate Rapor')
                 ->icon('heroicon-o-cpu-chip')
                 ->color('success')
+                ->before(function (Action $action, Student $record) {
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    if (!$activeYearId) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Tahun ajaran aktif tidak ditemukan')
+                            ->danger()
+                            ->send();
+                        $action->halt();
+                        return;
+                    }
+
+                    $rombel = $record->studyGroups->where('academic_year_id', $activeYearId)->first();
+                    $level = $rombel?->level;
+                    if (!$rombel || !$level) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Siswa belum terdaftar di Rombel untuk tahun ajaran aktif')
+                            ->danger()
+                            ->send();
+                        $action->halt();
+                        return;
+                    }
+
+                    $mappings = \App\Models\SubjectReportMapping::where('level_id', $level->id)->get();
+                    $subjects = collect();
+                    if ($mappings->isNotEmpty()) {
+                        foreach ($mappings as $m) {
+                            if ($m->subject && $m->subject->is_graded) {
+                                $subjects->push($m->subject);
+                            }
+                        }
+                    } else {
+                        $subjects = $level->subjects()->where('is_graded', true)->get();
+                    }
+
+                    if ($subjects->isEmpty()) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Mata pelajaran untuk tingkatan kelas ini belum diatur')
+                            ->danger()
+                            ->send();
+                        $action->halt();
+                        return;
+                    }
+
+                    $missingSubjects = [];
+                    foreach ($subjects as $subject) {
+                        $exists = \App\Models\Grade::where('student_id', $record->id)
+                            ->where('subject_id', $subject->id)
+                            ->where('academic_year_id', $activeYearId)
+                            ->exists();
+                        if (!$exists) {
+                            $missingSubjects[] = $subject->nama_mapel;
+                        }
+                    }
+
+                    if (!empty($missingSubjects)) {
+                        $list = implode(', ', $missingSubjects);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Gagal Generate Rapor')
+                            ->body("Nilai mata pelajaran [{$list}] masih kosong. Silakan lengkapi nilai siswa terlebih dahulu sebelum melakukan generate rapor!")
+                            ->danger()
+                            ->persistent()
+                            ->send();
+                        $action->halt();
+                    }
+                })
                 ->modalHeading(fn (Student $record) => "Generate Rapor (AI) - {$record->user->name}")
                 ->modalWidth('lg')
                 ->modalSubmitActionLabel('Simpan Rapor')
@@ -220,61 +346,16 @@ class RaporResource extends Resource
                     ]);
                     $livewire->js("window.open('{$url}', '_blank');");
                 }),
-        ]);
+        ];
+    }
 
-        $table = $table->bulkActions([
-            BulkAction::make('generate_rapor_masal')
-                ->label('Generate Rapor Masal')
-                ->icon('heroicon-o-cpu-chip')
-                ->color('success')
-                ->modalHeading('Generate Rapor Massal via AI')
-                ->modalDescription('Proses ini akan men-generate rapor secara massal menggunakan kecerdasan buatan (AI) untuk menganalisis nilai & absensi seluruh siswa yang dipilih.')
-                ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
-                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                    if (!$activeYearId) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Tahun ajaran aktif tidak ditemukan')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
-
-                    $raporService = new \App\Services\Academic\RaporService();
-                    $successCount = 0;
-
-                    foreach ($records as $student) {
-                        try {
-                            $raporService->generateStudentRapor($student, $activeYearId);
-                            $successCount++;
-                        } catch (\Exception $e) {
-                            \Illuminate\Support\Facades\Log::error("Mass AI Rapor failed for Student ID {$student->id}: " . $e->getMessage());
-                        }
-                    }
-
-                    \Filament\Notifications\Notification::make()
-                        ->title("Rapor berhasil digenerate untuk {$successCount} siswa")
-                        ->success()
-                        ->send();
-                }),
-            BulkAction::make('cetak_rapor_masal')
-                ->label('Cetak Rapor Masal')
-                ->icon('heroicon-o-printer')
-                ->color('warning')
-                ->modalHeading('Cetak Rapor Massal')
-                ->modalWidth('md')
-                ->form(self::getCetakRaporForm())
-                ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data, \Filament\Resources\Pages\ListRecords $livewire) {
-                    $studentIds = $records->pluck('id')->implode(',');
-                    $url = route('print.rapor.bulk', [
-                        'student_ids' => $studentIds,
-                        'paper_size' => $data['paper_size'],
-                        'margin_size' => $data['margin_size'],
-                    ]);
-                    $livewire->js("window.open('{$url}', '_blank');");
-                })
-        ]);
-
-        return $table;
+    protected static function getTableBulkActions(): array
+    {
+        return [
+            \Filament\Actions\BulkActionGroup::make([
+                \Filament\Actions\DeleteBulkAction::make(),
+            ]),
+        ];
     }
 
     public static function getPages(): array
