@@ -47,29 +47,38 @@ class StudentLeaveResource extends Resource
                     ->schema([
                         Select::make('student_id')
                             ->relationship('student.user', 'name')
+                            ->searchable()
+                            ->preload()
                             ->label('Siswa')
-                            ->disabled(),
+                            ->required(fn (string $context) => $context === 'create')
+                            ->disabled(fn (string $context) => $context !== 'create'),
                         Select::make('type')
                             ->options([
                                 'sakit' => 'Sakit',
                                 'izin' => 'Izin',
                             ])
                             ->label('Tipe')
-                            ->disabled(),
+                            ->required(fn (string $context) => $context === 'create')
+                            ->disabled(fn (string $context) => $context !== 'create'),
                         DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
-                            ->disabled(),
+                            ->required(fn (string $context) => $context === 'create')
+                            ->disabled(fn (string $context) => $context !== 'create'),
                         DatePicker::make('end_date')
                             ->label('Tanggal Selesai')
-                            ->disabled(),
+                            ->afterOrEqual('start_date')
+                            ->required(fn (string $context) => $context === 'create')
+                            ->disabled(fn (string $context) => $context !== 'create'),
                         Textarea::make('reason')
                             ->label('Alasan')
-                            ->disabled()
+                            ->minLength(10)
+                            ->required(fn (string $context) => $context === 'create')
+                            ->disabled(fn (string $context) => $context !== 'create')
                             ->columnSpanFull(),
                         FileUpload::make('attachment')
                             ->label('Lampiran')
                             ->image()
-                            ->disabled()
+                            ->disabled(fn (string $context) => $context !== 'create')
                             ->columnSpanFull(),
                     ])->columns(2),
                 
@@ -81,6 +90,7 @@ class StudentLeaveResource extends Resource
                                 'approved' => 'Disetujui',
                                 'rejected' => 'Ditolak',
                             ])
+                            ->default('approved')
                             ->required()
                             ->native(false),
                         Textarea::make('rejection_note')
@@ -240,7 +250,7 @@ class StudentLeaveResource extends Resource
     /**
      * Sync approved leave to attendance records.
      */
-    protected static function syncToAttendance(StudentLeave $leave)
+    public static function syncToAttendance(StudentLeave $leave)
     {
         $startDate = $leave->start_date;
         $endDate = $leave->end_date;
