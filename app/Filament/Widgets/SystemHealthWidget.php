@@ -96,14 +96,34 @@ class SystemHealthWidget extends BaseWidget
 
     private function getEmsifaStatus(): Stat
     {
+        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+        
         try {
-            $response = Http::timeout(2)->get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json');
-            return Stat::make('Regional API', $response->successful() ? 'Online' : 'Degraded')
-                ->description('Emsifa Wilayah Indonesia')
-                ->descriptionIcon('heroicon-m-globe-alt')
-                ->color($response->successful() ? 'success' : 'warning');
+            // 1. Check local TatetaGeo microservice with the lightweight public health endpoint
+            $response = Http::timeout(1)->get("{$baseUrl}/api/health");
+                
+            if ($response->successful() && $response->json('status') === 'healthy') {
+                $dbStatus = $response->json('database') === 'connected' ? 'Database: OK' : 'Database: Offline';
+                return Stat::make('Regional API', 'Online')
+                    ->description("TatetaGeo ({$dbStatus})")
+                    ->descriptionIcon('heroicon-m-globe-alt')
+                    ->color('success');
+            }
         } catch (\Exception $e) {
-            return Stat::make('Regional API', 'Offline')->color('danger');
+            // Microservice is down, proceed to Emsifa check
+        }
+
+        try {
+            // 2. Check Emsifa CDN as safety fallback
+            $response = Http::timeout(2)->get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json');
+            return Stat::make('Regional API', $response->successful() ? 'Emsifa Fallback' : 'Offline')
+                ->description($response->successful() ? 'TatetaGeo Offline | Emsifa OK' : 'All services unreachable')
+                ->descriptionIcon('heroicon-m-globe-alt')
+                ->color($response->successful() ? 'warning' : 'danger');
+        } catch (\Exception $e) {
+            return Stat::make('Regional API', 'Offline')
+                ->description('All regional APIs are offline!')
+                ->color('danger');
         }
     }
 

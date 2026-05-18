@@ -4,49 +4,51 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Concurrency;
+use Illuminate\Support\Facades\Log;
 
 class RegionService
 {
-    private static function fetchFromBps(string $level, string $parent = '0'): array
+    private static function fetchFromService(string $level, string $parent = '0'): array
     {
         $parent = trim((string)$parent);
-        $cacheKey = "bps_region_v6_{$level}_{$parent}";
+        $cacheKey = "tateta_geo_v1_{$level}_{$parent}";
         
         return Cache::remember($cacheKey, 86400, function () use ($level, $parent) {
-            // If BPS is flagged as blocked/down, bypass and go straight to Emsifa
-            if (!Cache::has('bps_is_blocked')) {
-                try {
-                    // 1. Try BPS First with a short timeout of 2 seconds
-                    $response = Http::timeout(2)->withHeaders([
-                        'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept' => 'application/json, text/plain, */*',
-                        'Accept-Language' => 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-                        'Referer' => 'https://sig.bps.go.id/',
-                        'Origin' => 'https://sig.bps.go.id',
-                    ])->get('https://sig.bps.go.id/rest-drop-down/getwilayah', [
-                        'level' => $level,
-                        'parent' => $parent,
-                        'periode_merge' => '2025_1.2025'
-                    ]);
-
+            $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+            
+            // 1. Try TatetaGeo Local Microservice First with a short timeout of 2 seconds
+            try {
+                $endpoint = match($level) {
+                    'provinsi' => 'v1/provinces',
+                    'kabupaten' => 'v1/regencies?province_id=' . $parent,
+                    'kecamatan' => 'v1/districts?regency_id=' . $parent,
+                    'desa' => 'v1/villages?district_id=' . $parent,
+                    default => null
+                };
+                
+                if ($endpoint) {
+                    $response = Http::timeout(2)
+                        ->withToken(env('TATETA_GEO_TOKEN'))
+                        ->get("{$baseUrl}/api/{$endpoint}");
                     if ($response->successful()) {
                         $data = $response->json();
                         $results = [];
                         foreach ($data as $item) {
-                            if (isset($item['kode']) && isset($item['nama'])) {
-                                $results[(string)$item['kode']] = strtoupper($item['nama']);
+                            $code = $item['id'] ?? null;
+                            $name = $item['name'] ?? null;
+                            if ($code && $name) {
+                                $results[(string)$code] = strtoupper($name);
                             }
                         }
                         if (!empty($results)) return $results;
                     }
-                } catch (\Exception $e) {
-                    // Flag BPS as blocked for 15 minutes to avoid hanging subsequent page requests
-                    Cache::put('bps_is_blocked', true, 900);
                 }
+            } catch (\Exception $e) {
+                // Log and failover to secondary safety net (Emsifa GitHub Pages)
+                Log::warning("TatetaGeo is offline/unreachable: " . $e->getMessage() . ". Falling back to Emsifa API.");
             }
 
-            // 2. Fallback to Emsifa API (GitHub Pages)
+            // 2. Secondary safety fallback: Fetch directly from Emsifa API (GitHub Pages)
             return self::fetchFromEmsifa($level, $parent);
         });
     }
@@ -71,7 +73,6 @@ class RegionService
             $data = $response->json();
             $results = [];
             foreach ($data as $item) {
-                // Emsifa uses 'id' instead of 'kode'
                 $code = $item['id'] ?? $item['kode'] ?? null;
                 $name = $item['name'] ?? $item['nama'] ?? null;
                 if ($code && $name) {
@@ -85,10 +86,10 @@ class RegionService
     }
 
     // INTERNAL: Get [ID => NAME]
-    private static function getRawProvinces(): array { return self::fetchFromBps('provinsi'); }
-    private static function getRawRegencies($pId): array { return self::fetchFromBps('kabupaten', $pId); }
-    private static function getRawDistricts($rId): array { return self::fetchFromBps('kecamatan', $rId); }
-    private static function getRawVillages($dId): array { return self::fetchFromBps('desa', $dId); }
+    private static function getRawProvinces(): array { return self::fetchFromService('provinsi'); }
+    private static function getRawRegencies($pId): array { return self::fetchFromService('kabupaten', $pId); }
+    private static function getRawDistricts($rId): array { return self::fetchFromService('kecamatan', $rId); }
+    private static function getRawVillages($dId): array { return self::fetchFromService('desa', $dId); }
 
     // PUBLIC: Get [NAME => NAME] for Filament Select
     public static function getProvinces(): array
@@ -127,6 +128,20 @@ class RegionService
     public static function findProvinceIdByName(?string $name): ?string
     {
         if (!$name) return null;
+        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+
+        try {
+            $response = Http::timeout(2)
+                ->withToken(env('TATETA_GEO_TOKEN'))
+                ->get("{$baseUrl}/api/v1/provinces/find", ['name' => $name]);
+            if ($response->successful()) {
+                $id = $response->json()['id'] ?? null;
+                if ($id) return (string)$id;
+            }
+        } catch (\Exception $e) {
+            // Offline fallback
+        }
+
         $normSearch = self::normalize($name);
         foreach (self::getRawProvinces() as $id => $v) {
             if (self::normalize($v) === $normSearch) return (string)$id;
@@ -137,6 +152,23 @@ class RegionService
     public static function findRegencyIdByName($provinceName, ?string $name): ?string
     {
         if (!$name) return null;
+        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+
+        try {
+            $response = Http::timeout(2)
+                ->withToken(env('TATETA_GEO_TOKEN'))
+                ->get("{$baseUrl}/api/v1/regencies/find", [
+                    'name' => $name,
+                    'province_name' => $provinceName
+                ]);
+            if ($response->successful()) {
+                $id = $response->json()['id'] ?? null;
+                if ($id) return (string)$id;
+            }
+        } catch (\Exception $e) {
+            // Offline fallback
+        }
+
         $normSearch = self::normalize($name);
         
         // 1. Try with province context first
@@ -161,6 +193,23 @@ class RegionService
     public static function findDistrictIdByName($regencyName, ?string $name): ?string
     {
         if (!$name) return null;
+        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+
+        try {
+            $response = Http::timeout(2)
+                ->withToken(env('TATETA_GEO_TOKEN'))
+                ->get("{$baseUrl}/api/v1/districts/find", [
+                    'name' => $name,
+                    'regency_name' => $regencyName
+                ]);
+            if ($response->successful()) {
+                $id = $response->json()['id'] ?? null;
+                if ($id) return (string)$id;
+            }
+        } catch (\Exception $e) {
+            // Offline fallback
+        }
+
         $normSearch = self::normalize($name);
         
         // 1. Try with regency context first
@@ -201,7 +250,6 @@ class RegionService
     private static function normalize(?string $name): string
     {
         if (!$name) return '';
-        // Remove prefixes more aggressively
         $name = preg_replace('/^(PROV\.|PROP\.|KAB\.|KOTA\.|KEC\.|KEL\.|PROVINSI|KABUPATEN|KOTA|KECAMATAN|DESA|KELURAHAN)\s+/i', '', trim($name));
         $name = str_replace(['DAERAH ISTIMEWA ', 'D.I. '], 'DI ', strtoupper($name));
         $name = preg_replace('/\s+/', '', $name); // Remove ALL spaces for comparison

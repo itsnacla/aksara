@@ -23,6 +23,8 @@ Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data p
 -   **Notifikasi Absensi Latar Belakang (Real-time Queued)**: Pengiriman otomatis pesan WhatsApp terformat rapi ke orang tua/wali murid saat siswa memindai kartu presensi (masuk/pulang). Dilengkapi dengan penamaan sekolah dinamis pada *header* dan *branding* elegan (`Powered by Aksara | Tateta`) pada *footer*, diproses asinkron di latar belakang (*Job/Queue*) tanpa membebani kecepatan pemindaian.
 -   **Pemindai QR Mandiri Anti-Duplikasi (Kiosk Mode)**: Modul pemindai presensi mandiri yang dapat diakses di tab terpisah untuk mencegah bentrok elemen Livewire. Dilengkapi dengan proteksi ganda berupa **Cooldown Klien (5 detik)** dan **Cooldown Server (10 detik)** guna mengatasi *race condition*, serta memprioritaskan privasi siswa dengan menghapus *fallback* avatar pihak ketiga.
 -   **Mesin Siaran Pengumuman (Broadcast Engine)**: Memungkinkan staf atau pengelola sekolah untuk mengirimkan pengumuman penting secara massal ke seluruh orang tua, maupun difilter spesifik berdasarkan **Rombel/Kelas** tertentu.
+-   **Alih Sesi Mandiri Premium (Login As / User Impersonation)**: Fitur peniruan identitas pengguna (*impersonation*) 100% native bawaan Filament yang diakses langsung melalui menu profil pengguna (khusus super admin). Dilengkapi pengalihan peran otomatis (Portal `/dashboard` untuk siswa/wali, Panel Admin `/admin` untuk guru/staf), serta tombol pengembalian sesi instan ke admin asli.
+-   **Arsitektur Wilayah Terdistribusi (TatetaGeo Microservice)**: Pemindahan mesin pencarian data wilayah Indonesia ke mikroservis eksternal **TatetaGeo** berbasis Laravel 13 & SQLite yang terproteksi API Sanctum, lengkap dengan monitor status kesehatan live di dasbor dan **failover otomatis (dynamic fallback) ke Emsifa CDN** jika server mati.
 
 ---
 
@@ -109,22 +111,46 @@ php artisan migrate:fresh --seed
 php artisan shield:generate --all --panel=admin --no-interaction
 ```
 
+### 6. Integrasi TatetaGeo (Location Intelligence Service)
+Aksara terintegrasi secara mulus dengan **TatetaGeo**—sebuah layanan *Location Intelligence* berbasis mikroservis terpisah yang menyajikan data wilayah administrasi Indonesia secara lokal dan cepat.
+
+Cukup konfigurasikan variabel berikut pada file `.env` Aksara Anda untuk menghubungkan ke instance TatetaGeo Anda:
+- `TATETA_GEO_URL=http://127.0.0.1:8001` (URL/Port tempat TatetaGeo di-serve)
+- `TATETA_GEO_TOKEN=` (Token API Sanctum Anda)
+
+> [!TIP]
+> **Mekanisme Failover Otomatis**: Jika layanan mikro TatetaGeo sedang offline atau dalam pemeliharaan, sistem Aksara secara otomatis mengaktifkan **fallback dinamis ke Emsifa CDN** demi menjaga kelancaran operasional pendaftaran dan pencarian wilayah tanpa mengganggu pengguna!
+
 ---
 
 ## 🔑 Akun Akses Default
 Gunakan password default: **`password`** untuk semua akun berikut:
 
-| Role        | Username / Email                     | Dasbor Akses         | Keterangan           |
-| ----------- | ------------------------------------ | -------------------- | -------------------- |
-| Super Admin | `admin@aksara.com`                   | `/admin`             | Akses penuh          |
-| Guru Wali   | `eni@aksara.com`                     | `/admin`             | Wali Kelas 1         |
-| Guru Mapel  | `beni@aksara.com`                    | `/admin`             | Guru PJOK            |
-| Staff TU    | `sarah@aksara.com`                   | `/admin`             | Bendahara            |
-| Wali/Parent | `walisiswakelas1-ruang1no1@aksara.com`| `/dashboard` (Portal)| Orang Tua Siswa No 1 |
-| Siswa       | `siswakelas1-ruang1no1@aksara.com`   | `/dashboard` (Portal)| Siswa Kelas 1 No 1   |
+### 1. Akun Staff & Pendidik (Static Seeder)
+
+| Role | Username / Email | Dasbor Akses | Keterangan |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** | `admin@aksara.com` / `admin` | `/admin` | Akses penuh sistem |
+| **Guru Wali** | `eni@aksara.com` / `eni` | `/admin` | Wali Kelas 1 - A (Eni Nuryanti) |
+| **Guru Mapel** | `beni@aksara.com` / `beni` | `/admin` | Guru PJOK (Beni Putra) |
+| **Staff TU** | `sarah@aksara.com` / `sarah` | `/admin` | Bendahara (Siti Sarah) |
+
+---
+
+### 2. Akun Siswa & Wali (Dynamic Seeder)
+Untuk menjaga keamanan data dan menyimulasikan sekolah nyata, akun **Siswa** dan **Wali** dibuat secara dinamis menggunakan domain **`@aksara.samastanuswantara.com`** dengan format sebagai berikut:
+
+*   **Akun Siswa**:
+    *   **Format Email**: `[namasiswa]_[hash]_[no]@aksara.samastanuswantara.com` (Contoh: `ahmadsaputra_7af3d2_1@aksara.samastanuswantara.com`)
+    *   **Username**: `[namasiswa]_[hash]_[no]` (Contoh: `ahmadsaputra_7af3d2_1`)
+    *   **Dasbor Akses**: `/dashboard` (Portal Siswa)
+*   **Akun Wali / Orang Tua**:
+    *   **Format Email**: `wali_[siswa_username]@aksara.samastanuswantara.com` (Contoh: `wali_ahmadsaputra_7af3d2_1@aksara.samastanuswantara.com`)
+    *   **Username**: `wali_[siswa_username]` (Contoh: `wali_ahmadsaputra_7af3d2_1`)
+    *   **Dasbor Akses**: `/dashboard` (Portal Wali)
 
 > [!NOTE]
-> Tersedia juga puluhan akun guru lain (seperti `rusti@aksara.com`, `alex@aksara.com`) serta siswa dari nomor 1 hingga 20 di setiap kelas.
+> Anda dapat melihat daftar lengkap siswa dan wali kelas yang terdaftar langsung melalui Panel Admin di menu **Siswa** atau **Wali** untuk mengambil email uji coba secara spesifik.
 
 ---
 

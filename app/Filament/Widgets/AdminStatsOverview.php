@@ -32,7 +32,7 @@ class AdminStatsOverview extends BaseWidget
     protected function getStats(): array
     {
         $totalStudents = Student::count();
-        $activeStudents = Student::where('status', 'active')->count();
+        $activeStudents = Student::where('status', 'aktif')->count();
 
         $totalTeachers = Teacher::count();
 
