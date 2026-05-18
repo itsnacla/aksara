@@ -36,6 +36,18 @@ class PrintController extends Controller
             abort(400, 'Tahun ajaran aktif tidak ditemukan.');
         }
 
+        // Security check for parents and students
+        $user = auth()->user();
+        if ($user && ($user->hasRole('siswa') || $user->hasRole('wali'))) {
+            $isPublished = \App\Models\StudentRapor::where('student_id', $student->id)
+                ->where('academic_year_id', $academicYearId)
+                ->where('is_published', true)
+                ->exists();
+            if (!$isPublished) {
+                abort(403, 'Rapor Anda belum dipublikasikan oleh Wali Kelas.');
+            }
+        }
+
         $raporService = new RaporService();
         $raporData = $raporService->getStudentRaporData($student, $academicYearId);
 

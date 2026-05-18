@@ -26,7 +26,7 @@ class GetStudentDetails implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        $query = Student::query()->with(['user', 'studyGroup.level', 'parent.user']);
+        $query = Student::query()->with(['user', 'studyGroups.level', 'parent.user']);
 
         // Mengambil nilai dari Request secara aman
         $nisn = $request['nisn'] ?? null;
@@ -46,11 +46,13 @@ class GetStudentDetails implements Tool
             return 'Siswa tidak ditemukan.';
         }
 
+        $rombel = $student->currentStudyGroup();
+
         return json_encode([
             'nama' => $student->user->name,
             'nisn' => $student->nisn,
-            'rombel' => $student->studyGroup?->nama_rombel,
-            'tingkatan' => $student->studyGroup?->level?->nama_tingkatan,
+            'rombel' => $rombel?->nama_rombel,
+            'tingkatan' => $rombel?->level?->nama_tingkatan,
             'orang_tua' => $student->parent?->user?->name,
             'email' => $student->user->email,
         ], JSON_PRETTY_PRINT);

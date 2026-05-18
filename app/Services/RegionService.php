@@ -14,29 +14,36 @@ class RegionService
         $cacheKey = "bps_region_v6_{$level}_{$parent}";
         
         return Cache::remember($cacheKey, 86400, function () use ($level, $parent) {
-            try {
-                // 1. Try BPS First
-                $response = Http::timeout(5)->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Accept' => 'application/json',
-                ])->get('https://sig.bps.go.id/rest-drop-down/getwilayah', [
-                    'level' => $level,
-                    'parent' => $parent,
-                    'periode_merge' => '2025_1.2025'
-                ]);
+            // If BPS is flagged as blocked/down, bypass and go straight to Emsifa
+            if (!Cache::has('bps_is_blocked')) {
+                try {
+                    // 1. Try BPS First with a short timeout of 2 seconds
+                    $response = Http::timeout(2)->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept' => 'application/json, text/plain, */*',
+                        'Accept-Language' => 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+                        'Referer' => 'https://sig.bps.go.id/',
+                        'Origin' => 'https://sig.bps.go.id',
+                    ])->get('https://sig.bps.go.id/rest-drop-down/getwilayah', [
+                        'level' => $level,
+                        'parent' => $parent,
+                        'periode_merge' => '2025_1.2025'
+                    ]);
 
-                if ($response->successful()) {
-                    $data = $response->json();
-                    $results = [];
-                    foreach ($data as $item) {
-                        if (isset($item['kode']) && isset($item['nama'])) {
-                            $results[(string)$item['kode']] = strtoupper($item['nama']);
+                    if ($response->successful()) {
+                        $data = $response->json();
+                        $results = [];
+                        foreach ($data as $item) {
+                            if (isset($item['kode']) && isset($item['nama'])) {
+                                $results[(string)$item['kode']] = strtoupper($item['nama']);
+                            }
                         }
+                        if (!empty($results)) return $results;
                     }
-                    if (!empty($results)) return $results;
+                } catch (\Exception $e) {
+                    // Flag BPS as blocked for 15 minutes to avoid hanging subsequent page requests
+                    Cache::put('bps_is_blocked', true, 900);
                 }
-            } catch (\Exception $e) {
-                // Log or ignore
             }
 
             // 2. Fallback to Emsifa API (GitHub Pages)

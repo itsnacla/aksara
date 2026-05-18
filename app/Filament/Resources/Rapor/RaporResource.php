@@ -160,6 +160,21 @@ class RaporResource extends Resource
                         ->where('academic_year_id', $activeYearId)
                         ->exists();
                 }),
+            IconColumn::make('is_rapor_published')
+                ->label('Publikasi')
+                ->boolean()
+                ->trueIcon('heroicon-o-eye')
+                ->falseIcon('heroicon-o-eye-slash')
+                ->trueColor('success')
+                ->falseColor('gray')
+                ->getStateUsing(function (Student $record) {
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    if (!$activeYearId) return false;
+                    $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
+                        ->where('academic_year_id', $activeYearId)
+                        ->first();
+                    return $rapor ? (bool) $rapor->is_published : false;
+                }),
         ];
     }
 
@@ -357,6 +372,63 @@ class RaporResource extends Resource
                     ]);
                     $livewire->js("window.open('{$url}', '_blank');");
                 }),
+            Action::make('publish_rapor')
+                ->label('Tampilkan ke Ortu & Siswa')
+                ->icon('heroicon-o-eye')
+                ->color('success')
+                ->action(function (Student $record) {
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    if (!$activeYearId) return;
+
+                    $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
+                        ->where('academic_year_id', $activeYearId)
+                        ->first();
+                    
+                    if ($rapor) {
+                        $rapor->update(['is_published' => true]);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rapor berhasil ditampilkan ke orang tua & siswa!')
+                            ->success()
+                            ->send();
+                    }
+                })
+                ->visible(function (Student $record) {
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    if (!$activeYearId) return false;
+                    $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
+                        ->where('academic_year_id', $activeYearId)
+                        ->first();
+                    return $rapor && !$rapor->is_published;
+                }),
+            Action::make('unpublish_rapor')
+                ->label('Sembunyikan dari Ortu & Siswa')
+                ->icon('heroicon-o-eye-slash')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->action(function (Student $record) {
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    if (!$activeYearId) return;
+
+                    $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
+                        ->where('academic_year_id', $activeYearId)
+                        ->first();
+                    
+                    if ($rapor) {
+                        $rapor->update(['is_published' => false]);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rapor berhasil disembunyikan!')
+                            ->warning()
+                            ->send();
+                    }
+                })
+                ->visible(function (Student $record) {
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    if (!$activeYearId) return false;
+                    $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
+                        ->where('academic_year_id', $activeYearId)
+                        ->first();
+                    return $rapor && $rapor->is_published;
+                }),
         ];
     }
 
@@ -364,6 +436,64 @@ class RaporResource extends Resource
     {
         return [
             \Filament\Actions\BulkActionGroup::make([
+                BulkAction::make('publish_selected')
+                    ->label('Tampilkan ke Ortu & Siswa')
+                    ->icon('heroicon-o-eye')
+                    ->color('success')
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                        if (!$activeYearId) return;
+
+                        $count = 0;
+                        foreach ($records as $record) {
+                            $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
+                                ->where('academic_year_id', $activeYearId)
+                                ->first();
+                            if ($rapor) {
+                                $rapor->update(['is_published' => true]);
+                                $count++;
+                            }
+                        }
+
+                        if ($count > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("Rapor untuk {$count} siswa berhasil ditampilkan ke orang tua & siswa!")
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title("Tidak ada rapor yang sudah digenerate dari siswa terpilih.")
+                                ->warning()
+                                ->send();
+                        }
+                    }),
+                BulkAction::make('unpublish_selected')
+                    ->label('Sembunyikan dari Ortu & Siswa')
+                    ->icon('heroicon-o-eye-slash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                        if (!$activeYearId) return;
+
+                        $count = 0;
+                        foreach ($records as $record) {
+                            $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
+                                ->where('academic_year_id', $activeYearId)
+                                ->first();
+                            if ($rapor) {
+                                $rapor->update(['is_published' => false]);
+                                $count++;
+                            }
+                        }
+
+                        if ($count > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("Rapor untuk {$count} siswa berhasil disembunyikan!")
+                                ->warning()
+                                ->send();
+                        }
+                    }),
                 \Filament\Actions\DeleteBulkAction::make(),
             ]),
         ];

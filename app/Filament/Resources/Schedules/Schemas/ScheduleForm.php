@@ -29,7 +29,7 @@ class ScheduleForm
                     ->schema([
                         Select::make('study_group_id')
                             ->label('Rombel')
-                            ->options(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($rombel) => [
+                            ->options(fn () => StudyGroup::with('academicYear')->whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($rombel) => [
                                 $rombel->id => "{$rombel->nama_rombel} ({$rombel->academicYear->tahun_ajaran})"
                             ]))
                             ->required()
@@ -138,7 +138,7 @@ class ScheduleForm
                         
                         Hidden::make('remaining_jp'),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Fieldset::make('Pengajar & Waktu')
                     ->schema([
@@ -260,7 +260,8 @@ class ScheduleForm
                                 if (!$studyGroup) return [];
 
                                 // Ambil Aturan Hari
-                                $dayConfig = \App\Models\DayConfig::where('academic_year_id', $studyGroup->academic_year_id)
+                                $dayConfig = \App\Models\DayConfig::with(['maxTimeSlot'])
+                                    ->where('academic_year_id', $studyGroup->academic_year_id)
                                     ->where('day', $hari)
                                     ->whereJsonContains('level_ids', (int) $studyGroup->level_id)
                                     ->first();
@@ -335,7 +336,8 @@ class ScheduleForm
                                 
                                 if (!$studyGroup) return [];
 
-                                $dayConfig = \App\Models\DayConfig::where('academic_year_id', $studyGroup->academic_year_id)
+                                $dayConfig = \App\Models\DayConfig::with(['maxTimeSlot'])
+                                    ->where('academic_year_id', $studyGroup->academic_year_id)
                                     ->where('day', $hari)
                                     ->whereJsonContains('level_ids', (int) $studyGroup->level_id)
                                     ->first();
@@ -467,7 +469,7 @@ class ScheduleForm
                                 },
                             ]),
                     ])
-                    ->columns(2),
+                    ->columns(1),
             ]);
     }
 }

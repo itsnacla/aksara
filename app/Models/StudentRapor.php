@@ -18,10 +18,12 @@ class StudentRapor extends Model
         'catatan_wali_kelas',
         'is_naik',
         'kenaikan_kelas_to',
+        'is_published',
     ];
 
     protected $casts = [
         'is_naik' => 'boolean',
+        'is_published' => 'boolean',
     ];
 
     public function student(): BelongsTo

@@ -22,6 +22,10 @@ class DummyDataSeeder extends Seeder
 
     public function run(): void
     {
+        // Seed the random number generators to make Faker and all random functions 100% deterministic!
+        srand(42);
+        mt_srand(42);
+
         $this->academicYears = AcademicYear::where('tahun_ajaran', '2025/2026')->get();
         if ($this->academicYears->isEmpty()) return;
 
@@ -227,7 +231,7 @@ class DummyDataSeeder extends Seeder
         $places = ['Banyuwangi', 'Jakarta', 'Surabaya', 'Malang', 'Bandung', 'Yogyakarta'];
         
         $name = $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
-        $uniqueId = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+        $uniqueId = substr(md5($name . '_' . $namaRombel . '_' . $index), 0, 6);
         $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name)) . '_' . $uniqueId . '_' . $index;
 
         // Parent Data

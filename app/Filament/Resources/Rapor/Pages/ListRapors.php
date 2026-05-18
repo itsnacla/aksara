@@ -55,6 +55,7 @@ class ListRapors extends ListRecords
                     $raporService = new \App\Services\Academic\RaporService();
                     $successCount = 0;
 
+                    /** @var Student $student */
                     foreach ($students as $student) {
                         try {
                             $raporService->generateStudentRapor($student, $activeYearId);
@@ -67,6 +68,110 @@ class ListRapors extends ListRecords
                     \Filament\Notifications\Notification::make()
                         ->title("Rapor berhasil digenerate untuk {$successCount} siswa di Rombel")
                         ->success()
+                        ->send();
+                }),
+            Action::make('publish_rapor_batch')
+                ->label('Tampilkan Per Batch')
+                ->icon('heroicon-o-eye')
+                ->color('success')
+                ->modalHeading('Tampilkan Rapor Ke Orang Tua & Siswa (Batch)')
+                ->modalDescription('Proses ini akan mempublikasikan Rapor seluruh siswa di Rombel terpilih sehingga dapat diakses oleh orang tua dan siswa di portal masing-masing.')
+                ->modalWidth('lg')
+                ->form([
+                    Select::make('study_group_id')
+                        ->label('Pilih Rombongan Belajar (Rombel)')
+                        ->options(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))->pluck('nama_rombel', 'id'))
+                        ->required()
+                        ->searchable(),
+                ])
+                ->action(function (array $data) {
+                    $studyGroupId = $data['study_group_id'];
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    
+                    if (!$activeYearId) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Tahun ajaran aktif tidak ditemukan')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $students = Student::whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))->get();
+                    
+                    if ($students->isEmpty()) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rombel terpilih tidak memiliki siswa')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $count = 0;
+                    foreach ($students as $student) {
+                        $rapor = \App\Models\StudentRapor::where('student_id', $student->id)
+                            ->where('academic_year_id', $activeYearId)
+                            ->first();
+                        if ($rapor) {
+                            $rapor->update(['is_published' => true]);
+                            $count++;
+                        }
+                    }
+
+                    \Filament\Notifications\Notification::make()
+                        ->title("Rapor berhasil dipublikasikan untuk {$count} siswa di Rombel!")
+                        ->success()
+                        ->send();
+                }),
+            Action::make('unpublish_rapor_batch')
+                ->label('Sembunyikan Per Batch')
+                ->icon('heroicon-o-eye-slash')
+                ->color('danger')
+                ->modalHeading('Tarik Rapor Dari Orang Tua & Siswa (Batch)')
+                ->modalDescription('Proses ini akan menarik kembali publikasi Rapor sehingga disembunyikan dari akses orang tua dan siswa di portal masing-masing.')
+                ->modalWidth('lg')
+                ->form([
+                    Select::make('study_group_id')
+                        ->label('Pilih Rombongan Belajar (Rombel)')
+                        ->options(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))->pluck('nama_rombel', 'id'))
+                        ->required()
+                        ->searchable(),
+                ])
+                ->action(function (array $data) {
+                    $studyGroupId = $data['study_group_id'];
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    
+                    if (!$activeYearId) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Tahun ajaran aktif tidak ditemukan')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $students = Student::whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))->get();
+                    
+                    if ($students->isEmpty()) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rombel terpilih tidak memiliki siswa')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $count = 0;
+                    foreach ($students as $student) {
+                        $rapor = \App\Models\StudentRapor::where('student_id', $student->id)
+                            ->where('academic_year_id', $activeYearId)
+                            ->first();
+                        if ($rapor) {
+                            $rapor->update(['is_published' => false]);
+                            $count++;
+                        }
+                    }
+
+                    \Filament\Notifications\Notification::make()
+                        ->title("Publikasi Rapor berhasil ditarik kembali untuk {$count} siswa di Rombel!")
+                        ->warning()
                         ->send();
                 }),
             Action::make('cetak_rapor_batch')

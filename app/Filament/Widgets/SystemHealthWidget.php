@@ -125,11 +125,28 @@ class SystemHealthWidget extends BaseWidget
 
     private function getAiStatus(): Stat
     {
-        $provider = config('services.ai.primary', 'GEMINI');
-        return Stat::make('AI Service', 'Active')
-            ->description("Provider: {$provider}")
-            ->descriptionIcon('heroicon-m-sparkles')
-            ->color('success');
+        try {
+            $settings = \App\Models\ChatbotSetting::current();
+            $isActive = $settings->is_active;
+            $rawProvider = $settings->primary_provider;
+            
+            // Format provider name beautifully
+            $provider = match (strtolower($rawProvider)) {
+                'google', 'gemini' => 'GEMINI',
+                'openai' => 'OPENAI',
+                'groq' => 'GROQ',
+                default => strtoupper($rawProvider),
+            };
+
+            return Stat::make('AI Service', $isActive ? 'Active' : 'Inactive')
+                ->description("Provider: {$provider}")
+                ->descriptionIcon('heroicon-m-sparkles')
+                ->color($isActive ? 'success' : 'danger');
+        } catch (\Exception $e) {
+            return Stat::make('AI Service', 'Offline')
+                ->description('Status Check Failed')
+                ->color('danger');
+        }
     }
 
     private function getMailStatus(): Stat

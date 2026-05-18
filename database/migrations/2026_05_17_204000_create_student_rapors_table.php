@@ -27,6 +27,7 @@ return new class extends Migration
             // Promotion settings (Even semesters)
             $table->boolean('is_naik')->nullable(); // true = Naik, false = Tidak Naik, null = N/A
             $table->string('kenaikan_kelas_to')->nullable(); // Target grade promotion name
+            $table->boolean('is_published')->default(false);
 
             $table->timestamps();
 

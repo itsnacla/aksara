@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('parent_id')->constrained('parents')->cascadeOnDelete();
+            $table->boolean('is_buku_induk_generated')->default(false);
             $table->foreignId('study_group_id')->nullable()->constrained('study_groups')->onDelete('set null');
             $table->string('nisn', 10)->unique();
             $table->string('nis')->nullable();

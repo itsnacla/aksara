@@ -49,6 +49,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable([
     'user_id',
     'parent_id',
+    'is_buku_induk_generated',
     'nisn',
     'nis',
     'status',

@@ -112,7 +112,8 @@ class ListSchedules extends ListRecords
                 ->get();
 
             // Ambil Konfigurasi Hari/Aturan
-            $dayConfigs = \App\Models\DayConfig::where('academic_year_id', $studyGroup->academic_year_id)
+            $dayConfigs = \App\Models\DayConfig::with(['maxTimeSlot'])
+                ->where('academic_year_id', $studyGroup->academic_year_id)
                 ->whereJsonContains('level_ids', (int) $studyGroup->level_id)
                 ->get();
 

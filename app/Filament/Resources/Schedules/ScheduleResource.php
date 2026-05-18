@@ -31,6 +31,12 @@ class ScheduleResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Jadwal Pelajaran';
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['startTimeSlot', 'endTimeSlot', 'subject', 'teacher.user', 'studyGroup.classroom']);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ScheduleForm::configure($schema);

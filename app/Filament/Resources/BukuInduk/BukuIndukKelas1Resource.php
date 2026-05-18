@@ -62,6 +62,13 @@ class BukuIndukKelas1Resource extends Resource
                     ->label('Rombongan Belajar')
                     ->badge()
                     ->color('success'),
+                \Filament\Tables\Columns\IconColumn::make('is_buku_induk_generated')
+                    ->label('Status Buku Induk')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
             ])
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('academic_year')
@@ -94,12 +101,36 @@ class BukuIndukKelas1Resource extends Resource
                         ->first()?->id),
             ])
             ->actions([
+                Action::make('generate_buku_induk')
+                    ->label('Generate')
+                    ->icon('heroicon-o-cpu-chip')
+                    ->color('success')
+                    ->action(function (Student $record) {
+                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                        if (!$activeYearId) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Tahun ajaran aktif tidak ditemukan')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        $bukuIndukService = new \App\Services\Academic\BukuIndukService();
+                        $bukuIndukService->generateStudentBukuInduk($record, $activeYearId);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Buku Induk berhasil digenerate!')
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn (Student $record) => !$record->is_buku_induk_generated),
                 Action::make('cetak')
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
-                    ->color('success')
+                    ->color('info')
                     ->url(fn (Student $record): string => route('print.buku-induk', $record))
-                    ->openUrlInNewTab(),
+                    ->openUrlInNewTab()
+                    ->visible(fn (Student $record) => (bool) $record->is_buku_induk_generated),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

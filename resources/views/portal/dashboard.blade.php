@@ -113,7 +113,7 @@
                                 <p class="text-xs text-gray-400 uppercase tracking-wider">{{ $child->currentStudyGroup()?->nama_rombel ?? 'Tanpa Rombel' }}</p>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center text-sm p-4 bg-gray-50 rounded-2xl">
+                        <div class="flex justify-between items-center text-sm p-4 bg-gray-50 rounded-2xl mb-4">
                             <span class="text-gray-500 font-medium">Presensi:</span>
                             @php $childAttendance = $child->attendances->first(); @endphp
                             @if($childAttendance)
@@ -124,6 +124,24 @@
                                 <span class="text-gray-300 italic">Belum Presensi</span>
                             @endif
                         </div>
+
+                        <!-- E-Raport Access for Parents -->
+                        @php
+                            $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                            $hasPublishedRapor = $activeYearId ? \App\Models\StudentRapor::where('student_id', $child->id)
+                                ->where('academic_year_id', $activeYearId)
+                                ->where('is_published', true)
+                                ->exists() : false;
+                        @endphp
+                        @if($hasPublishedRapor)
+                            <a href="{{ route('print.rapor', $child) }}" target="_blank" class="block w-full text-center bg-primary hover:bg-primary/95 text-white py-3 rounded-2xl font-bold text-sm shadow-md transition-all">
+                                Lihat E-Raport
+                            </a>
+                        @else
+                            <button disabled class="block w-full text-center bg-gray-100 text-gray-400 py-3 rounded-2xl font-bold text-sm cursor-not-allowed">
+                                Rapor Belum Dipublikasikan
+                            </button>
+                        @endif
                     </div>
                     @endforeach
                 </div>
@@ -345,9 +363,23 @@
                 <p class="text-gray-600 leading-relaxed mb-8">
                     Unduh dan tinjau kemajuan akademik Anda secara digital. Sederhana, aman, dan dapat diakses kapan saja.
                 </p>
-                <button class="bg-[#005da7] text-white px-10 py-4 rounded-full font-bold shadow-lg hover:shadow-xl hover:translate-y-[-2px] transition-all">
-                    Lihat Rapor Terakhir
-                </button>
+                @php
+                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                    $student = auth()->user()->student;
+                    $hasPublishedRapor = ($student && $activeYearId) ? \App\Models\StudentRapor::where('student_id', $student->id)
+                        ->where('academic_year_id', $activeYearId)
+                        ->where('is_published', true)
+                        ->exists() : false;
+                @endphp
+                @if($hasPublishedRapor)
+                    <a href="{{ route('print.rapor', $student) }}" target="_blank" class="inline-block bg-[#005da7] hover:bg-[#004b86] text-white px-10 py-4 rounded-full font-bold shadow-lg hover:shadow-xl hover:translate-y-[-2px] transition-all">
+                        Lihat Rapor Terakhir
+                    </a>
+                @else
+                    <button disabled class="inline-block bg-gray-200 text-gray-400 px-10 py-4 rounded-full font-bold cursor-not-allowed">
+                        Rapor Belum Dipublikasikan
+                    </button>
+                @endif
             </div>
             <div class="flex-1 flex justify-center">
                 <!-- Mockup/Image Placeholder with Tonal depth -->
