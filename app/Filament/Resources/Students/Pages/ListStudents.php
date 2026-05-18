@@ -55,7 +55,7 @@ class ListStudents extends ListRecords
                 ->form([
                     Select::make('fallback_study_group_id')
                         ->label('Rombel / Kelas Tujuan (Opsional)')
-                        ->options(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($sg) => [
+                        ->options(fn () => StudyGroup::with('academicYear')->whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($sg) => [
                             $sg->id => "{$sg->nama_rombel} ({$sg->academicYear->tahun_ajaran})"
                         ]))
                         ->searchable()
