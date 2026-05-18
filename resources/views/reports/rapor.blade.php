@@ -593,8 +593,8 @@
                 <div class="text-center w-60">
                     <p>................., {{ now()->translatedFormat('d F Y') }}</p>
                     <p class="mb-20">Wali Kelas</p>
-                    <p class="font-bold underline">{{ $rombel->waliKelas->user->name ?? '.........................................' }}</p>
-                    <p>NIP. {{ $rombel->waliKelas->nip ?? '.........................' }}</p>
+                    <p class="font-bold underline">{{ $rombel->waliKelas?->nama_lengkap ?? '.........................................' }}</p>
+                    <p>NIP. {{ $rombel->waliKelas?->nip ?? '.........................' }}</p>
                 </div>
             </div>
             
@@ -602,8 +602,8 @@
                 <div class="text-center w-64 mt-6">
                     <p>Mengetahui,</p>
                     <p class="mb-20">Kepala Sekolah</p>
-                    <p class="font-bold underline">{{ $principal->user->name ?? '.........................................' }}</p>
-                    <p>NIP. {{ $principal->nip ?? '.........................' }}</p>
+                    <p class="font-bold underline">{{ $principal?->nama_lengkap ?? '.........................................' }}</p>
+                    <p>NIP. {{ $principal?->nip ?? '.........................' }}</p>
                 </div>
             </div>
         </div>

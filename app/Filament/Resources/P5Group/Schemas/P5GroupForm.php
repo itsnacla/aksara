@@ -25,7 +25,7 @@ class P5GroupForm
                     ->searchable(),
 
                 Select::make('teacher_id')
-                    ->options(\App\Models\Teacher::with('user')->get()->pluck('user.name', 'id'))
+                    ->options(\App\Models\Teacher::with('user')->get()->pluck('nama_lengkap', 'id'))
                     ->label('Koordinator / Fasilitator')
                     ->required()
                     ->searchable(),

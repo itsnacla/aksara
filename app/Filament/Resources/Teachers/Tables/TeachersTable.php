@@ -38,11 +38,7 @@ class TeachersTable
                 ->label('Nama Guru')
                 ->searchable()
                 ->sortable()
-                ->formatStateUsing(function ($record) {
-                    $depan = $record->gelar_depan ? trim($record->gelar_depan) . ' ' : '';
-                    $belakang = $record->gelar_belakang ? ', ' . trim($record->gelar_belakang) : '';
-                    return $depan . ($record->user->name ?? 'N/A') . $belakang;
-                }),
+                ->formatStateUsing(fn ($record) => $record->nama_lengkap),
             TextColumn::make('status')
                 ->label('Status')
                 ->badge()

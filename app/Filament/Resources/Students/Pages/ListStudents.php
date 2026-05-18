@@ -40,8 +40,9 @@ class ListStudents extends ListRecords
                         ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id)
                         ->required(),
                 ])
-                ->action(function (array $data) {
-                    return redirect()->route('student.cards.all', ['academic_year_id' => $data['academic_year_id']]);
+                ->action(function (array $data, ListStudents $livewire) {
+                    $url = route('student.cards.all', ['academic_year_id' => $data['academic_year_id']]);
+                    $livewire->js("window.open('{$url}', '_blank');");
                 }),
             Action::make('import_csv')
                 ->label('Import Data Siswa')

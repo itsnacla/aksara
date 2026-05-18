@@ -47,7 +47,8 @@ class StudyGroupsTable
                 ->icon('heroicon-m-user-circle')
                 ->color('gray')
                 ->description(fn ($record) => "NIP/ID: " . ($record->waliKelas?->nip ?? '-'))
-                ->sortable(),
+                ->sortable()
+                ->formatStateUsing(fn ($record) => $record->waliKelas?->nama_lengkap ?? '-'),
 
             TextColumn::make('students_count')
                 ->label('Siswa')
@@ -191,7 +192,7 @@ class StudyGroupsTable
                                             $query->where('academic_year_id', $academicYearId);
                                         })
                                         ->get()
-                                        ->pluck('user.name', 'id');
+                                        ->pluck('nama_lengkap', 'id');
                                 })
                                 ->searchable()
                                 ->reactive()

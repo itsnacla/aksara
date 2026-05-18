@@ -167,13 +167,13 @@
             <div class="text-center w-32">
                 <p>Mengetahui,</p>
                 <p class="mb-8">Kepala Sekolah</p>
-                <p class="font-bold underline">{{ $principal?->user?->name ?? '................................' }}</p>
+                <p class="font-bold underline">{{ $principal?->nama_lengkap ?? '................................' }}</p>
                 <p>NIP. {{ $principal?->nip ?? '........................' }}</p>
             </div>
             <div class="text-center w-32">
                 <p>{{ $school->city ?? 'Banyuwangi' }}, {{ now()->translatedFormat('d F Y') }}</p>
                 <p class="mb-8">Wali Kelas,</p>
-                <p class="font-bold underline">{{ $rombel->waliKelas->user->name ?? '................................' }}</p>
+                <p class="font-bold underline">{{ $rombel->waliKelas?->nama_lengkap ?? '................................' }}</p>
                 <p>NIP. {{ $rombel->waliKelas->nip ?? '........................' }}</p>
             </div>
         </div>
@@ -209,7 +209,7 @@
                         @foreach($legendTeachers as $lt)
                             <div class="flex leading-tight">
                                 <span class="font-bold w-20 shrink-0 whitespace-nowrap">{{ $lt->kode_guru ?? '??' }}</span>
-                                <span class="flex-1">: {{ $lt->user->name }}</span>
+                                <span class="flex-1">: {{ $lt->nama_lengkap }}</span>
                             </div>
                         @endforeach
                     </div>

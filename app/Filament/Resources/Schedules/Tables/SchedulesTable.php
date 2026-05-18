@@ -40,7 +40,8 @@ class SchedulesTable
                     ->label('Guru / Pengajar')
                     ->description(fn ($record) => $record->teacher?->kode_guru ? "Kode: {$record->teacher->kode_guru}" : null)
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn ($record) => $record->teacher?->nama_lengkap ?? '-'),
 
                 TextColumn::make('studyGroup.nama_rombel')
                     ->label('Rombel')

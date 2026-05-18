@@ -154,7 +154,7 @@ class ScheduleForm
                                     if ($studyGroup && $studyGroup->walikelas_id) {
                                         $teacher = Teacher::with('user')->find($studyGroup->walikelas_id);
                                         if ($teacher && $teacher->status === 'aktif' && $teacher->user?->is_active) {
-                                            return [$teacher->id => $teacher->user->name . ' (Wali Kelas)'];
+                                            return [$teacher->id => $teacher->nama_lengkap . ' (Wali Kelas)'];
                                         }
                                     }
                                     return []; // Kembalikan kosong jika walikelas tidak aktif
@@ -164,7 +164,7 @@ class ScheduleForm
                                     ->whereHas('user', fn ($q) => $q->where('is_active', true))
                                     ->whereHas('subjects', function ($query) use ($subjectId) {
                                         $query->where('subjects.id', $subjectId);
-                                    })->with('user')->get()->pluck('user.name', 'id');
+                                    })->with('user')->get()->pluck('nama_lengkap', 'id');
                             })
                             ->required()
                             ->searchable()

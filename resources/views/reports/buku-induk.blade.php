@@ -419,8 +419,8 @@
                     <div class="text-center w-72">
                         <p class="text-xs mb-1">{{ $school->district ?? 'Kotabaru' }}, {{ $student->created_at ? \Carbon\Carbon::parse($student->created_at)->translatedFormat('d F Y') : '-' }}</p>
                         <p class="text-xs font-bold mb-14">Kepala Sekolah</p>
-                        <p class="font-bold underline text-sm">{{ $principal->user->name ?? '.........................................' }}</p>
-                        <p class="text-xs mt-0.5">NIP. {{ $principal->nip ?? '.........................................' }}</p>
+                        <p class="font-bold underline text-sm">{{ $principal?->nama_lengkap ?? '.........................................' }}</p>
+                        <p class="text-xs mt-0.5">NIP. {{ $principal?->nip ?? '.........................................' }}</p>
                     </div>
                 </div>
             </div>

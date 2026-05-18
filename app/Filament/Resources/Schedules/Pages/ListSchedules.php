@@ -82,7 +82,7 @@ class ListSchedules extends ListRecords
                                 ->default(true),
                         ]),
                 ])
-                ->action(function (array $data) {
+                ->action(function (array $data, ListSchedules $livewire) {
                     $url = route('reports.schedule', [
                         'study_group_id' => $data['print_mode'] === 'global' ? 'all' : $data['study_group_id'],
                         'show_subject_code' => $data['show_subject_code'] ? 1 : 0,
@@ -91,7 +91,7 @@ class ListSchedules extends ListRecords
                         'orientation' => $data['orientation'] ?? 'landscape',
                     ]);
                     
-                    return redirect($url);
+                    $livewire->js("window.open('{$url}', '_blank');");
                 }),
             CreateAction::make(),
         ];

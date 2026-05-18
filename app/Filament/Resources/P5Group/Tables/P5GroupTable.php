@@ -28,7 +28,8 @@ class P5GroupTable
                 TextColumn::make('teacher.user.name')
                     ->label('Koordinator')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn ($record) => $record->teacher?->nama_lengkap ?? '-'),
                 TextColumn::make('project.name')
                     ->label('Data Kokurikuler')
                     ->searchable()
@@ -44,7 +45,7 @@ class P5GroupTable
                     ->relationship('level', 'nama_tingkatan')
                     ->label('Tingkat'),
                 \Filament\Tables\Filters\SelectFilter::make('teacher_id')
-                    ->options(\App\Models\Teacher::with('user')->get()->pluck('user.name', 'id'))
+                    ->options(\App\Models\Teacher::with('user')->get()->pluck('nama_lengkap', 'id'))
                     ->label('Koordinator'),
                 \Filament\Tables\Filters\SelectFilter::make('p5_project_id')
                     ->relationship('project', 'name')

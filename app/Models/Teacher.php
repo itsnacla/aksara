@@ -87,6 +87,13 @@ class Teacher extends Model
         'is_kepalasekolah' => 'boolean',
     ];
 
+    public function getNamaLengkapAttribute(): string
+    {
+        $depan = $this->gelar_depan ? trim($this->gelar_depan) . ' ' : '';
+        $belakang = $this->gelar_belakang ? ', ' . trim($this->gelar_belakang) : '';
+        return $depan . ($this->user->name ?? '') . $belakang;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

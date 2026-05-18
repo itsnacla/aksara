@@ -263,10 +263,11 @@ class StudentsTable
                     ->label('Cetak Kartu Massal')
                     ->icon('heroicon-o-identification')
                     ->color('info')
-                        ->action(function (Collection $records) {
-                            $ids = $records->pluck('id')->implode(',');
-                            return redirect()->route('student.cards.bulk', ['ids' => $ids]);
-                        }),
+                    ->action(function (Collection $records, \Filament\Resources\Pages\ListRecords $livewire) {
+                        $ids = $records->pluck('id')->implode(',');
+                        $url = route('student.cards.bulk', ['ids' => $ids]);
+                        $livewire->js("window.open('{$url}', '_blank');");
+                    }),
                 ]),
         ];
     }

@@ -70,7 +70,7 @@ class StudyGroupForm
                             });
                         }
 
-                        return $query->get()->pluck('user.name', 'id');
+                        return $query->get()->pluck('nama_lengkap', 'id');
                     })
                     ->required()
                     ->searchable()
