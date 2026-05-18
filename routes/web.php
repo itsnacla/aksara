@@ -163,5 +163,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/buku-induk/print/{student}', [\App\Http\Controllers\PrintController::class, 'printBukuInduk'])->name('print.buku-induk');
     Route::get('/rapor/print-bulk', [\App\Http\Controllers\PrintController::class, 'printRaporBulk'])->name('print.rapor.bulk');
     Route::get('/rapor/print/{student}', [\App\Http\Controllers\PrintController::class, 'printRapor'])->name('print.rapor');
+
+    // Impersonate (Login As)
+    Route::post('/impersonate/login/{user}', [\App\Http\Controllers\Portal\ImpersonateController::class, 'login'])->name('impersonate.login');
+    Route::post('/impersonate/logout', [\App\Http\Controllers\Portal\ImpersonateController::class, 'logout'])->name('impersonate.logout');
 });
 
