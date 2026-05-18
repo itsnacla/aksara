@@ -135,7 +135,22 @@ class StudentLeaveResource extends Resource
                         'rejected' => 'danger',
                     }),
             ])
-            ->filters([
+             ->filters([
+                Tables\Filters\SelectFilter::make('academic_year')
+                    ->label('Tahun Ajaran')
+                    ->options(fn () => \App\Models\AcademicYear::query()
+                        ->get()
+                        ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)])
+                    )
+                    ->query(function ($query, array $data) {
+                        if (empty($data['value'])) {
+                            return $query;
+                        }
+                        return $query->whereHas('studyGroup', function ($q) use ($data) {
+                            $q->where('study_groups.academic_year_id', $data['value']);
+                        });
+                    })
+                    ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'pending' => 'Tertunda',
@@ -143,7 +158,14 @@ class StudentLeaveResource extends Resource
                         'rejected' => 'Ditolak',
                     ]),
                 Tables\Filters\SelectFilter::make('study_group_id')
-                    ->relationship('studyGroup', 'nama_rombel')
+                    ->relationship('studyGroup', 'nama_rombel', function ($query, $livewire) {
+                        $academicYearId = $livewire->tableFilters['academic_year']['value'] ?? null;
+                        $academicYearId = $academicYearId ?: \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+                        if ($academicYearId) {
+                            return $query->where('academic_year_id', $academicYearId);
+                        }
+                        return $query;
+                    })
                     ->label('Rombel'),
                 Tables\Filters\Filter::make('created_at')
                     ->form([
