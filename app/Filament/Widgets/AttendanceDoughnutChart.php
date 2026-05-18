@@ -42,7 +42,7 @@ class AttendanceDoughnutChart extends ChartWidget
 
         $alfa = Attendance::whereMonth('tanggal', $now->month)
             ->whereYear('tanggal', $now->year)
-            ->where('status', 'alfa')
+            ->whereIn('status', ['alfa', 'alpha'])
             ->count();
 
         // If no data, show placeholder

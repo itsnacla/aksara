@@ -30,7 +30,7 @@ class AttendanceStatsOverview extends BaseWidget
         $todayPresent = Attendance::whereDate('tanggal', $today)->where('status', 'hadir')->count();
         $todaySick = Attendance::whereDate('tanggal', $today)->where('status', 'sakit')->count();
         $todayPermission = Attendance::whereDate('tanggal', $today)->where('status', 'izin')->count();
-        $todayAbsent = Attendance::whereDate('tanggal', $today)->where('status', 'alfa')->count();
+        $todayAbsent = Attendance::whereDate('tanggal', $today)->whereIn('status', ['alfa', 'alpha'])->count();
 
         $todayPercentage = $todayTotal > 0 ? round(($todayPresent / $todayTotal) * 100, 1) : 0;
 
@@ -143,7 +143,7 @@ class AttendanceStatsOverview extends BaseWidget
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $data[] = Attendance::whereDate('tanggal', $date)
-                ->where('status', 'alfa')
+                ->whereIn('status', ['alfa', 'alpha'])
                 ->count();
         }
         if (array_sum($data) === 0) {

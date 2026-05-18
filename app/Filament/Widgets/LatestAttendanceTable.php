@@ -67,21 +67,21 @@ class LatestAttendanceTable extends BaseWidget
                         'hadir' => 'Hadir',
                         'sakit' => 'Sakit',
                         'izin' => 'Izin',
-                        'alfa' => 'Alfa',
+                        'alfa', 'alpha' => 'Alfa',
                         default => ucfirst($state),
                     })
                     ->color(fn (string $state): string => match ($state) {
                         'hadir' => 'success',
                         'sakit' => 'warning',
                         'izin' => 'info',
-                        'alfa' => 'danger',
+                        'alfa', 'alpha' => 'danger',
                         default => 'gray',
                     })
                     ->icon(fn (string $state): string => match ($state) {
                         'hadir' => 'heroicon-m-check-circle',
                         'sakit' => 'heroicon-m-heart',
                         'izin' => 'heroicon-m-document-text',
-                        'alfa' => 'heroicon-m-x-circle',
+                        'alfa', 'alpha' => 'heroicon-m-x-circle',
                         default => 'heroicon-m-question-mark-circle',
                     }),
 

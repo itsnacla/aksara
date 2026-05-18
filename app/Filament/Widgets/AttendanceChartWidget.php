@@ -36,7 +36,7 @@ class AttendanceChartWidget extends ChartWidget
             $hadirData[] = Attendance::whereDate('tanggal', $date)->where('status', 'hadir')->count();
             $sakitData[] = Attendance::whereDate('tanggal', $date)->where('status', 'sakit')->count();
             $izinData[] = Attendance::whereDate('tanggal', $date)->where('status', 'izin')->count();
-            $alfaData[] = Attendance::whereDate('tanggal', $date)->where('status', 'alfa')->count();
+            $alfaData[] = Attendance::whereDate('tanggal', $date)->whereIn('status', ['alfa', 'alpha'])->count();
         }
 
         // If no data exists, show demo data
