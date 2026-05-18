@@ -60,6 +60,14 @@ class WAService
     }
 
     /**
+     * Dispatch a WhatsApp message to the background queue worker.
+     */
+    public static function sendMessageAsync(string $phone, string $message): void
+    {
+        \App\Jobs\SendWhatsAppNotification::dispatch($phone, $message);
+    }
+
+    /**
      * Format phone number to international format (62...)
      */
     protected static function formatPhoneNumber(string $phone): string

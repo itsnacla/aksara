@@ -115,7 +115,7 @@ class StudentLeaveController extends Controller
             $message .= "Mohon segera tinjau permohonan ini melalui Dashboard Aksara.\n";
             $message .= "--- _Powered by Aksara_ ---";
 
-            \App\Services\WAService::sendMessage($teacher->no_whatsapp, $message);
+            \App\Services\WAService::sendMessageAsync($teacher->no_whatsapp, $message);
         } else {
             \Illuminate\Support\Facades\Log::warning('WA Notify: Conditions not met.', [
                 'hasRombel' => (bool)$currentRombel,
@@ -194,7 +194,7 @@ class StudentLeaveController extends Controller
             $message .= "Mohon tinjau kembali melalui Dashboard Aksara.\n";
             $message .= "--- _Powered by Aksara_ ---";
 
-            \App\Services\WAService::sendMessage($teacher->no_whatsapp, $message);
+            \App\Services\WAService::sendMessageAsync($teacher->no_whatsapp, $message);
         }
 
         return redirect()->route('leaves.index')->with('success', 'Permohonan izin berhasil diperbarui.');

@@ -218,7 +218,7 @@ class StudentLeaveResource extends Resource
                             $message .= "Terima kasih.\n";
                             $message .= "--- _Powered by Aksara_ ---";
 
-                            \App\Services\WAService::sendMessage($record->parent->no_whatsapp, $message);
+                            \App\Services\WAService::sendMessageAsync($record->parent->no_whatsapp, $message);
                         }
                     }),
                 Action::make('reject')
@@ -257,7 +257,7 @@ class StudentLeaveResource extends Resource
                             $message .= "Terima kasih.\n";
                             $message .= "--- _Powered by Aksara_ ---";
 
-                            \App\Services\WAService::sendMessage($record->parent->no_whatsapp, $message);
+                            \App\Services\WAService::sendMessageAsync($record->parent->no_whatsapp, $message);
                         }
                     }),
                 ViewAction::make(),
