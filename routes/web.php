@@ -17,6 +17,7 @@ Route::get('/login', function () {
 // Portal (Students/Parents)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [PortalController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/realtime', [PortalController::class, 'realtimeData'])->name('dashboard.realtime');
 
     // Student Leaves (Permissions)
     Route::get('/leaves', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'index'])->name('leaves.index');
