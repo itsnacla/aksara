@@ -21,6 +21,8 @@ class TeacherResource extends Resource
 {
     protected static ?string $model = Teacher::class;
 
+    protected static ?string $recordTitleAttribute = 'nip';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-briefcase';
 
     protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';

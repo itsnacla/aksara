@@ -21,6 +21,8 @@ class GradeResource extends Resource
 {
     protected static ?string $model = Grade::class;
 
+    protected static ?string $recordTitleAttribute = 'id';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static UnitEnum|string|null $navigationGroup = 'Akademik & KBM';

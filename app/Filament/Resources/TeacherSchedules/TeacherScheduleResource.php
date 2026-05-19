@@ -16,6 +16,8 @@ class TeacherScheduleResource extends Resource
 {
     protected static ?string $model = \App\Models\TeacherSchedule::class;
 
+    protected static ?string $recordTitleAttribute = 'hari';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar';
 
     protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';

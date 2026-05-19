@@ -15,6 +15,8 @@ class SchoolSettingResource extends Resource
 {
     protected static ?string $model = SchoolSetting::class;
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-home-modern';
 
     protected static UnitEnum|string|null $navigationGroup = 'Pengaturan Aplikasi';

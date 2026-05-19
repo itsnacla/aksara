@@ -15,6 +15,8 @@ class ChatbotSettingResource extends Resource
 {
     protected static ?string $model = ChatbotSetting::class;
 
+    protected static ?string $recordTitleAttribute = 'primary_provider';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-cpu-chip';
 
     protected static UnitEnum|string|null $navigationGroup = 'Pengaturan Aplikasi';

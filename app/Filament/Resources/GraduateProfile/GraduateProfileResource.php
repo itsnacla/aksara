@@ -19,6 +19,8 @@ class GraduateProfileResource extends Resource
 {
     protected static ?string $model = GraduateProfile::class;
 
+    protected static ?string $recordTitleAttribute = 'dimensi';
+
     protected static ?string $slug = 'graduate-profile';
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';

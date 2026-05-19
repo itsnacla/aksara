@@ -19,6 +19,8 @@ class StudyGroupResource extends Resource
 {
     protected static ?string $model = StudyGroup::class;
 
+    protected static ?string $recordTitleAttribute = 'nama_rombel';
+
     protected static ?string $slug = 'rombel';
 
     protected static ?string $modelLabel = 'Rombel';

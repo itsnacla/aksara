@@ -21,6 +21,8 @@ class AttendanceResource extends Resource
 {
     protected static ?string $model = Attendance::class;
 
+    protected static ?string $recordTitleAttribute = 'catatan';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-check-badge';
 
     protected static UnitEnum|string|null $navigationGroup = 'Akademik & KBM';

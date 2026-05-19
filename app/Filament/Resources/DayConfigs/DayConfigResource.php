@@ -22,6 +22,8 @@ class DayConfigResource extends Resource
 {
     protected static ?string $model = DayConfig::class;
 
+    protected static ?string $recordTitleAttribute = 'day';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-adjustments-vertical';
 
     protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';

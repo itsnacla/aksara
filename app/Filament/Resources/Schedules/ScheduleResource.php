@@ -19,6 +19,8 @@ class ScheduleResource extends Resource
 {
     protected static ?string $model = Schedule::class;
 
+    protected static ?string $recordTitleAttribute = 'hari';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';

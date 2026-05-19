@@ -17,6 +17,8 @@ class BukuIndukKelas1Resource extends Resource
 {
     protected static ?string $model = Student::class;
 
+    protected static ?string $recordTitleAttribute = 'nisn';
+
     protected static ?string $slug = 'buku-induk';
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-book-open';

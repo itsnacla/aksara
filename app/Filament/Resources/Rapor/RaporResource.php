@@ -16,6 +16,8 @@ class RaporResource extends Resource
 {
     protected static ?string $model = Student::class;
 
+    protected static ?string $recordTitleAttribute = 'nisn';
+
     protected static ?string $slug = 'rapor';
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-document-chart-bar';

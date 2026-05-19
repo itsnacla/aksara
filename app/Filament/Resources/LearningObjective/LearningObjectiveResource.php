@@ -15,6 +15,8 @@ class LearningObjectiveResource extends Resource
 {
     protected static ?string $model = LearningObjective::class;
 
+    protected static ?string $recordTitleAttribute = 'description';
+
     protected static ?string $slug = 'learning-objective';
 
     public static function getEloquentQuery(): Builder

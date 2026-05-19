@@ -21,6 +21,8 @@ class StudentResource extends Resource
 {
     protected static ?string $model = Student::class;
 
+    protected static ?string $recordTitleAttribute = 'nisn';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';

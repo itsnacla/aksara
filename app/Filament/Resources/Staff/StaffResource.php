@@ -22,6 +22,8 @@ class StaffResource extends Resource
 {
     protected static ?string $model = Staff::class;
 
+    protected static ?string $recordTitleAttribute = 'jabatan';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-identification';
 
     protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';

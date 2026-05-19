@@ -16,6 +16,8 @@ class TimeSlotResource extends Resource
 {
     protected static ?string $model = TimeSlot::class;
 
+    protected static ?string $recordTitleAttribute = 'nama_jam';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-clock';
 
     protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';

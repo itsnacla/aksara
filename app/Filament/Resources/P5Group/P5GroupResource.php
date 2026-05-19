@@ -15,6 +15,8 @@ class P5GroupResource extends Resource
 {
     protected static ?string $model = P5Group::class;
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     protected static ?string $slug = 'p5-group';
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-users';

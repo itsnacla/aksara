@@ -14,6 +14,8 @@ class P5ProjectResource extends Resource
 {
     protected static ?string $model = P5Project::class;
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     protected static ?string $slug = 'p5-project';
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-document-text';

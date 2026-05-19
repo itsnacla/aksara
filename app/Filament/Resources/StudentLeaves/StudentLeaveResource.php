@@ -27,6 +27,8 @@ class StudentLeaveResource extends Resource
 {
     protected static ?string $model = StudentLeave::class;
 
+    protected static ?string $recordTitleAttribute = 'reason';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-document-check';
 
     protected static ?string $navigationLabel = 'Izin Siswa';
