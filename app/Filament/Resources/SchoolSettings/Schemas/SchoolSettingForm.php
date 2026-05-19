@@ -90,6 +90,12 @@ class SchoolSettingForm
                             ->disk('public')
                             ->directory('school')
                             ->columnSpanFull(),
+                        FileUpload::make('logo_pemda')
+                            ->label('Logo Pemerintah Daerah')
+                            ->image()
+                            ->disk('public')
+                            ->directory('school')
+                            ->columnSpanFull(),
                     ])
                     ->columns(1),
 
@@ -109,21 +115,21 @@ class SchoolSettingForm
                             ->afterStateUpdated(fn ($set) => $set('city', null)->set('district', null)->set('village', null)),
                         Select::make('city')
                             ->label('Kabupaten/Kota')
-                            ->options(fn (Get $get) => SchoolRegionService::getRegencies($get('province')))
+                            ->options(fn (callable $get) => SchoolRegionService::getRegencies($get('province')))
                             ->searchable()
                             ->required()
                             ->live()
                             ->afterStateUpdated(fn ($set) => $set('district', null)->set('village', null)),
                         Select::make('district')
                             ->label('Kecamatan')
-                            ->options(fn (Get $get) => SchoolRegionService::getDistricts($get('city')))
+                            ->options(fn (callable $get) => SchoolRegionService::getDistricts($get('city')))
                             ->searchable()
                             ->required()
                             ->live()
                             ->afterStateUpdated(fn ($set) => $set('village', null)),
                         Select::make('village')
                             ->label('Kelurahan/Desa')
-                            ->options(fn (Get $get) => SchoolRegionService::getVillages($get('district')))
+                            ->options(fn (callable $get) => SchoolRegionService::getVillages($get('district')))
                             ->searchable()
                             ->required(),
                     ])

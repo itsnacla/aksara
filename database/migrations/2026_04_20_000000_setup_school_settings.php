@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('npsn')->nullable();
             $table->string('logo')->nullable();
+            $table->string('logo_pemda')->nullable();
             $table->string('address')->nullable();
             $table->string('village')->nullable();
             $table->string('district')->nullable();

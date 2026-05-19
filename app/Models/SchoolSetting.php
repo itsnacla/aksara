@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property string|null $npsn
  * @property string|null $logo
+ * @property string|null $logo_pemda
  * @property string|null $address
  * @property string|null $village
  * @property string|null $district
@@ -33,6 +34,7 @@ use Illuminate\Database\Eloquent\Model;
     'name',
     'npsn',
     'logo',
+    'logo_pemda',
     'address',
     'village',
     'district',
