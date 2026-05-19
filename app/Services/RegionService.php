@@ -14,22 +14,21 @@ class RegionService
         $cacheKey = "tateta_geo_v1_{$level}_{$parent}";
         
         return Cache::remember($cacheKey, 86400, function () use ($level, $parent) {
-            $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+            $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
             
-            // 1. Try TatetaGeo Local Microservice First with a short timeout of 2 seconds
             try {
                 $endpoint = match($level) {
-                    'provinsi' => 'v1/provinces',
-                    'kabupaten' => 'v1/regencies?province_id=' . $parent,
-                    'kecamatan' => 'v1/districts?regency_id=' . $parent,
-                    'desa' => 'v1/villages?district_id=' . $parent,
+                    'provinsi' => '/provinces',
+                    'kabupaten' => '/regencies?province_id=' . $parent,
+                    'kecamatan' => '/districts?regency_id=' . $parent,
+                    'desa' => '/villages?district_id=' . $parent,
                     default => null
                 };
                 
                 if ($endpoint) {
-                    $response = Http::timeout(2)
+                    $response = Http::timeout(5)
                         ->withToken(env('TATETA_GEO_TOKEN'))
-                        ->get("{$baseUrl}/api/{$endpoint}");
+                        ->get("{$baseUrl}{$endpoint}");
                     if ($response->successful()) {
                         $data = $response->json();
                         $results = [];
@@ -44,45 +43,11 @@ class RegionService
                     }
                 }
             } catch (\Exception $e) {
-                // Log and failover to secondary safety net (Emsifa GitHub Pages)
-                Log::warning("TatetaGeo is offline/unreachable: " . $e->getMessage() . ". Falling back to Emsifa API.");
+                Log::error("TatetaGeo is offline/unreachable: " . $e->getMessage());
             }
 
-            // 2. Secondary safety fallback: Fetch directly from Emsifa API (GitHub Pages)
-            return self::fetchFromEmsifa($level, $parent);
-        });
-    }
-
-    private static function fetchFromEmsifa(string $level, string $parent = '0'): array
-    {
-        $endpoints = [
-            'provinsi' => 'provinces.json',
-            'kabupaten' => "regencies/{$parent}.json",
-            'kecamatan' => "districts/{$parent}.json",
-            'desa' => "villages/{$parent}.json",
-        ];
-
-        if (!isset($endpoints[$level])) return [];
-
-        try {
-            $url = "https://www.emsifa.com/api-wilayah-indonesia/api/" . $endpoints[$level];
-            $response = Http::timeout(10)->get($url);
-
-            if (!$response->successful()) return [];
-
-            $data = $response->json();
-            $results = [];
-            foreach ($data as $item) {
-                $code = $item['id'] ?? $item['kode'] ?? null;
-                $name = $item['name'] ?? $item['nama'] ?? null;
-                if ($code && $name) {
-                    $results[(string)$code] = strtoupper($name);
-                }
-            }
-            return $results;
-        } catch (\Exception $e) {
             return [];
-        }
+        });
     }
 
     // INTERNAL: Get [ID => NAME]
@@ -128,12 +93,12 @@ class RegionService
     public static function findProvinceIdByName(?string $name): ?string
     {
         if (!$name) return null;
-        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+        $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
 
         try {
             $response = Http::timeout(2)
                 ->withToken(env('TATETA_GEO_TOKEN'))
-                ->get("{$baseUrl}/api/v1/provinces/find", ['name' => $name]);
+                ->get("{$baseUrl}/provinces/find", ['name' => $name]);
             if ($response->successful()) {
                 $id = $response->json()['id'] ?? null;
                 if ($id) return (string)$id;
@@ -152,12 +117,12 @@ class RegionService
     public static function findRegencyIdByName($provinceName, ?string $name): ?string
     {
         if (!$name) return null;
-        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+        $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
 
         try {
             $response = Http::timeout(2)
                 ->withToken(env('TATETA_GEO_TOKEN'))
-                ->get("{$baseUrl}/api/v1/regencies/find", [
+                ->get("{$baseUrl}/regencies/find", [
                     'name' => $name,
                     'province_name' => $provinceName
                 ]);
@@ -193,12 +158,12 @@ class RegionService
     public static function findDistrictIdByName($regencyName, ?string $name): ?string
     {
         if (!$name) return null;
-        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+        $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
 
         try {
             $response = Http::timeout(2)
                 ->withToken(env('TATETA_GEO_TOKEN'))
-                ->get("{$baseUrl}/api/v1/districts/find", [
+                ->get("{$baseUrl}/districts/find", [
                     'name' => $name,
                     'regency_name' => $regencyName
                 ]);

@@ -24,7 +24,7 @@ class SystemHealthWidget extends BaseWidget
 
             // --- EXTERNAL SERVICES ---
             $this->getKemendikbudStatus(),
-            $this->getEmsifaStatus(),
+            $this->getRegionalApiStatus(),
             $this->getWaStatus(),
             $this->getAiStatus(),
             $this->getMailStatus(),
@@ -94,13 +94,16 @@ class SystemHealthWidget extends BaseWidget
         }
     }
 
-    private function getEmsifaStatus(): Stat
+    private function getRegionalApiStatus(): Stat
     {
-        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001');
+        $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo');
         
         try {
-            // 1. Check local TatetaGeo microservice with the lightweight public health endpoint
-            $response = Http::timeout(1)->get("{$baseUrl}/api/health");
+            // Parse host and port to correctly call the health check endpoint at tateta-geo root
+            $urlParts = parse_url($baseUrl);
+            $host = ($urlParts['scheme'] ?? 'http') . '://' . ($urlParts['host'] ?? '127.0.0.1') . (isset($urlParts['port']) ? ':' . $urlParts['port'] : '');
+            
+            $response = Http::timeout(2)->get("{$host}/api/health");
                 
             if ($response->successful() && $response->json('status') === 'healthy') {
                 $dbStatus = $response->json('database') === 'connected' ? 'Database: OK' : 'Database: Offline';
@@ -110,21 +113,13 @@ class SystemHealthWidget extends BaseWidget
                     ->color('success');
             }
         } catch (\Exception $e) {
-            // Microservice is down, proceed to Emsifa check
+            // Log or ignore to show Offline status below
         }
 
-        try {
-            // 2. Check Emsifa CDN as safety fallback
-            $response = Http::timeout(2)->get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json');
-            return Stat::make('Regional API', $response->successful() ? 'Emsifa Fallback' : 'Offline')
-                ->description($response->successful() ? 'TatetaGeo Offline | Emsifa OK' : 'All services unreachable')
-                ->descriptionIcon('heroicon-m-globe-alt')
-                ->color($response->successful() ? 'warning' : 'danger');
-        } catch (\Exception $e) {
-            return Stat::make('Regional API', 'Offline')
-                ->description('All regional APIs are offline!')
-                ->color('danger');
-        }
+        return Stat::make('Regional API', 'Offline')
+            ->description('TatetaGeo is Offline')
+            ->descriptionIcon('heroicon-m-globe-alt')
+            ->color('danger');
     }
 
     private function getWaStatus(): Stat
