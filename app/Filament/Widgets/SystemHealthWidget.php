@@ -16,7 +16,7 @@ class SystemHealthWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasAnyRole(['super_admin', 'staff']) ?? false;
+        return auth()->user()?->hasRole('super_admin') ?? false;
     }
 
     protected function getStats(): array
