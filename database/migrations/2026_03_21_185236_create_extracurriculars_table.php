@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nama_ekskul', 50);
             $table->enum('kategori', ['wajib', 'pilihan'])->default('pilihan');
             $table->string('nilai_minimum', 20)->nullable();
-            $table->string('pembina')->nullable();
+            $table->foreignId('coordinator_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->text('deskripsi');
             $table->timestamps();
         });

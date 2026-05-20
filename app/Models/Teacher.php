@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class Teacher extends Model
 {
+    protected $with = ['user'];
     protected static function booted()
     {
         static::creating(function ($model) {

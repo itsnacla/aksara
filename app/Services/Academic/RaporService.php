@@ -14,6 +14,7 @@ use App\Models\SubjectReportMapping;
 use App\Models\Level;
 use App\Models\StudyGroup;
 use App\Models\StudentRapor;
+use App\Models\ExtracurricularGrade;
 
 class RaporService
 {
@@ -98,7 +99,7 @@ class RaporService
             'sakit' => $sakit,
             'izin' => $izin,
             'alpha' => $alpha,
-            'ekskuls' => $this->getEkskulsRecap(),
+            'ekskuls' => $this->getEkskulsRecap($student, $academicYearId),
             'cocurriculars' => $this->getCocurricularData($level, $activeYear),
             'p5Project' => $p5Data['p5Project'],
             'graduateProfiles' => $p5Data['graduateProfiles'],
@@ -278,17 +279,22 @@ class RaporService
     }
 
     /**
-     * Retrieve extracurriculars record recap.
+     * Retrieve extracurricular grades for a specific student and academic year.
      */
-    private function getEkskulsRecap(): array
+    private function getEkskulsRecap(Student $student, int $academicYearId): array
     {
-        return Extracurricular::limit(2)->get()->map(function($e) {
-            return [
-                'nama' => $e->nama_ekskul,
-                'nilai' => 'A',
-                'deskripsi' => $e->deskripsi ?: 'Berpartisipasi aktif dan menunjukkan minat tinggi.'
-            ];
-        })->toArray();
+        return ExtracurricularGrade::where('student_id', $student->id)
+            ->where('academic_year_id', $academicYearId)
+            ->with('extracurricular')
+            ->get()
+            ->map(function ($grade) {
+                return [
+                    'nama'     => $grade->extracurricular->nama_ekskul,
+                    'nilai'    => $grade->predikat,
+                    'deskripsi' => $grade->keterangan ?: 'Berpartisipasi aktif dan menunjukkan minat tinggi.',
+                ];
+            })
+            ->toArray();
     }
 
     /**

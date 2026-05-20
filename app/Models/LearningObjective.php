@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'subject_id',
     'level_id',
+    'academic_year_id',
     'code',
     'description',
     'is_active',

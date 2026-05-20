@@ -5,6 +5,7 @@ namespace App\Filament\Resources\LearningObjective\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Hidden;
 use Filament\Schemas\Schema;
 
 class LearningObjectiveForm
@@ -12,17 +13,34 @@ class LearningObjectiveForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
+            Hidden::make('academic_year_id')
+                ->default(function () {
+                    return \App\Models\AcademicYear::where('is_active', true)->value('id');
+                })
+                ->required(),
+            
             Select::make('subject_id')
                 ->relationship('subject', 'nama_mapel', modifyQueryUsing: function ($query) {
                     $query->where('subjects.is_graded', true);
                     $user = auth()->user();
                     if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
                         $teacherId = $user->teacher->id;
-                        $managedLevelIds = \App\Models\StudyGroup::where('walikelas_id', $teacherId)->pluck('level_id')->toArray();
-                        $query->where(function ($q) use ($teacherId, $managedLevelIds) {
-                            $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
-                              ->orWhereHas('levels', fn ($lq) => $lq->whereIn('levels.id', $managedLevelIds));
-                        });
+                        $isWaliKelas = $user->teacher->is_walikelas;
+                        
+                        if ($isWaliKelas) {
+                            // Wali kelas can see: is_umum subjects OR subjects from schedules OR subjects from teacher relationship
+                            $query->where(function ($q) use ($teacherId) {
+                                $q->where('subjects.is_umum', true)
+                                  ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
+                                  ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
+                            });
+                        } else {
+                            // Guru mapel can see: subjects from schedules OR subjects from teacher relationship
+                            $query->where(function ($q) use ($teacherId) {
+                                $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
+                                  ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
+                            });
+                        }
                     }
                 })
                 ->label('Mata Pelajaran')
@@ -32,13 +50,36 @@ class LearningObjectiveForm
                 ->native(false)
                 ->live()
                 ->afterStateUpdated(function (callable $set, callable $get) {
-                    $set('level_id', null);
+                    $user = auth()->user();
+                    $isWaliKelas = $user && $user->teacher && $user->teacher->is_walikelas;
+                    
+                    if (!$isWaliKelas) {
+                        // Guru mapel: reset level_id karena mereka pilih manual
+                        $set('level_id', null);
+                    }
+                    // Untuk semua: reset code
                     $set('code', null);
                 }),
                 
             Select::make('level_id')
                 ->label('Tingkatan / Fase')
                 ->options(function (callable $get) {
+                    $user = auth()->user();
+                    $isWaliKelas = $user && $user->teacher && $user->teacher->is_walikelas;
+                    
+                    if ($isWaliKelas) {
+                        // Wali kelas: auto-populate dari rombel mereka
+                        $managedStudyGroup = \App\Models\StudyGroup::where('walikelas_id', $user->teacher->id)
+                            ->whereHas('academicYear', fn ($q) => $q->where('is_active', true))
+                            ->first();
+                        
+                        if ($managedStudyGroup && $managedStudyGroup->level) {
+                            return [$managedStudyGroup->level->id => $managedStudyGroup->level->nama_tingkatan];
+                        }
+                        return [];
+                    }
+                    
+                    // Guru mapel: manual select
                     $subjectId = $get('subject_id');
                     if (!$subjectId) {
                         return \App\Models\Level::pluck('nama_tingkatan', 'id')->toArray();
@@ -48,6 +89,34 @@ class LearningObjectiveForm
                         return $subject->levels->pluck('nama_tingkatan', 'id')->toArray();
                     }
                     return [];
+                })
+                ->default(function () {
+                    $user = auth()->user();
+                    $isWaliKelas = $user && $user->teacher && $user->teacher->is_walikelas;
+                    
+                    if ($isWaliKelas) {
+                        // Auto-populate level untuk wali kelas
+                        $managedStudyGroup = \App\Models\StudyGroup::where('walikelas_id', $user->teacher->id)
+                            ->whereHas('academicYear', fn ($q) => $q->where('is_active', true))
+                            ->first();
+                        
+                        return $managedStudyGroup?->level_id;
+                    }
+                    return null;
+                })
+                ->disabled(function () {
+                    $user = auth()->user();
+                    return $user && $user->teacher && $user->teacher->is_walikelas;
+                })
+                ->dehydrated()
+                ->helperText(function () {
+                    $user = auth()->user();
+                    $isWaliKelas = $user && $user->teacher && $user->teacher->is_walikelas;
+                    
+                    if ($isWaliKelas) {
+                        return 'Tingkatan otomatis diambil dari rombel yang Anda kelola.';
+                    }
+                    return null;
                 })
                 ->searchable()
                 ->required()

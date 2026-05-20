@@ -153,4 +153,19 @@ class Student extends Model
     {
         return $this->belongsToMany(P5Group::class, 'p5_group_student')->withTimestamps();
     }
+
+    public function studentRapors()
+    {
+        return $this->hasMany(StudentRapor::class);
+    }
+
+    public function extracurriculars(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Extracurricular::class, 'extracurricular_student')->withTimestamps();
+    }
+
+    public function extracurricularGrades(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ExtracurricularGrade::class);
+    }
 }

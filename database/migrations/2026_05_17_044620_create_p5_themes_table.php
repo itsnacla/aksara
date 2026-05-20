@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('p5_themes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('academic_year_id')->nullable()->constrained('academic_years');
             $table->string('name');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

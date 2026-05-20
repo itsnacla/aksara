@@ -12,10 +12,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('subject_id')->constrained()->cascadeOnDelete();
             $table->foreignId('level_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('academic_year_id')->nullable()->constrained('academic_years')->cascadeOnDelete();
             $table->string('code', 20)->nullable(); // Contoh: TP 1.1
             $table->text('description'); // Contoh: Mengenal angka 1-10
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->index('academic_year_id');
         });
     }
 

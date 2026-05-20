@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Extracurriculars\Schemas;
 
 use App\Models\Staff;
 use App\Models\Teacher;
+use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -32,23 +33,23 @@ class ExtracurricularForm
                     ->label('Nilai Minimum (Standar)')
                     ->placeholder('Contoh: B atau 75')
                     ->maxLength(20),
-                Select::make('pembina')
-                    ->label('Pembina / Pelatih')
+                Select::make('coordinator_user_id')
+                    ->label('Koordinator / Pembina')
                     ->options(function () {
-                        $teachers = Teacher::with('user')->get()->mapWithKeys(function ($teacher) {
-                            $name = $teacher->user->name ?? 'N/A';
-                            return [$name => "[Guru] " . $name];
-                        });
+                        $teacherUserIds = Teacher::pluck('user_id')->filter();
+                        $staffUserIds = Staff::pluck('user_id')->filter();
+                        $userIds = $teacherUserIds->concat($staffUserIds)->unique();
 
-                        $staff = Staff::with('user')->get()->mapWithKeys(function ($staffMember) {
-                            $name = $staffMember->user->name ?? 'N/A';
-                            return [$name => "[Staf] " . $name];
-                        });
-
-                        return $teachers->merge($staff)->toArray();
+                        return User::whereIn('id', $userIds)
+                            ->get()
+                            ->mapWithKeys(function ($user) use ($teacherUserIds) {
+                                $prefix = $teacherUserIds->contains($user->id) ? '[Guru]' : '[Staf]';
+                                return [$user->id => "{$prefix} {$user->name}"];
+                            })
+                            ->toArray();
                     })
                     ->searchable()
-                    ->placeholder('Pilih Guru atau Staf sebagai Pembina'),
+                    ->placeholder('Pilih Guru atau Staf sebagai Koordinator'),
                 Textarea::make('deskripsi')
                     ->label('Deskripsi Kegiatan')
                     ->required()

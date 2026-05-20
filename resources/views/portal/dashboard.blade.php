@@ -252,7 +252,7 @@
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                         <div class="min-w-0">
                             <p class="font-semibold text-xs truncate">{{ $ekskul->nama_ekskul }}</p>
-                            <p class="text-[10px] text-gray-400">{{ $ekskul->pembina ?? 'N/A' }}</p>
+                            <p class="text-[10px] text-gray-400">{{ $ekskul->coordinator?->name ?? 'N/A' }}</p>
                         </div>
                         <span class="px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase shrink-0 {{ $ekskul->kategori === 'wajib' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' }}">
                             {{ ucwords($ekskul->kategori) }}
@@ -341,7 +341,7 @@
                             </div>
                             <div class="min-w-0">
                                 <p class="font-semibold text-xs truncate">{{ $ekskul->nama_ekskul }}</p>
-                                <p class="text-[10px] text-gray-400">{{ $ekskul->pembina ?? 'N/A' }}</p>
+                                <p class="text-[10px] text-gray-400">{{ $ekskul->coordinator?->name ?? 'N/A' }}</p>
                             </div>
                         </div>
                         <span class="px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase shrink-0 ml-2 {{ $ekskul->kategori === 'wajib' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' }}">

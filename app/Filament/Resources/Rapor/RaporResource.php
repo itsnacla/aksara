@@ -32,11 +32,63 @@ class RaporResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Rapor';
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('ViewAny:Rapor') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('Create:Rapor') ?? false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->can('Update:Rapor') ?? false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->can('Delete:Rapor') ?? false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()?->can('DeleteAny:Rapor') ?? false;
+    }
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        // Shield permission check (configurable via Filament Shield UI)
+        if (!static::canViewAny()) return false;
+
+        // super_admin & staff: full access
+        if ($user->hasAnyRole(['super_admin', 'staff'])) return true;
+
+        // guru: hanya wali kelas yang bisa akses
+        if ($user->hasRole('guru')) {
+            return \App\Models\StudyGroup::where('walikelas_id', $user->teacher?->id ?? 0)->exists();
+        }
+
+        // Role lain yang di-grant via Shield: ikuti Shield permission
+        return true;
+    }
+
     public static function getEloquentQuery(): Builder
     {
+        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+        
         $query = parent::getEloquentQuery()
             ->with(['user', 'studyGroups.level'])
-            ->whereHas('studyGroups');
+            ->whereHas('studyGroups')
+            ->whereHas('studentRapors', function ($q) use ($activeYearId) {
+                if ($activeYearId) {
+                    $q->where('academic_year_id', $activeYearId);
+                }
+            });
 
         $user = auth()->user();
         if ($user && $user->hasRole('guru')) {
@@ -236,122 +288,6 @@ class RaporResource extends Resource
     protected static function getTableActions(): array
     {
         return [
-            Action::make('generate_rapor')
-                ->label('Generate Rapor')
-                ->icon('heroicon-o-cpu-chip')
-                ->color('success')
-                ->before(function (Action $action, Student $record) {
-                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                    if (!$activeYearId) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Tahun ajaran aktif tidak ditemukan')
-                            ->danger()
-                            ->send();
-                        $action->halt();
-                        return;
-                    }
-
-                    $rombel = $record->studyGroups->where('academic_year_id', $activeYearId)->first();
-                    $level = $rombel?->level;
-                    if (!$rombel || !$level) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Siswa belum terdaftar di Rombel untuk tahun ajaran aktif')
-                            ->danger()
-                            ->send();
-                        $action->halt();
-                        return;
-                    }
-
-                    $mappings = \App\Models\SubjectReportMapping::where('level_id', $level->id)->get();
-                    $subjects = collect();
-                    if ($mappings->isNotEmpty()) {
-                        foreach ($mappings as $m) {
-                            if ($m->subject && $m->subject->is_graded) {
-                                $subjects->push($m->subject);
-                            }
-                        }
-                    } else {
-                        $subjects = $level->subjects()->where('is_graded', true)->get();
-                    }
-
-                    if ($subjects->isEmpty()) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Mata pelajaran untuk tingkatan kelas ini belum diatur')
-                            ->danger()
-                            ->send();
-                        $action->halt();
-                        return;
-                    }
-
-                    $missingSubjects = [];
-                    foreach ($subjects as $subject) {
-                        $exists = \App\Models\Grade::where('student_id', $record->id)
-                            ->where('subject_id', $subject->id)
-                            ->where('academic_year_id', $activeYearId)
-                            ->exists();
-                        if (!$exists) {
-                            $missingSubjects[] = $subject->nama_mapel;
-                        }
-                    }
-
-                    if (!empty($missingSubjects)) {
-                        $list = implode(', ', $missingSubjects);
-                        \Filament\Notifications\Notification::make()
-                            ->title('Gagal Generate Rapor')
-                            ->body("Nilai mata pelajaran [{$list}] masih kosong. Silakan lengkapi nilai siswa terlebih dahulu sebelum melakukan generate rapor!")
-                            ->danger()
-                            ->persistent()
-                            ->send();
-                        $action->halt();
-                    }
-                })
-                ->modalHeading(fn (Student $record) => "Generate Rapor (AI) - {$record->user->name}")
-                ->modalWidth('lg')
-                ->modalSubmitActionLabel('Simpan Rapor')
-                ->fillForm(function (Student $record) {
-                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                    
-                    $rapor = \App\Models\StudentRapor::where('student_id', $record->id)
-                        ->where('academic_year_id', $activeYearId)
-                        ->first();
-
-                    if (!$rapor) {
-                        $raporService = new \App\Services\Academic\RaporService();
-                        $rapor = $raporService->generateStudentRapor($record, $activeYearId);
-                    }
-
-                    $activeYear = \App\Models\AcademicYear::find($activeYearId);
-                    $isGenap = $activeYear && strtolower($activeYear->semester) === 'genap';
-
-                    return [
-                        'catatan_wali_kelas' => $rapor->catatan_wali_kelas,
-                        'is_naik' => $rapor->is_naik ?? true,
-                        'kenaikan_kelas_to' => $rapor->kenaikan_kelas_to,
-                        'is_genap' => $isGenap,
-                    ];
-                })
-                ->form(self::getGenerateRaporForm())
-                ->action(function (Student $record, array $data) {
-                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                    if (!$activeYearId) return;
-
-                    \App\Models\StudentRapor::updateOrCreate(
-                        [
-                            'student_id' => $record->id,
-                            'academic_year_id' => $activeYearId,
-                        ],
-                        [
-                            'catatan_wali_kelas' => $data['catatan_wali_kelas'],
-                            'is_naik' => isset($data['is_naik']) ? (bool)$data['is_naik'] : null,
-                            'kenaikan_kelas_to' => $data['kenaikan_kelas_to'] ?? null,
-                        ]
-                    );
-
-                    \Filament\Notifications\Notification::make()
-                        ->title('Rapor Berhasil Disimpan')
-                        ->success()
-                        ->send();
-                }),
             Action::make('cetak_rapor')
                 ->label('Cetak')
                 ->icon('heroicon-o-printer')

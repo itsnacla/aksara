@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $is_active
  */
 #[Fillable([
+    'academic_year_id',
     'name',
     'is_active',
 ])]

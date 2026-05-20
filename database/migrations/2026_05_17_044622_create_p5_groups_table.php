@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('p5_groups', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('academic_year_id')->nullable()->constrained('academic_years');
             $table->foreignId('p5_project_id')->constrained('p5_projects')->cascadeOnDelete();
             $table->foreignId('level_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('study_group_id')->nullable()->constrained('study_groups')->nullOnDelete();
             $table->foreignId('teacher_id')->constrained()->cascadeOnDelete(); // Koordinator
             $table->string('name'); // Nama Kelompok, misal: 9.1
             $table->timestamps();

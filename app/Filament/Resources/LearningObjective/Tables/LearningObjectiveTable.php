@@ -68,7 +68,7 @@ class LearningObjectiveTable
                     ->label('Tingkatan'),
             ])
             ->actions([
-                EditAction::make(),
+                EditAction::make()->modalWidth('5xl'),
                 DeleteAction::make(),
             ])
             ->bulkActions([

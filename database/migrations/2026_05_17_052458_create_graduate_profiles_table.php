@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('graduate_profiles', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('academic_year_id')->nullable()->constrained('academic_years');
             $table->string('dimensi');
-            $table->string('subdimensi');
             $table->timestamps();
         });
     }

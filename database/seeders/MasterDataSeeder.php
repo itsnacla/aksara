@@ -24,9 +24,9 @@ class MasterDataSeeder extends Seeder
         $this->seedSubjectReportMappings($levelModels);
         $this->seedExtracurriculars();
         $this->seedChatbotSettings();
-        $this->seedLearningObjectives($levelModels);
-        $this->seedP5ThemesAndProjects();
-        $this->seedCocurriculars();
+        // $this->seedLearningObjectives($levelModels); // Commented out - TP data cleaned
+        // $this->seedP5ThemesAndProjects(); // Commented out - requires academic_year_id
+        // $this->seedCocurriculars(); // Commented out - requires academic_year_id
     }
 
     private function seedChatbotSettings(): void
@@ -170,13 +170,17 @@ class MasterDataSeeder extends Seeder
     private function seedExtracurriculars(): void
     {
         $ekskuls = [
-            ['nama_ekskul' => 'Pramuka', 'kategori' => 'wajib', 'pembina' => 'Eni Nuryanti, S.Pd', 'nilai_minimum' => 'B', 'deskripsi' => 'Kegiatan kepanduan wajib untuk melatih kedisiplinan dan kemandirian.'],
-            ['nama_ekskul' => 'Futsal', 'kategori' => 'pilihan', 'pembina' => 'Beni Putra, S.Pd', 'nilai_minimum' => 'C', 'deskripsi' => 'Olahraga minat bakat sepak bola dalam ruangan.'],
-            ['nama_ekskul' => 'Tari Tradisional', 'kategori' => 'pilihan', 'pembina' => 'Siti Sarah', 'nilai_minimum' => 'B', 'deskripsi' => 'Melestarikan seni budaya melalui tarian daerah.'],
-            ['nama_ekskul' => 'PMR', 'kategori' => 'pilihan', 'pembina' => 'Bambang Irawan', 'nilai_minimum' => 'B', 'deskripsi' => 'Pelatihan pertolongan pertama dan kesehatan sekolah.'],
+            ['nama_ekskul' => 'Pramuka', 'kategori' => 'wajib', 'coordinator_name' => 'Eni Nuryanti, S.Pd', 'nilai_minimum' => 'B', 'deskripsi' => 'Kegiatan kepanduan wajib untuk melatih kedisiplinan dan kemandirian.'],
+            ['nama_ekskul' => 'Futsal', 'kategori' => 'pilihan', 'coordinator_name' => 'Beni Putra, S.Pd', 'nilai_minimum' => 'C', 'deskripsi' => 'Olahraga minat bakat sepak bola dalam ruangan.'],
+            ['nama_ekskul' => 'Tari Tradisional', 'kategori' => 'pilihan', 'coordinator_name' => 'Siti Sarah', 'nilai_minimum' => 'B', 'deskripsi' => 'Melestarikan seni budaya melalui tarian daerah.'],
+            ['nama_ekskul' => 'PMR', 'kategori' => 'pilihan', 'coordinator_name' => 'Bambang Irawan', 'nilai_minimum' => 'B', 'deskripsi' => 'Pelatihan pertolongan pertama dan kesehatan sekolah.'],
         ];
 
         foreach ($ekskuls as $e) {
+            $coordinatorUserId = \App\Models\User::where('name', $e['coordinator_name'])->value('id');
+            unset($e['coordinator_name']);
+            $e['coordinator_user_id'] = $coordinatorUserId;
+
             Extracurricular::updateOrCreate(['nama_ekskul' => $e['nama_ekskul']], $e);
         }
     }
@@ -254,52 +258,52 @@ class MasterDataSeeder extends Seeder
         }
     }
 
-    private function seedLearningObjectives(array $levelModels): void
-    {
-        $subjects = Subject::with('levels')->get();
-        foreach ($subjects as $subject) {
-            foreach ($levelModels as $sort => $level) {
-                // Check if subject is associated with this level
-                if (!$subject->levels->contains($level->id)) {
-                    continue;
-                }
-                
-                // Let's seed 4 TPs per subject-level combination
-                $tpTemplates = [
-                    1 => [
-                        'code' => "TP {$sort}.1",
-                        'description' => "memahami konsep dasar {$subject->nama_mapel}"
-                    ],
-                    2 => [
-                        'code' => "TP {$sort}.2",
-                        'description' => "menganalisis materi {$subject->nama_mapel}"
-                    ],
-                    3 => [
-                        'code' => "TP {$sort}.3",
-                        'description' => "mengevaluasi hasil karya {$subject->nama_mapel}"
-                    ],
-                    4 => [
-                        'code' => "TP {$sort}.4",
-                        'description' => "mempraktikkan proyek {$subject->nama_mapel}"
-                    ],
-                ];
-                
-                foreach ($tpTemplates as $tp) {
-                    \App\Models\LearningObjective::updateOrCreate(
-                        [
-                            'subject_id' => $subject->id,
-                            'level_id' => $level->id,
-                            'code' => $tp['code'],
-                        ],
-                        [
-                            'description' => $tp['description'],
-                            'is_active' => true,
-                        ]
-                    );
-                }
-            }
-        }
-    }
+    // private function seedLearningObjectives(array $levelModels): void
+    // {
+    //     $subjects = Subject::with('levels')->get();
+    //     foreach ($subjects as $subject) {
+    //         foreach ($levelModels as $sort => $level) {
+    //             // Check if subject is associated with this level
+    //             if (!$subject->levels->contains($level->id)) {
+    //                 continue;
+    //             }
+    //             
+    //             // Let's seed 4 TPs per subject-level combination
+    //             $tpTemplates = [
+    //                 1 => [
+    //                     'code' => "TP {$sort}.1",
+    //                     'description' => "memahami konsep dasar {$subject->nama_mapel}"
+    //                 ],
+    //                 2 => [
+    //                     'code' => "TP {$sort}.2",
+    //                     'description' => "menganalisis materi {$subject->nama_mapel}"
+    //                 ],
+    //                 3 => [
+    //                     'code' => "TP {$sort}.3",
+    //                     'description' => "mengevaluasi hasil karya {$subject->nama_mapel}"
+    //                 ],
+    //                 4 => [
+    //                     'code' => "TP {$sort}.4",
+    //                     'description' => "mempraktikkan proyek {$subject->nama_mapel}"
+    //                 ],
+    //             ];
+    //             
+    //             foreach ($tpTemplates as $tp) {
+    //                 \App\Models\LearningObjective::updateOrCreate(
+    //                     [
+    //                         'subject_id' => $subject->id,
+    //                         'level_id' => $level->id,
+    //                         'code' => $tp['code'],
+    //                     ],
+    //                     [
+    //                         'description' => $tp['description'],
+    //                         'is_active' => true,
+    //                     ]
+    //                 );
+    //             }
+    //         }
+    //     }
+    // }
 
     private function seedP5ThemesAndProjects(): void
     {

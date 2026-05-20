@@ -24,7 +24,7 @@ class P5ProjectResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel = 'Kegiatan Kokurikuler';
+    protected static ?string $navigationLabel = 'Kokurikuler';
 
     protected static ?string $modelLabel = 'Kegiatan Kokurikuler';
 
@@ -40,10 +40,32 @@ class P5ProjectResource extends Resource
         return P5ProjectTable::configure($table);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        // Filter by active academic year
+        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+        if ($activeYearId) {
+            $query->where('academic_year_id', $activeYearId);
+        }
+        
+        return $query;
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            'groups' => RelationManagers\P5GroupRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageP5Projects::route('/'),
+            'index' => Pages\ListP5Projects::route('/'),
+            'create' => Pages\CreateP5Project::route('/create'),
+            'edit' => Pages\EditP5Project::route('/{record}'),
         ];
     }
 }

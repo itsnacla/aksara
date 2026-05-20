@@ -6,6 +6,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Hidden;
 use Filament\Schemas\Schema;
 use App\Models\AcademicYear;
 
@@ -15,30 +16,28 @@ class P5ProjectForm
     {
         return $schema
             ->components([
+                Hidden::make('academic_year_id')
+                    ->default(fn() => AcademicYear::where('is_active', true)->first()?->id),
+                
                 Select::make('p5_theme_id')
-                    ->relationship('theme', 'name')
+                    ->relationship('theme', 'name', modifyQueryUsing: function ($query) {
+                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                        if ($activeYearId) {
+                            $query->where('academic_year_id', $activeYearId);
+                        }
+                    })
                     ->label('Tema Kokurikuler')
                     ->required()
-                    ->searchable(),
-                
-                Select::make('academic_year_id')
-                    ->relationship('academicYear', 'name')
-                    ->label('Tahun Ajaran')
-                    ->default(fn() => AcademicYear::where('is_active', true)->first()?->id)
-                    ->required()
+                    ->preload()
                     ->searchable(),
 
-                Select::make('fase')
-                    ->label('Fase')
-                    ->options([
-                        'A' => 'Fase A (Kelas 1-2)',
-                        'B' => 'Fase B (Kelas 3-4)',
-                        'C' => 'Fase C (Kelas 5-6)',
-                        'D' => 'Fase D (Kelas 7-9)',
-                        'E' => 'Fase E (Kelas 10)',
-                        'F' => 'Fase F (Kelas 11-12)',
-                    ])
-                    ->required(),
+                Select::make('levels')
+                    ->relationship('levels', 'nama_tingkatan')
+                    ->label('Tingkat')
+                    ->multiple()
+                    ->required()
+                    ->preload()
+                    ->searchable(),
 
                 TextInput::make('name')
                     ->label('Judul Kegiatan Kokurikuler')
@@ -55,9 +54,24 @@ class P5ProjectForm
                     ->label('Profil Lulusan (Dimensi/Elemen)')
                     ->multiple()
                     ->options(function () {
-                        return \App\Models\GraduateProfile::all()
-                            ->mapWithKeys(fn($item) => ["{$item->dimensi}: {$item->subdimensi}" => "{$item->dimensi} - {$item->subdimensi}"])
-                            ->toArray();
+                        $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
+                        if (!$activeYear) {
+                            return [];
+                        }
+                        
+                        $options = [];
+                        $profiles = \App\Models\GraduateProfile::where('academic_year_id', $activeYear->id)
+                            ->with('subdimensions')
+                            ->get();
+                        
+                        foreach ($profiles as $profile) {
+                            foreach ($profile->subdimensions as $subdimension) {
+                                $key = "{$profile->dimensi}: {$subdimension->subdimensi}";
+                                $options[$key] = "{$profile->dimensi} - {$subdimension->subdimensi}";
+                            }
+                        }
+                        
+                        return $options;
                     })
                     ->preload()
                     ->searchable()

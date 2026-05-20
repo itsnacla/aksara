@@ -23,24 +23,18 @@ class P5ProjectTable
                     ->label('Tema')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('fase')
-                    ->label('Fase')
-                    ->sortable(),
+                TextColumn::make('levels.nama_tingkatan')
+                    ->label('Tingkat')
+                    ->badge()
+                    ->searchable(),
             ])
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('p5_theme_id')
                     ->relationship('theme', 'name')
                     ->label('Tema'),
-                \Filament\Tables\Filters\SelectFilter::make('fase')
-                    ->options([
-                        'A' => 'Fase A',
-                        'B' => 'Fase B',
-                        'C' => 'Fase C',
-                        'D' => 'Fase D',
-                        'E' => 'Fase E',
-                        'F' => 'Fase F',
-                    ])
-                    ->label('Fase'),
+                \Filament\Tables\Filters\SelectFilter::make('levels')
+                    ->relationship('levels', 'nama_tingkatan')
+                    ->label('Tingkat'),
             ])
             ->actions([
                 EditAction::make(),

@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Extracurriculars\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -30,11 +29,14 @@ class ExtracurricularsTable
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => ucwords($state)),
-                TextColumn::make('nilai_minimum')
-                    ->label('Min. Nilai')
-                    ->alignCenter(),
-                TextColumn::make('pembina')
-                    ->label('Pembina')
+                TextColumn::make('students_count')
+                    ->label('Anggota')
+                    ->counts('students')
+                    ->badge()
+                    ->color('info'),
+                TextColumn::make('coordinator.name')
+                    ->label('Koordinator')
+                    ->placeholder('Belum ditentukan')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
@@ -50,9 +52,8 @@ class ExtracurricularsTable
                     ]),
             ])
             ->actions([
-                ViewAction::make()->modal(),
-                EditAction::make()->modal(),
-                DeleteAction::make()->modal(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

@@ -450,14 +450,15 @@ class ChatbotController extends Controller
     private function fetchExtracurricularData(?int $studentId, $user, string $role)
     {
         // Now fetching master data, no longer per student
-        $extracurriculars = Extracurricular::orderBy('kategori', 'asc')
+        $extracurriculars = Extracurricular::with('coordinator')
+            ->orderBy('kategori', 'asc')
             ->orderBy('nama_ekskul', 'asc')
             ->get()
             ->map(fn($e) => [
                 'nama_ekskul' => $e->nama_ekskul,
                 'kategori' => $e->kategori,
                 'min_nilai' => $e->nilai_minimum ?? 'N/A',
-                'pembina' => $e->pembina ?? 'N/A',
+                'koordinator' => $e->coordinator?->name ?? 'N/A',
                 'deskripsi' => $e->deskripsi,
             ]);
 

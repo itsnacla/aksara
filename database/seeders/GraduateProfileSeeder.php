@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\GraduateProfile;
+use App\Models\AcademicYear;
 use Illuminate\Database\Seeder;
 
 class GraduateProfileSeeder extends Seeder
@@ -12,109 +13,75 @@ class GraduateProfileSeeder extends Seeder
      */
     public function run(): void
     {
-        $profiles = [
-            [
-                'dimensi' => 'keimanan dan ketakwaan terhadap Tuhan Yang Maha Esa',
-                'subdimensi' => 'Hubungan dengan Tuhan Yang Maha Esa'
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        if (!$activeYear) {
+            return;
+        }
+
+        $profilesData = [
+            'Keimanan dan Ketakwaan terhadap Tuhan Yang Maha Esa' => [
+                'Hubungan dengan Tuhan Yang Maha Esa',
+                'Hubungan dengan sesama manusia',
+                'Hubungan dengan Lingkungan Alam',
             ],
-            [
-                'dimensi' => 'keimanan dan ketakwaan terhadap Tuhan Yang Maha Esa',
-                'subdimensi' => 'Hubungan dengan sesama manusia'
+            'Kewargaan' => [
+                'Kewargaan Nasional',
+                'Kewargaan Global',
             ],
-            [
-                'dimensi' => 'keimanan dan ketakwaan terhadap Tuhan Yang Maha Esa',
-                'subdimensi' => 'Hubungan dengan Lingkungan Alam'
+            'Penalaran Kritis' => [
+                'Penyampaian Argumentasi',
+                'Pengambilan Keputusan',
+                'Penyelesaian Masalah',
             ],
-            [
-                'dimensi' => 'kewargaan',
-                'subdimensi' => 'Kewargaan Nasional'
+            'Kreativitas' => [
+                'Gagasan baru',
+                'Fleksibilitas berpikir',
+                'Karya',
             ],
-            [
-                'dimensi' => 'kewargaan',
-                'subdimensi' => 'Kewargaan Global'
+            'Kemandirian' => [
+                'Bertanggung Jawab',
+                'Kepemimpinan',
+                'Pengembangan Diri',
             ],
-            [
-                'dimensi' => 'penalaran kritis',
-                'subdimensi' => 'Penyampaian Argumentasi'
+            'Kolaborasi' => [
+                'Peduli',
+                'Berbagi',
+                'Kerja sama',
             ],
-            [
-                'dimensi' => 'penalaran kritis',
-                'subdimensi' => 'Pengambilan Keputusan'
+            'Komunikasi' => [
+                'Berbicara',
+                'Membaca',
+                'Menulis',
             ],
-            [
-                'dimensi' => 'penalaran kritis',
-                'subdimensi' => 'Penyelesaian Masalah'
-            ],
-            [
-                'dimensi' => 'kreativitas',
-                'subdimensi' => 'Gagasan baru'
-            ],
-            [
-                'dimensi' => 'kreativitas',
-                'subdimensi' => 'Fleksibilitas berpikir'
-            ],
-            [
-                'dimensi' => 'kreativitas',
-                'subdimensi' => 'Karya'
-            ],
-            [
-                'dimensi' => 'kemandirian',
-                'subdimensi' => 'Bertanggung Jawab'
-            ],
-            [
-                'dimensi' => 'kemandirian',
-                'subdimensi' => 'Kepemimpinan'
-            ],
-            [
-                'dimensi' => 'kemandirian',
-                'subdimensi' => 'Pengembangan Diri'
-            ],
-            [
-                'dimensi' => 'kolaborasi',
-                'subdimensi' => 'Peduli'
-            ],
-            [
-                'dimensi' => 'kolaborasi',
-                'subdimensi' => 'Berbagi'
-            ],
-            [
-                'dimensi' => 'kolaborasi',
-                'subdimensi' => 'Kerja sama'
-            ],
-            [
-                'dimensi' => 'komunikasi',
-                'subdimensi' => 'Berbicara'
-            ],
-            [
-                'dimensi' => 'komunikasi',
-                'subdimensi' => 'Membaca'
-            ],
-            [
-                'dimensi' => 'komunikasi',
-                'subdimensi' => 'Menulis'
-            ],
-            [
-                'dimensi' => 'kesehatan',
-                'subdimensi' => 'Hidup bersih dan sehat'
-            ],
-            [
-                'dimensi' => 'kesehatan',
-                'subdimensi' => 'Kebugaran, kesehatan fisik, dan kesehatan mental'
-            ],
-            [
-                'dimensi' => 'kesehatan',
-                'subdimensi' => 'Kesehatan Lingkungan'
+            'Kesehatan' => [
+                'Hidup bersih dan sehat',
+                'Kebugaran, kesehatan fisik, dan kesehatan mental',
+                'Kesehatan Lingkungan',
             ],
         ];
 
-        foreach ($profiles as $profile) {
-            GraduateProfile::updateOrCreate(
+        foreach ($profilesData as $dimensi => $subdimensions) {
+            $profile = GraduateProfile::updateOrCreate(
                 [
-                    'dimensi' => $profile['dimensi'],
-                    'subdimensi' => $profile['subdimensi']
+                    'academic_year_id' => $activeYear->id,
+                    'dimensi' => $dimensi,
                 ],
-                $profile
+                [
+                    'academic_year_id' => $activeYear->id,
+                    'dimensi' => $dimensi,
+                ]
             );
+
+            // Delete existing subdimensions
+            $profile->subdimensions()->delete();
+
+            // Create new subdimensions
+            foreach ($subdimensions as $subdimensi) {
+                $profile->subdimensions()->create([
+                    'subdimensi' => $subdimensi,
+                ]);
+            }
         }
     }
 }
+

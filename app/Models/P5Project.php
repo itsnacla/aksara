@@ -19,7 +19,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'p5_theme_id',
     'academic_year_id',
-    'fase',
     'name',
     'target_description',
     'graduate_profile',
@@ -42,6 +41,11 @@ class P5Project extends Model
     public function theme(): BelongsTo
     {
         return $this->belongsTo(P5Theme::class, 'p5_theme_id');
+    }
+
+    public function levels(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Level::class, 'p5_project_level');
     }
 
     public function academicYear(): BelongsTo

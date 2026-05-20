@@ -40,6 +40,19 @@ class P5ThemeResource extends Resource
         return P5ThemeTable::configure($table);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        // Filter by active academic year
+        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+        if ($activeYearId) {
+            $query->where('academic_year_id', $activeYearId);
+        }
+        
+        return $query;
+    }
+
     public static function getPages(): array
     {
         return [

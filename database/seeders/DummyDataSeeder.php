@@ -33,7 +33,6 @@ class DummyDataSeeder extends Seeder
         $this->seedGuruMapel();
         $this->seedStaff();
         $this->seedRombelAndStudents();
-        $this->seedP5GroupsAndStudentGrades();
         $this->seedAttendance();
     }
 
@@ -299,109 +298,7 @@ class DummyDataSeeder extends Seeder
         $student->studyGroups()->sync($rombelIds);
     }
 
-    protected function seedP5GroupsAndStudentGrades()
-    {
-        $studyGroups = StudyGroup::with(['students', 'walikelas', 'level.subjects'])->get();
-        $p5Projects = \App\Models\P5Project::all();
-        $tps = \App\Models\LearningObjective::all();
-        
-        foreach ($studyGroups as $studyGroup) {
-            $students = $studyGroup->students;
-            $teacher = $studyGroup->walikelas;
-            
-            if ($students->isEmpty() || !$teacher) continue;
-            
-            // 1. Seed P5 Group for this Rombel
-            $project = $p5Projects->random();
-            $p5Group = \App\Models\P5Group::updateOrCreate(
-                [
-                    'p5_project_id' => $project->id,
-                    'level_id' => $studyGroup->level_id,
-                    'name' => "Kelompok P5 - " . $studyGroup->nama_rombel,
-                ],
-                [
-                    'teacher_id' => $teacher->id,
-                ]
-            );
-            $p5Group->students()->sync($students->pluck('id'));
-            
-            // 2. Seed Student Grades (Tugas, UTS, UAS) and TP checkmarks for some students to populate demo data
-            // We want to seed for major subjects taught in this level
-            $subjects = $studyGroup->level->subjects;
-            foreach ($subjects as $subject) {
-                // Find teacher for this subject or default to walikelas
-                $subjectTeacher = Teacher::whereHas('subjects', fn($q) => $q->where('subjects.id', $subject->id))->first() ?? $teacher;
-                
-                // Get TPs for this subject and level
-                $subjectTps = $tps->where('subject_id', $subject->id)->where('level_id', $studyGroup->level_id)->pluck('id')->toArray();
-                
-                foreach ($students->take(5) as $student) { // Seed first 5 students per subject to have clean data without bloating
-                    $tugas = rand(70, 95);
-                    $uts = rand(65, 90);
-                    $uas = rand(70, 95);
-                    
-                    // Distribute TPs between optimal and improved
-                    $optimal = [];
-                    $improved = [];
-                    if (!empty($subjectTps)) {
-                        $shuffled = $subjectTps;
-                        shuffle($shuffled);
-                        $optimal = array_slice($shuffled, 0, 1);
-                        $improved = array_slice($shuffled, 1, 1);
-                    }
-                    
-                    \App\Models\Grade::updateOrCreate(
-                        [
-                            'student_id' => $student->id,
-                            'subject_id' => $subject->id,
-                            'study_group_id' => $studyGroup->id,
-                        ],
-                        [
-                            'teacher_id' => $subjectTeacher->id,
-                            'academic_year_id' => $studyGroup->academic_year_id,
-                            'nilai_tugas' => $tugas,
-                            'nilai_uts' => $uts,
-                            'nilai_uas' => $uas,
-                            'optimal_tp_ids' => $optimal,
-                            'improved_tp_ids' => $improved,
-                        ]
-                    );
-                    
-                    // Also seed StudentGrade for TP-level scoring
-                    foreach ($optimal as $tpId) {
-                        \App\Models\StudentGrade::updateOrCreate(
-                            [
-                                'student_id' => $student->id,
-                                'learning_objective_id' => $tpId,
-                            ],
-                            [
-                                'academic_year_id' => $studyGroup->academic_year_id,
-                                'teacher_id' => $subjectTeacher->id,
-                                'score' => rand(85, 98),
-                                'is_achieved' => true,
-                                'notes' => 'Tercapai sangat baik.',
-                            ]
-                        );
-                    }
-                    foreach ($improved as $tpId) {
-                        \App\Models\StudentGrade::updateOrCreate(
-                            [
-                                'student_id' => $student->id,
-                                'learning_objective_id' => $tpId,
-                            ],
-                            [
-                                'academic_year_id' => $studyGroup->academic_year_id,
-                                'teacher_id' => $subjectTeacher->id,
-                                'score' => rand(55, 68),
-                                'is_achieved' => false,
-                                'notes' => 'Perlu bimbingan lebih lanjut.',
-                            ]
-                        );
-                    }
-                }
-            }
-        }
-    }
+
 
     protected function seedAttendance(): void
     {

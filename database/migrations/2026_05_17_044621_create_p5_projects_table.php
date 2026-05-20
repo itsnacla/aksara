@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('p5_theme_id')->constrained('p5_themes')->cascadeOnDelete();
             $table->foreignId('academic_year_id')->constrained()->cascadeOnDelete();
-            $table->string('fase', 10);
+            $table->string('fase', 10)->nullable();
             $table->string('name'); // Judul Kegiatan
             $table->text('target_description')->nullable(); // Tujuan Akhir
             $table->json('graduate_profile')->nullable(); // Profil Lulusan (Dimensi/Elemen)

@@ -24,20 +24,31 @@ class LearningObjectiveResource extends Resource
         $query = parent::getEloquentQuery();
         $user = auth()->user();
 
+        // Filter by teacher role
         if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
             $teacherId = $user->teacher->id;
-            $managedLevelIds = \App\Models\StudyGroup::where('walikelas_id', $teacherId)->pluck('level_id')->toArray();
+            $isWaliKelas = $user->teacher->is_walikelas;
             
-            $query->where(function ($q) use ($teacherId, $managedLevelIds) {
-                // Guru Mapel: see learning objectives for subjects they teach
-                $q->whereHas('subject', function ($sq) use ($teacherId) {
+            if ($isWaliKelas) {
+                // Wali kelas: only TP for mapel umum at their level (active academic year)
+                $managedLevelIds = \App\Models\StudyGroup::where('walikelas_id', $teacherId)
+                    ->whereHas('academicYear', fn ($q) => $q->where('is_active', true))
+                    ->pluck('level_id')
+                    ->toArray();
+                
+                $query->where(function ($q) use ($managedLevelIds) {
+                    $q->whereIn('level_id', $managedLevelIds)
+                      ->whereHas('subject', fn ($sq) => $sq->where('is_umum', true));
+                });
+            } else {
+                // Guru mapel: only TP for subjects they teach
+                $query->whereHas('subject', function ($sq) use ($teacherId) {
                     $sq->whereHas('schedules', fn ($ssq) => $ssq->where('teacher_id', $teacherId))
                       ->orWhereIn('subjects.id', \DB::table('subject_teacher')->where('teacher_id', $teacherId)->pluck('subject_id'));
-                })
-                // Wali Kelas: see learning objectives of the levels they manage
-                ->orWhereIn('level_id', $managedLevelIds);
-            });
+                });
+            }
         }
+        
         return $query;
     }
 
