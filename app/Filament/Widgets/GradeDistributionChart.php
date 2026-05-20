@@ -64,7 +64,6 @@ class GradeDistributionChart extends BaseWidget
 
                 TextColumn::make('rata_rata')
                     ->label('Rata-rata')
-                    ->sortable()
                     ->state(function ($record) use ($activeYear) {
                         $grades = $record->grades()
                             ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))

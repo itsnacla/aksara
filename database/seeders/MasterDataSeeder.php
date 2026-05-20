@@ -170,10 +170,10 @@ class MasterDataSeeder extends Seeder
     private function seedExtracurriculars(): void
     {
         $ekskuls = [
-            ['nama_ekskul' => 'Pramuka', 'kategori' => 'wajib', 'coordinator_name' => 'Eni Nuryanti, S.Pd', 'nilai_minimum' => 'B', 'deskripsi' => 'Kegiatan kepanduan wajib untuk melatih kedisiplinan dan kemandirian.'],
-            ['nama_ekskul' => 'Futsal', 'kategori' => 'pilihan', 'coordinator_name' => 'Beni Putra, S.Pd', 'nilai_minimum' => 'C', 'deskripsi' => 'Olahraga minat bakat sepak bola dalam ruangan.'],
-            ['nama_ekskul' => 'Tari Tradisional', 'kategori' => 'pilihan', 'coordinator_name' => 'Siti Sarah', 'nilai_minimum' => 'B', 'deskripsi' => 'Melestarikan seni budaya melalui tarian daerah.'],
-            ['nama_ekskul' => 'PMR', 'kategori' => 'pilihan', 'coordinator_name' => 'Bambang Irawan', 'nilai_minimum' => 'B', 'deskripsi' => 'Pelatihan pertolongan pertama dan kesehatan sekolah.'],
+              ['nama_ekskul' => 'Pramuka', 'kategori' => 'wajib', 'coordinator_name' => 'Imam Fahrudin', 'nilai_minimum' => 'B', 'deskripsi' => 'Kegiatan kepanduan wajib untuk melatih kedisiplinan dan kemandirian.'],
+              ['nama_ekskul' => 'Tari', 'kategori' => 'pilihan', 'coordinator_name' => 'Angger Wigunaning Aji', 'nilai_minimum' => 'B', 'deskripsi' => 'Melestarikan seni budaya melalui tarian daerah.'],
+              ['nama_ekskul' => 'Hadrah', 'kategori' => 'pilihan', 'coordinator_name' => 'Moh. Itqonur Risal', 'nilai_minimum' => 'B', 'deskripsi' => 'Seni musik islami dengan alat rebana dan hadrah.'],
+              ['nama_ekskul' => 'Renang', 'kategori' => 'pilihan', 'coordinator_name' => 'Beni Putra', 'nilai_minimum' => 'B', 'deskripsi' => 'Olahraga renang untuk melatih kesehatan dan ketahanan fisik.'],
         ];
 
         foreach ($ekskuls as $e) {
