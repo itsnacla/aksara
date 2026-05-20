@@ -3,24 +3,36 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Attendance;
-use Filament\Tables;
+use App\Filament\Resources\Attendances\AttendanceResource;
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Livewire\Attributes\On;
 
 class LatestAttendanceTable extends BaseWidget
 {
+    use ScopesToTeacherStudents;
+
     #[On('echo:attendance,AttendanceLogged')]
     public function refreshAttendance($event)
     {
+        $isGuru = auth()->user()?->hasRole('guru');
+
+        if ($isGuru) {
+            $studentIds = $this->getTeacherStudentIds();
+            if (!in_array($event['studentId'] ?? null, $studentIds)) {
+                return;
+            }
+        }
+
         Notification::make()
             ->title('Presensi Masuk!')
             ->body("{$event['studentName']} baru saja dicatat sebagai {$event['status']}.")
             ->success()
             ->send();
-            
+
         $this->dispatch('refreshTable');
     }
 
@@ -35,13 +47,14 @@ class LatestAttendanceTable extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $query = Attendance::query()->with(['student.user', 'studyGroup'])->latest('tanggal')->latest('created_at');
+
+        if (auth()->user()?->hasRole('guru')) {
+            $this->scopeTeacherAttendance($query);
+        }
+
         return $table
-            ->query(
-                Attendance::query()
-                    ->with(['student.user', 'studyGroup'])
-                    ->latest('tanggal')
-                    ->latest('created_at')
-            )
+            ->query($query)
             ->columns([
                 TextColumn::make('student.user.name')
                     ->label('Nama Siswa')
@@ -94,6 +107,10 @@ class LatestAttendanceTable extends BaseWidget
             ->defaultPaginationPageOption(5)
             ->defaultSort('tanggal', 'desc')
             ->striped()
+            ->recordUrl(fn ($record) => AttendanceResource::getUrl('index', [
+                'tableAction' => 'edit',
+                'tableActionRecord' => $record->id,
+            ]))
             ->emptyStateHeading('Belum ada data presensi')
             ->emptyStateDescription('Data presensi akan muncul setelah input dilakukan.')
             ->emptyStateIcon('heroicon-o-clipboard-document-list');
@@ -101,6 +118,6 @@ class LatestAttendanceTable extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        return auth()->user()?->hasAnyRole(['super_admin', 'guru', 'staff']) ?? false;
     }
 }

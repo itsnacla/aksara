@@ -14,6 +14,11 @@ class SystemHealthWidget extends BaseWidget
 {
     protected ?string $pollingInterval = '30s';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasAnyRole(['super_admin', 'staff']) ?? false;
+    }
+
     protected function getStats(): array
     {
         return [

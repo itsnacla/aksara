@@ -131,6 +131,6 @@ class AdminStatsOverview extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        return auth()->user()?->hasAnyRole(['super_admin', 'staff']) ?? false;
     }
 }

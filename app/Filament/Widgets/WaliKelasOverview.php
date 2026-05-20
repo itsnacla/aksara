@@ -6,6 +6,7 @@ use App\Models\StudyGroup;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AcademicYear;
 
 class WaliKelasOverview extends BaseWidget
 {
@@ -57,7 +58,40 @@ class WaliKelasOverview extends BaseWidget
                     'class' => 'cursor-pointer',
                     'onclick' => "window.location.href='/admin/rombel/{$studyGroup->id}/edit'",
                 ]),
+            Stat::make('Rata-rata Kelas', $this->getAverageGrade($studyGroup))
+                ->description('Performa akademik kelas')
+                ->icon('heroicon-m-chart-bar')
+                ->color('info'),
         ];
+    }
+
+    private function getAverageGrade($studyGroup): string
+    {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $students = $studyGroup->students;
+
+        if ($students->isEmpty()) {
+            return '-';
+        }
+
+        $totalAverage = 0;
+        $count = 0;
+
+        foreach ($students as $student) {
+            $grades = $student->grades()
+                ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+                ->get();
+
+            if (!$grades->isEmpty()) {
+                $avg = $grades->avg(function ($g) {
+                    return ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3;
+                });
+                $totalAverage += $avg;
+                $count++;
+            }
+        }
+
+        return $count > 0 ? round($totalAverage / $count, 1) : '-';
     }
 
     public static function canView(): bool

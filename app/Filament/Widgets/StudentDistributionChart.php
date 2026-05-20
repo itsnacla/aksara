@@ -6,9 +6,12 @@ use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\AcademicYear;
 use Filament\Widgets\ChartWidget;
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
 class StudentDistributionChart extends ChartWidget
 {
+    use ScopesToTeacherStudents;
+
     protected ?string $heading = 'Distribusi Siswa per Rombel';
 
     protected ?string $description = 'Jumlah siswa di setiap rombongan belajar';
@@ -25,6 +28,56 @@ class StudentDistributionChart extends ChartWidget
     protected function getData(): array
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
+        $isGuru = auth()->user()?->hasRole('guru');
+
+        if ($isGuru) {
+            $studyGroups = $this->getTeacherStudyGroups();
+
+            if ($studyGroups->isEmpty()) {
+                return [
+                    'datasets' => [
+                        [
+                            'label' => 'Jumlah Siswa',
+                            'data' => [],
+                            'backgroundColor' => [],
+                            'borderColor' => [],
+                            'borderWidth' => 2,
+                            'borderRadius' => 8,
+                        ],
+                    ],
+                    'labels' => ['Belum ada rombel'],
+                ];
+            }
+
+            $studyGroups = StudyGroup::whereIn('id', $studyGroups->pluck('id'))
+                ->withCount('students')
+                ->orderBy('nama_rombel')
+                ->get();
+
+            $colors = [
+                'rgba(0, 93, 167, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+            ];
+            $borderColors = ['#005da7', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#3b82f6'];
+
+            return [
+                'datasets' => [
+                    [
+                        'label' => 'Jumlah Siswa',
+                        'data' => $studyGroups->pluck('students_count')->toArray(),
+                        'backgroundColor' => array_slice($colors, 0, $studyGroups->count()),
+                        'borderColor' => array_slice($borderColors, 0, $studyGroups->count()),
+                        'borderWidth' => 2,
+                        'borderRadius' => 8,
+                    ],
+                ],
+                'labels' => $studyGroups->pluck('nama_rombel')->toArray(),
+            ];
+        }
 
         $studyGroups = StudyGroup::query()
             ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
@@ -129,6 +182,9 @@ class StudentDistributionChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->hasRole('guru')) return false;
+        return $user->hasAnyRole(['super_admin', 'staff']);
     }
 }

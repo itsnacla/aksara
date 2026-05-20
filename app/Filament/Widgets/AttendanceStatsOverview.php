@@ -8,9 +8,12 @@ use App\Models\AcademicYear;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
 class AttendanceStatsOverview extends BaseWidget
 {
+    use ScopesToTeacherStudents;
+
     protected static ?int $sort = -1;
 
     protected int | string | array $columnSpan = 'full';
@@ -25,26 +28,28 @@ class AttendanceStatsOverview extends BaseWidget
         $today = Carbon::today();
         $thisMonth = Carbon::now();
 
-        // Today's attendance
-        $todayTotal = Attendance::whereDate('tanggal', $today)->count();
-        $todayPresent = Attendance::whereDate('tanggal', $today)->where('status', 'hadir')->count();
-        $todaySick = Attendance::whereDate('tanggal', $today)->where('status', 'sakit')->count();
-        $todayPermission = Attendance::whereDate('tanggal', $today)->where('status', 'izin')->count();
-        $todayAbsent = Attendance::whereDate('tanggal', $today)->whereIn('status', ['alfa', 'alpha'])->count();
+        $attendanceQuery = Attendance::query();
+        if (auth()->user()?->hasRole('guru')) {
+            $this->scopeTeacherAttendance($attendanceQuery);
+        }
+
+        $todayTotal = (clone $attendanceQuery)->whereDate('tanggal', $today)->count();
+        $todayPresent = (clone $attendanceQuery)->whereDate('tanggal', $today)->where('status', 'hadir')->count();
+        $todaySick = (clone $attendanceQuery)->whereDate('tanggal', $today)->where('status', 'sakit')->count();
+        $todayPermission = (clone $attendanceQuery)->whereDate('tanggal', $today)->where('status', 'izin')->count();
+        $todayAbsent = (clone $attendanceQuery)->whereDate('tanggal', $today)->whereIn('status', ['alfa', 'alpha'])->count();
 
         $todayPercentage = $todayTotal > 0 ? round(($todayPresent / $todayTotal) * 100, 1) : 0;
 
-        // This month attendance
-        $monthTotal = Attendance::whereMonth('tanggal', $thisMonth->month)
-            ->whereYear('tanggal', $thisMonth->year)
-            ->count();
-        $monthPresent = Attendance::whereMonth('tanggal', $thisMonth->month)
-            ->whereYear('tanggal', $thisMonth->year)
-            ->where('status', 'hadir')
-            ->count();
+        $monthQuery = Attendance::query();
+        if (auth()->user()?->hasRole('guru')) {
+            $this->scopeTeacherAttendance($monthQuery);
+        }
+
+        $monthTotal = (clone $monthQuery)->whereMonth('tanggal', $thisMonth->month)->whereYear('tanggal', $thisMonth->year)->count();
+        $monthPresent = (clone $monthQuery)->whereMonth('tanggal', $thisMonth->month)->whereYear('tanggal', $thisMonth->year)->where('status', 'hadir')->count();
         $monthPercentage = $monthTotal > 0 ? round(($monthPresent / $monthTotal) * 100, 1) : 0;
 
-        // Determine color based on percentage
         $todayColor = $this->getPercentageColor($todayPercentage);
         $monthColor = $this->getPercentageColor($monthPercentage);
 
@@ -92,8 +97,12 @@ class AttendanceStatsOverview extends BaseWidget
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
-            $total = Attendance::whereDate('tanggal', $date)->count();
-            $present = Attendance::whereDate('tanggal', $date)->where('status', 'hadir')->count();
+            $query = Attendance::whereDate('tanggal', $date);
+            if (auth()->user()?->hasRole('guru')) {
+                $this->scopeTeacherAttendance($query);
+            }
+            $total = (clone $query)->count();
+            $present = (clone $query)->where('status', 'hadir')->count();
             $data[] = $total > 0 ? round(($present / $total) * 100) : 0;
         }
         if (array_sum($data) === 0) {
@@ -107,13 +116,12 @@ class AttendanceStatsOverview extends BaseWidget
         $data = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $total = Attendance::whereMonth('tanggal', $month->month)
-                ->whereYear('tanggal', $month->year)
-                ->count();
-            $present = Attendance::whereMonth('tanggal', $month->month)
-                ->whereYear('tanggal', $month->year)
-                ->where('status', 'hadir')
-                ->count();
+            $query = Attendance::whereMonth('tanggal', $month->month)->whereYear('tanggal', $month->year);
+            if (auth()->user()?->hasRole('guru')) {
+                $this->scopeTeacherAttendance($query);
+            }
+            $total = (clone $query)->count();
+            $present = (clone $query)->where('status', 'hadir')->count();
             $data[] = $total > 0 ? round(($present / $total) * 100) : 0;
         }
         if (array_sum($data) === 0) {
@@ -127,9 +135,11 @@ class AttendanceStatsOverview extends BaseWidget
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
-            $data[] = Attendance::whereDate('tanggal', $date)
-                ->whereIn('status', ['sakit', 'izin'])
-                ->count();
+            $query = Attendance::whereDate('tanggal', $date)->whereIn('status', ['sakit', 'izin']);
+            if (auth()->user()?->hasRole('guru')) {
+                $this->scopeTeacherAttendance($query);
+            }
+            $data[] = (clone $query)->count();
         }
         if (array_sum($data) === 0) {
             return [3, 2, 4, 1, 3, 2, 2];
@@ -142,9 +152,11 @@ class AttendanceStatsOverview extends BaseWidget
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
-            $data[] = Attendance::whereDate('tanggal', $date)
-                ->whereIn('status', ['alfa', 'alpha'])
-                ->count();
+            $query = Attendance::whereDate('tanggal', $date)->whereIn('status', ['alfa', 'alpha']);
+            if (auth()->user()?->hasRole('guru')) {
+                $this->scopeTeacherAttendance($query);
+            }
+            $data[] = (clone $query)->count();
         }
         if (array_sum($data) === 0) {
             return [1, 0, 2, 1, 0, 1, 0];
@@ -154,6 +166,6 @@ class AttendanceStatsOverview extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        return auth()->user()?->hasAnyRole(['super_admin', 'guru', 'staff']) ?? false;
     }
 }
