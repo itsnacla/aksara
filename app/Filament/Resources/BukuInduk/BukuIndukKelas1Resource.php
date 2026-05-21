@@ -35,8 +35,29 @@ class BukuIndukKelas1Resource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->with(['user', 'studyGroups.level']);
+
+        $user = auth()->user();
+
+        // Super admin and staff: full access
+        if ($user && $user->hasAnyRole(['super_admin', 'staff'])) {
+            return $query;
+        }
+
+        // Guru wali kelas: only their study group students
+        if ($user && $user->hasRole('guru')) {
+            $teacher = $user->teacher;
+            if ($teacher && $teacher->is_walikelas) {
+                $studyGroupIds = \App\Models\StudyGroup::where('walikelas_id', $teacher->id)->pluck('id');
+                return $query->whereHas('studyGroups', function ($q) use ($studyGroupIds) {
+                    $q->whereIn('study_groups.id', $studyGroupIds);
+                });
+            }
+        }
+
+        // Default: no access
+        return $query->whereRaw('1 = 0');
     }
 
     public static function table(Table $table): Table
@@ -58,7 +79,7 @@ class BukuIndukKelas1Resource extends Resource
                     ->sortable(),
                 TextColumn::make('gender')
                     ->label('JK')
-                    ->formatStateUsing(fn ($state) => $state === 'L' ? 'Laki-laki' : ($state === 'P' ? 'Perempuan' : '-'))
+                    ->formatStateUsing(fn($state) => $state === 'L' ? 'Laki-laki' : ($state === 'P' ? 'Perempuan' : '-'))
                     ->sortable(),
                 TextColumn::make('studyGroups.nama_rombel')
                     ->label('Rombongan Belajar')
@@ -75,9 +96,10 @@ class BukuIndukKelas1Resource extends Resource
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('academic_year')
                     ->label('Tahun Ajaran')
-                    ->options(fn () => \App\Models\AcademicYear::query()
-                        ->get()
-                        ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)])
+                    ->options(
+                        fn() => \App\Models\AcademicYear::query()
+                            ->get()
+                            ->mapWithKeys(fn($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)])
                     )
                     ->query(function ($query, array $data) {
                         if (empty($data['value'])) {
@@ -87,7 +109,7 @@ class BukuIndukKelas1Resource extends Resource
                             $q->where('study_groups.academic_year_id', $data['value']);
                         });
                     })
-                    ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
+                    ->default(fn() => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
                 \Filament\Tables\Filters\SelectFilter::make('studyGroups')
                     ->label('Filter Rombel')
                     ->relationship('studyGroups', 'nama_rombel', function ($query, $livewire) {
@@ -98,8 +120,8 @@ class BukuIndukKelas1Resource extends Resource
                         }
                         return $query;
                     })
-                    ->default(fn () => \App\Models\StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))
-                        ->whereHas('level', fn ($q) => $q->where('nama_tingkatan', 'like', '%Kelas 1%'))
+                    ->default(fn() => \App\Models\StudyGroup::whereHas('academicYear', fn($q) => $q->where('is_active', true))
+                        ->whereHas('level', fn($q) => $q->where('nama_tingkatan', 'like', '%Kelas 1%'))
                         ->first()?->id),
             ])
             ->actions([
@@ -125,14 +147,14 @@ class BukuIndukKelas1Resource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (Student $record) => !$record->is_buku_induk_generated),
+                    ->visible(fn(Student $record) => !$record->is_buku_induk_generated),
                 Action::make('cetak')
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
                     ->color('info')
-                    ->url(fn (Student $record): string => route('print.buku-induk', $record))
+                    ->url(fn(Student $record): string => route('print.buku-induk', $record))
                     ->openUrlInNewTab()
-                    ->visible(fn (Student $record) => (bool) $record->is_buku_induk_generated),
+                    ->visible(fn(Student $record) => (bool) $record->is_buku_induk_generated),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -146,5 +168,53 @@ class BukuIndukKelas1Resource extends Resource
         return [
             'index' => ListBukuIndukKelas1s::route('/'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        // Super admin has full access
+        if ($user->hasRole('super_admin')) return true;
+
+        // Staff has full access
+        if ($user->hasRole('staff')) return true;
+
+        // Guru: only wali kelas can access
+        if ($user->hasRole('guru')) {
+            $teacher = $user->teacher;
+            return $teacher && $teacher->is_walikelas;
+        }
+
+        return false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Buku Induk tidak bisa dibuat manual, hanya generate
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false; // Buku Induk tidak bisa diedit langsung
+    }
+
+    public static function canDelete($record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        // Only super_admin and staff can delete
+        return $user->hasAnyRole(['super_admin', 'staff']);
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        // Only super_admin and staff can bulk delete
+        return $user->hasAnyRole(['super_admin', 'staff']);
     }
 }
