@@ -32,6 +32,11 @@ class ExtracurricularResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'nama_ekskul';
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('coordinator');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ExtracurricularForm::configure($schema);

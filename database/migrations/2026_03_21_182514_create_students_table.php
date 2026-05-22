@@ -20,19 +20,19 @@ return new class extends Migration
             $table->string('nisn', 10)->unique();
             $table->string('nis')->nullable();
             
-            // Data Identitas Tambahan
+            // Additional Personal Data
             $table->string('nik', 20)->nullable();
             $table->string('no_kk', 20)->nullable();
             $table->string('no_akta_lahir', 50)->nullable();
             $table->integer('anak_ke')->nullable();
             $table->integer('jumlah_saudara')->nullable();
             
-            // Data Kesehatan
+            // Health Data
             $table->decimal('tinggi_badan', 5, 2)->nullable();
             $table->decimal('berat_badan', 5, 2)->nullable();
             $table->string('golongan_darah', 5)->nullable();
             
-            // Data Orang Tua Detail
+            // Details about parents and guardians
             $table->string('ayah_nik', 20)->nullable();
             $table->string('ayah_nama')->nullable();
             $table->string('ayah_pendidikan')->nullable();

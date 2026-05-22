@@ -205,7 +205,8 @@ class PortalController extends Controller
                 ->latest()
                 ->take(5)
                 ->get(),
-            'extracurriculars' => Extracurricular::orderBy('kategori', 'asc')
+            'extracurriculars' => Extracurricular::with('coordinator')
+                ->orderBy('kategori', 'asc')
                 ->orderBy('nama_ekskul', 'asc')
                 ->get(),
             'todaySchedules' => $todaySchedules,
@@ -289,7 +290,8 @@ class PortalController extends Controller
                 ->latest()
                 ->take(5)
                 ->get(),
-            'extracurriculars' => Extracurricular::orderBy('kategori', 'asc')
+            'extracurriculars' => Extracurricular::with('coordinator')
+                ->orderBy('kategori', 'asc')
                 ->orderBy('nama_ekskul', 'asc')
                 ->get(),
             'attendanceTrend' => $attendanceTrend,

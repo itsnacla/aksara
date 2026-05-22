@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('time_slots', function (Blueprint $table) {
             $table->id();
             $table->foreignId('level_id')->nullable()->constrained()->onDelete('cascade');
-            $table->string('nama_jam'); // Jam Pertama, Jam Kedua, dst
+            $table->string('nama_jam'); 
             $table->time('waktu_mulai');
             $table->time('waktu_selesai');
             $table->boolean('is_istirahat')->default(false);
-            $table->integer('urutan'); // Untuk sorting
+            $table->integer('urutan');
             $table->timestamps();
         });
     }
