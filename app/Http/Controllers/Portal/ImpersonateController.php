@@ -14,26 +14,12 @@ class ImpersonateController extends Controller
      */
     public function login(Request $request, User $user)
     {
-        $currentUser = auth()->user();
-        if (!$currentUser) {
-            abort(403, 'Unauthorized.');
-        }
-
-        $roleName = strtolower($currentUser->roles->first()?->name ?? '');
-        $isSuperAdmin = str_contains($roleName, 'super_admin') || str_contains($roleName, 'admin');
-
-        // Only super_admin or admin can initiate impersonation
-        if (!$isSuperAdmin) {
-            abort(403, 'Hanya Super Admin atau Admin yang dapat menggunakan fitur Login As.');
-        }
-
-        // Prevent self-impersonation for safety
-        if ($currentUser->id === $user->id) {
-            return redirect()->back()->with('error', 'Tidak dapat meniru diri sendiri.');
+        if (!\Illuminate\Support\Facades\Gate::allows('impersonate', $user)) {
+            abort(403, 'Hanya Super Admin yang dapat menggunakan fitur Login As.');
         }
 
         // Save original admin user ID in session
-        session(['impersonator_id' => $currentUser->id]);
+        session(['impersonator_id' => auth()->id()]);
 
         // Login as the target user
         Auth::login($user);

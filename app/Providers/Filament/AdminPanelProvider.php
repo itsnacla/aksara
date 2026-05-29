@@ -62,7 +62,7 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Login As')
                     ->url(fn (): string => url('/admin/login-as'))
                     ->icon('heroicon-o-arrows-right-left')
-                    ->visible(fn (): bool => str_contains(strtolower(auth()->user()?->roles->first()?->name ?? ''), 'admin')),
+                    ->visible(fn (): bool => auth()->user()?->can('Impersonate') ?? false),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([])

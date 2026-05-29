@@ -48,6 +48,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 #[Fillable([
     'user_id',
+    'user_is_active',
+    'user_photo',
     'parent_id',
     'is_buku_induk_generated',
     'nisn',

@@ -405,6 +405,7 @@ class PermissionSeeder extends Seeder
             'ScanAttendance',
             'AccessParentPortal',
             'AccessStudentPortal',
+            'Impersonate',
         ];
 
         foreach ($permissions as $permission) {
@@ -1128,6 +1129,7 @@ class PermissionSeeder extends Seeder
             'View:LatestAttendanceTable',
             'View:LatestLeaveRequestTable',
             'ScanAttendance',
+            'Impersonate',
         ]);
 
         $role = Role::firstOrCreate([

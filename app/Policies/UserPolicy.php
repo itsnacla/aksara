@@ -69,4 +69,18 @@ class UserPolicy
         return $authUser->can('Reorder:User');
     }
 
+    /**
+     * Determine whether the user can impersonate the target user.
+     */
+    public function impersonate(AuthUser $authUser, \App\Models\User $targetUser): bool
+    {
+        // Must have 'Impersonate' permission
+        if (!$authUser->can('Impersonate')) {
+            return false;
+        }
+
+        // Prevent self-impersonation
+        return $authUser->id !== $targetUser->id;
+    }
+
 }

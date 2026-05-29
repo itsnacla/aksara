@@ -4,14 +4,13 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use Filament\Tables\Table;
-use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Actions\Action;
 use App\Models\User;
 
-class LoginAs extends Page implements HasTable
+class LoginAs extends Page
 {
     use InteractsWithTable;
 
@@ -24,6 +23,11 @@ class LoginAs extends Page implements HasTable
     public static function shouldRegisterNavigation(): bool
     {
         return false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('Impersonate') ?? false;
     }
 
     public function table(Table $table): Table
@@ -77,6 +81,10 @@ class LoginAs extends Page implements HasTable
                     ->modalHeading('Konfirmasi Impersonasi')
                     ->modalDescription('Apakah Anda yakin ingin masuk sebagai pengguna ini? Sesi Anda akan beralih sementara.')
                     ->action(function (User $record) {
+                        if (!\Illuminate\Support\Facades\Gate::allows('impersonate', $record)) {
+                            abort(403, 'Hanya Super Admin yang dapat menggunakan fitur Login As.');
+                        }
+
                         $currentUser = auth()->user();
                         if ($currentUser) {
                             // Save original admin user ID in session

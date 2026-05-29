@@ -26,7 +26,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leaves/{leave}/edit', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'edit'])->name('leaves.edit');
     Route::put('/leaves/{leave}', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'update'])->name('leaves.update');
 
-    Route::post('/logout', [PortalController::class, 'logout'])->name('logout');
+    Route::post('/logout', [PortalController::class, 'logout'])->name('logout')->middleware('throttle:60,1');
 
     // AI Chatbot
     Route::get('/chatbot/config', [ChatbotController::class, 'config'])->name('chatbot.config');
@@ -166,7 +166,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/rapor/print/{student}', [\App\Http\Controllers\PrintController::class, 'printRapor'])->name('print.rapor');
 
     // Impersonate (Login As)
-    Route::post('/impersonate/login/{user}', [\App\Http\Controllers\Portal\ImpersonateController::class, 'login'])->name('impersonate.login');
-    Route::post('/impersonate/logout', [\App\Http\Controllers\Portal\ImpersonateController::class, 'logout'])->name('impersonate.logout');
+    Route::post('/impersonate/login/{user}', [\App\Http\Controllers\Portal\ImpersonateController::class, 'login'])->name('impersonate.login')->middleware('throttle:60,1');
+    Route::post('/impersonate/logout', [\App\Http\Controllers\Portal\ImpersonateController::class, 'logout'])->name('impersonate.logout')->middleware('throttle:60,1');
 });
 
