@@ -8,6 +8,7 @@ use App\Models\Level;
 use App\Models\Teacher;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Closure;
 
@@ -40,7 +41,7 @@ class StudyGroupForm
                     ->preload(),
                 Select::make('walikelas_id')
                     ->label('Wali Kelas')
-                    ->options(function (\Filament\Schemas\Components\Utilities\Get $get, $record) {
+                    ->options(function (Get $get, $record) {
                         $academicYearId = $get('academic_year_id');
                         $query = Teacher::with('user')
                             ->where('status', 'aktif')
@@ -70,7 +71,7 @@ class StudyGroupForm
                                     ->where('walikelas_id', $value)
                                     ->where('id', '!=', $component->getRecord()?->id)
                                     ->exists();
-                                
+
                                 if ($exists) {
                                     $fail('Guru ini sudah menjadi Wali Kelas di Rombel lain pada tahun ajaran ini!');
                                 }
