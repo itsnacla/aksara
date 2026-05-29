@@ -34,21 +34,7 @@ class StudyGroupForm
                     ->preload(),
                 Select::make('classroom_id')
                     ->label('Ruangan (Fisik)')
-                    ->options(function (\Filament\Schemas\Components\Utilities\Get $get, $record) {
-                        $academicYearId = $get('academic_year_id');
-                        $query = Classroom::query();
-
-                        if ($academicYearId) {
-                            $query->whereDoesntHave('studyGroups', function ($q) use ($academicYearId, $record) {
-                                $q->where('academic_year_id', $academicYearId);
-                                if ($record) {
-                                    $q->where('id', '!=', $record->id);
-                                }
-                            });
-                        }
-
-                        return $query->pluck('nama_ruangan', 'id');
-                    })
+                    ->relationship('classroom', 'nama_ruangan')
                     ->required()
                     ->searchable()
                     ->preload(),

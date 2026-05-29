@@ -52,10 +52,19 @@ class CreateStudent extends CreateRecord
             'username' => $data['user_username'],
             'email' => $data['user_email'],
             'password' => $data['user_password'],
+            'is_active' => $data['user_is_active'] ?? true,
+            'photo' => $data['user_photo'] ?? null,
         ];
 
         // Remove user fields from data, keep only student fields
-        unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
+        unset(
+            $data['user_name'],
+            $data['user_username'],
+            $data['user_email'],
+            $data['user_password'],
+            $data['user_is_active'],
+            $data['user_photo']
+        );
 
         // Create User account
         $user = User::create([
@@ -63,6 +72,8 @@ class CreateStudent extends CreateRecord
             'username' => $this->userData['username'],
             'email' => $this->userData['email'],
             'password' => Hash::make($this->userData['password']),
+            'is_active' => $this->userData['is_active'],
+            'photo' => $this->userData['photo'],
         ]);
 
         // Assign role

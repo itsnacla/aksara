@@ -108,7 +108,32 @@ class AcademicYearsTable
                     }),
                 ViewAction::make()->modal(),
                 EditAction::make()->modal(),
-                DeleteAction::make()->modal(),
+                DeleteAction::make()
+                    ->modal()
+                    ->before(function (DeleteAction $action, AcademicYear $record) {
+                        // Check if academic year has related records
+                        $hasGrades = $record->grades()->exists();
+                        $hasReports = $record->eReports()->exists();
+                        $hasSchedules = $record->schedules()->exists();
+                        $hasClassrooms = $record->classrooms()->exists();
+
+                        if ($hasGrades || $hasReports || $hasSchedules || $hasClassrooms) {
+                            $relatedItems = [];
+                            if ($hasGrades) $relatedItems[] = 'Nilai';
+                            if ($hasReports) $relatedItems[] = 'Rapor';
+                            if ($hasSchedules) $relatedItems[] = 'Jadwal';
+                            if ($hasClassrooms) $relatedItems[] = 'Kelas';
+
+                            Notification::make()
+                                ->title('Tidak Dapat Menghapus Tahun Ajaran')
+                                ->danger()
+                                ->body('Tahun ajaran ini masih memiliki data terkait: ' . implode(', ', $relatedItems) . '. Hapus data terkait terlebih dahulu.')
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
