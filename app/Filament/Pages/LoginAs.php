@@ -4,13 +4,14 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use Filament\Tables\Table;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Actions\Action;
 use App\Models\User;
 
-class LoginAs extends Page
+class LoginAs extends Page implements HasTable
 {
     use InteractsWithTable;
 
