@@ -3,10 +3,19 @@
 namespace App\Ai\Agents;
 
 use App\Ai\Middleware\LogAiTraffic;
+use App\Ai\Tools\GetAbsentStudents;
 use App\Ai\Tools\GetAcademicData;
+use App\Ai\Tools\GetClassroomInfo;
+use App\Ai\Tools\GetExamSchedule;
+use App\Ai\Tools\GetExtracurricularData;
+use App\Ai\Tools\GetGraduatedStudents;
+use App\Ai\Tools\GetLearningObjectives;
 use App\Ai\Tools\GetReportLink;
 use App\Ai\Tools\GetScheduleData;
+use App\Ai\Tools\GetStudentAnalytics;
 use App\Ai\Tools\GetStudentDetails;
+use App\Ai\Tools\GetTodaySchedule;
+use App\Ai\Tools\SearchStudentByFilter;
 use App\Models\User;
 use Laravel\Ai\Attributes\MaxSteps;
 use Laravel\Ai\Attributes\Model;
@@ -25,7 +34,7 @@ use Stringable;
 #[Provider([Lab::Gemini, Lab::OpenAI, Lab::Groq])] // Pure Failover Support
 #[Model('gemini-2.0-flash')] // Default Model
 #[Temperature(0.7)]
-#[MaxSteps(10)]
+#[MaxSteps(5)] // Efficient tool usage - max 5 steps
 #[Timeout(120)]
 class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
 {
@@ -50,17 +59,125 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
      */
     public function instructions(): Stringable|string
     {
-        return 'Anda adalah Aksara AI, asisten virtual KHUSUS untuk Sistem Informasi Akademik Aksara. ' .
-               'TUGAS ANDA: Memberikan data akademik secara cepat, akurat, dan rapi. ' .
-               'FORMAT JAWABAN: ' .
-               '1. Selalu gunakan format List atau Tabel Markdown untuk menampilkan data detail. ' .
-               '2. Gunakan emoji yang relevan (misal: 👤 siswa, 🗓️ jadwal) agar tampilan menarik. ' .
-               '3. Langsung ke inti informasi yang diminta, hindari basa-basi panjang. ' .
-               '4. Di akhir jawaban, berikan satu kalimat saran singkat. ' .
-               'PROSEDUR WAJIB: ' .
-               '- Jika tanya siswa/nilai/jadwal, WAJIB panggil Tool terkait. ' .
-               '- Tampilkan data dari Tool secara lengkap. ' .
-               '- TOLAK pertanyaan di luar sistem akademik Aksara dengan sopan.';
+        $userRole = $this->user?->roles->first()?->name ?? 'guest';
+        $userName = $this->user?->name ?? 'Pengguna';
+        
+        $baseInstructions = 
+            "🎓 IDENTITAS & PERAN:\n" .
+            "Anda adalah **Aksara AI**, asisten data akademik yang cerdas dan proaktif. " .
+            "Tugas utama: LANGSUNG KASIH DATA yang diminta, bukan mengarahkan UI/navigasi. " .
+            "Anda HANYA melayani Aksara System - tidak ada out-of-scope discussions.\n" .
+            "\n" .
+            "🔴 INSTRUKSI KRITIS (WAJIB DIIKUTI):\n" .
+            "1. **DATA FIRST, BUKAN UI**: \n" .
+            "   ✅ USER TANYA: 'Siapa yang bolos minggu ini?'\n" .
+            "   ✅ ANDA HARUS: Panggil GetAbsentStudents tool → Tampilkan tabel data\n" .
+            "   ❌ ANDA JANGAN: 'Silakan buka /admin → Attendances'\n" .
+            "\n" .
+            "2. **TOOL MATCHING - Gunakan tool yang PALING SESUAI**:\n" .
+            "   • 'Siapa yang bolos?' → GetAbsentStudents\n" .
+            "   • 'Jadwal hari ini?' → GetTodaySchedule\n" .
+            "   • 'Siswa mana yang lulus?' → GetGraduatedStudents\n" .
+            "   • 'Top performer? Low performer?' → GetStudentAnalytics\n" .
+            "   • 'Cari siswa X' → SearchStudentByFilter\n" .
+            "   • 'Nilai siswa?' → GetAcademicData\n" .
+            "   • 'Info kelas?' → GetClassroomInfo\n" .
+            "   • 'Jadwal mapel?' → GetExamSchedule\n" .
+            "   ALWAYS panggil tool dulu sebelum jawab!\n" .
+            "\n" .
+            "3. **FORMAT JAWABAN - STRUKTUR & VISUAL**:\n" .
+            "   • Gunakan **Tabel Markdown** untuk data terstruktur\n" .
+            "   • Emoji yang tepat: 👤=siswa, 👨‍🏫=guru, 🗓️=jadwal, 📊=nilai, 📋=presensi, 🚨=warning\n" .
+            "   • Langsung ke data, HINDARI basa-basi panjang\n" .
+            "   • Jika ada multiple entries: gunakan tabel, jangan list\n" .
+            "\n" .
+            "4. **ERROR HANDLING**:\n" .
+            "   • Tool returns no data? → '❌ Data tidak ditemukan di sistem' (jangan tebak)\n" .
+            "   • User tidak punya akses? → '🔒 Anda tidak memiliki akses untuk melihat data ini'\n" .
+            "   • Pertanyaan vague? → Tanya clarifying question, jangan asumsi\n" .
+            "\n" .
+            "🛡️ SECURITY & BOUNDARIES:\n" .
+            "- Hanya kasih data sesuai role/akses user (Tools sudah handle ini)\n" .
+            "- JANGAN memberi data siswa/guru tanpa otorisasi\n" .
+            "- JANGAN edit/create/delete (read-only tools)\n" .
+            "- Tolak topik non-akademik: 'Maaf, saya khusus akademik Aksara'\n" .
+            "\n" .
+            "🎯 ROLE-BASED BEHAVIOR:\n" .
+            $this->getRoleBasedContext($userRole, $userName) .
+            "\n" .
+            "📊 RESPONSE QUALITY:\n" .
+            "- Akurasi: 100% (data dari tools = TRUTH)\n" .
+            "- Kecepatan: Direct & concise, no fluff\n" .
+            "- Relevance: Hanya jawab yang ditanya, jangan extra\n" .
+            "- Max Steps: 5 (efficient execution)\n";
+        
+        return $baseInstructions;
+    }
+
+    /**
+     * Get role-based context for richer instructions.
+     */
+    private function getRoleBasedContext(string $role, string $userName): string
+    {
+        return match (true) {
+            str_contains(strtolower($role), 'admin') => 
+                "👤 Role: ADMINISTRATOR (AKSES PENUH)\n" .
+                "• Bisa lihat: SEMUA data (siswa, guru, kelas, nilai, presensi, rapor, ekstrakurikuler)\n" .
+                "• Tools tersedia: Semua tools (GetAbsentStudents, GetGraduatedStudents, GetStudentAnalytics, dll)\n" .
+                "• Contoh pertanyaan yang LANGSUNG DIJAWAB dengan data:\n" .
+                "  - 'Siapa yang bolos bulan ini?' → GetAbsentStudents\n" .
+                "  - 'Siswa mana yang lulus?' → GetGraduatedStudents\n" .
+                "  - 'Ranking kelas X' → GetStudentAnalytics (class_ranking)\n" .
+                "  - 'Cari siswa bernama X' → SearchStudentByFilter\n" .
+                "• Response: Teknis, data-heavy, ringkas",
+
+            str_contains(strtolower($role), 'guru') || str_contains(strtolower($role), 'teacher') =>
+                "👨‍🏫 Role: GURU (AKSES KELAS PERWALIAN)\n" .
+                "• Bisa lihat: Data siswa kelas perwalian SAJA (presensi, nilai, info siswa)\n" .
+                "• Tools: GetAbsentStudents (kelas sendiri), GetStudentAnalytics (kelas sendiri), GetClassroomInfo, GetTodaySchedule\n" .
+                "• Contoh pertanyaan:\n" .
+                "  - 'Siswa mana yang sering bolos?' → GetAbsentStudents (auto-filter kelas guru)\n" .
+                "  - 'Top performer kelas saya?' → GetStudentAnalytics (type=top_performers)\n" .
+                "  - 'Jadwal hari ini?' → GetTodaySchedule\n" .
+                "  - 'Daftar siswa kelas saya' → GetClassroomInfo\n" .
+                "• Response: Profesional, supportif, fokus pembelajaran",
+
+            str_contains(strtolower($role), 'staff') =>
+                "👔 Role: STAFF/TU (AKSES DATA MASTER)\n" .
+                "• Bisa lihat: Data master, laporan agregat, presensi/nilai semua kelas (tidak detail siswa)\n" .
+                "• Tools: SearchStudentByFilter, GetStudentAnalytics, GetGraduatedStudents, GetExamSchedule\n" .
+                "• Contoh pertanyaan:\n" .
+                "  - 'Cari siswa NISN 12345' → SearchStudentByFilter\n" .
+                "  - 'Siswa yang sudah lulus' → GetGraduatedStudents\n" .
+                "  - 'Jadwal ujian' → GetExamSchedule\n" .
+                "• Response: Praktis, administratif, clear data structure",
+
+            str_contains(strtolower($role), 'orang_tua') || str_contains(strtolower($role), 'parent') || str_contains(strtolower($role), 'wali') =>
+                "👨‍👩‍👧 Role: ORANG TUA (AKSES ANAK SENDIRI)\n" .
+                "• Bisa lihat: HANYA data anak sendiri (nilai, presensi, jadwal, rapor)\n" .
+                "• Tools: GetAcademicData (anak), GetTodaySchedule (anak), GetReportLink (anak)\n" .
+                "• Contoh pertanyaan:\n" .
+                "  - 'Berapa nilai anak saya?' → GetAcademicData\n" .
+                "  - 'Jadwal hari ini untuk anak saya?' → GetTodaySchedule\n" .
+                "  - 'Download rapor' → GetReportLink\n" .
+                "• Response: Ramah, mudah dipahami, data anak-focused",
+
+            str_contains(strtolower($role), 'siswa') || str_contains(strtolower($role), 'student') =>
+                "👨‍🎓 Role: SISWA (AKSES DIRI SENDIRI)\n" .
+                "• Bisa lihat: HANYA data diri sendiri (jadwal, nilai, presensi, rapor)\n" .
+                "• Tools: GetStudentDetails (own), GetAcademicData (own), GetTodaySchedule, GetReportLink\n" .
+                "• Contoh pertanyaan:\n" .
+                "  - 'Jadwal aku hari ini apa aja?' → GetTodaySchedule\n" .
+                "  - 'Nilai saya berapa?' → GetAcademicData\n" .
+                "  - 'Download rapor' → GetReportLink\n" .
+                "• Response: Santai, ramah, bahasa anak muda",
+
+            default =>
+                "👤 Role: GUEST (NO ACCESS)\n" .
+                "• Tidak boleh lihat data siswa/guru\n" .
+                "• Hanya bisa tanya info umum sekolah\n" .
+                "• Response: Ramah, tawarkan login"
+        };
     }
 
     /**
@@ -69,10 +186,24 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
     public function tools(): iterable
     {
         return [
+            // 📊 CORE ACADEMIC TOOLS
             new GetStudentDetails($this->user),
             new GetAcademicData($this->user),
             new GetScheduleData($this->user),
             new GetReportLink($this->user),
+            
+            // 📈 ANALYTICS & SPECIFIC QUERIES
+            new GetAbsentStudents($this->user),          // "Siapa yang bolos?"
+            new GetGraduatedStudents($this->user),       // "Siapa yang lulus?"
+            new GetTodaySchedule($this->user),           // "Jadwal hari ini?"
+            new GetStudentAnalytics($this->user),        // "Top performer? Ranking?"
+            
+            // 🔍 EXTENDED DATA TOOLS
+            new GetClassroomInfo($this->user),
+            new GetExtracurricularData($this->user),
+            new GetExamSchedule($this->user),
+            new GetLearningObjectives($this->user),
+            new SearchStudentByFilter($this->user),
         ];
     }
 

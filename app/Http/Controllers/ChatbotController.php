@@ -10,6 +10,7 @@ use App\Models\Schedule;
 use App\Models\Classroom;
 use App\Models\EReport;
 use App\Models\Extracurricular;
+use App\Ai\AksaraKnowledgeBase;
 use Illuminate\Support\Facades\Storage;
 
 class ChatbotController extends Controller
@@ -27,18 +28,30 @@ class ChatbotController extends Controller
         $userMessage = $request->input('message');
         $conversationId = $request->input('conversation_id');
         $user = $request->user();
+        $role = $this->getUserRole($user);
 
         try {
+            // Enrich user message with knowledge base context if relevant
+            $enrichedMessage = $this->enrichMessageWithKnowledge($userMessage, $role);
+            
             $agent = new \App\Ai\Agents\AksaraAssistant($user);
             
             if ($conversationId) {
-                $response = $agent->continue($conversationId, as: $user)->prompt($userMessage);
+                $response = $agent->continue($conversationId, as: $user)->prompt($enrichedMessage);
             } else {
-                $response = $agent->forUser($user)->prompt($userMessage);
+                $response = $agent->forUser($user)->prompt($enrichedMessage);
             }
 
             $reply = (string) $response;
             $conversationId = $response->conversationId;
+
+            // Log the interaction for analytics
+            Log::info('Chatbot interaction', [
+                'user_id' => $user?->id,
+                'role' => $role,
+                'message_length' => strlen($userMessage),
+                'conversation_id' => $conversationId,
+            ]);
 
             // Dispatch event for real-time update via Reverb
             event(new \App\Events\MessageSent($conversationId, $reply));
@@ -48,8 +61,12 @@ class ChatbotController extends Controller
                 'conversation_id' => $conversationId,
             ]);
         } catch (\Exception $e) {
-            Log::error('Chatbot AI SDK error: ' . $e->getMessage());
-            $reply = $this->getFallbackResponse($userMessage, $this->getUserRole($user));
+            Log::error('Chatbot AI SDK error: ' . $e->getMessage(), [
+                'user_id' => $user?->id,
+                'role' => $role,
+                'exception' => (string) $e,
+            ]);
+            $reply = $this->getFallbackResponse($userMessage, $role);
             
             return response()->json([
                 'reply' => $reply,
@@ -467,6 +484,86 @@ class ChatbotController extends Controller
             'total' => $extracurriculars->count(),
             'context' => 'Daftar kegiatan ekstrakurikuler yang tersedia di sekolah (Master Data).',
         ];
+    }
+
+    /**
+     * Enrich user message dengan knowledge base jika relevan.
+     * Cek apakah message mengandung keywords yang ada di FAQ/Guides.
+     */
+    private function enrichMessageWithKnowledge(string $message, string $role): string
+    {
+        // Keywords untuk trigger knowledge injection
+        $knowledgeKeywords = [
+            'cara', 'bagaimana', 'gimana', 'bisa', 'bapa', 'rapor', 'nilai', 'presensi', 
+            'jadwal', 'ekstrakurikuler', 'ekskul', 'wali kelas', 'buku induk', 'login as',
+            'tips', 'bantuan', 'help', 'panduan', 'tutorial', 'fitur', 'sistem'
+        ];
+
+        $messageLower = strtolower($message);
+        $hasKeyword = false;
+
+        foreach ($knowledgeKeywords as $keyword) {
+            if (strpos($messageLower, $keyword) !== false) {
+                $hasKeyword = true;
+                break;
+            }
+        }
+
+        // Jika ada keyword, inject knowledge base context
+        if ($hasKeyword) {
+            $faq = AksaraKnowledgeBase::searchFaq($message);
+            $tips = AksaraKnowledgeBase::getRoleTips($role);
+            
+            $context = "\n\n--- SISTEM CONTEXT (Jangan tampilkan ke user) ---\n";
+            if ($faq) {
+                $context .= "FAQ Terkait: Q: {$faq['q']}\nA: {$faq['a']}\n";
+            }
+            $context .= "Tips untuk role {$role}: {$tips}\n";
+            $context .= "--- END CONTEXT ---\n";
+            
+            return $message . $context;
+        }
+
+        return $message;
+    }
+
+    /**
+     * Get role-based context data (guru's classes, student's current class, etc.)
+     */
+    private function getContextualDataForRole($user, string $role): array
+    {
+        $contextData = [
+            'role' => $role,
+            'user_name' => $user->name ?? 'Pengguna',
+            'timestamp' => now()->format('d-m-Y H:i'),
+        ];
+
+        try {
+            if ($role === 'guru' && $user->teacher) {
+                $contextData['wali_kelas'] = $user->teacher->studyGroups()
+                    ->first()?->nama_rombel ?? 'Belum ada';
+                $contextData['teaching_subjects'] = $user->teacher->subjects()
+                    ->pluck('nama_mapel')
+                    ->take(5)
+                    ->toArray() ?? [];
+            } elseif ($role === 'siswa' && $user->student) {
+                $studyGroup = $user->student->currentStudyGroup();
+                $contextData['current_class'] = $studyGroup?->nama_rombel ?? 'Belum terdaftar';
+                $contextData['class_teacher'] = $studyGroup?->teacher?->user?->name ?? 'N/A';
+            } elseif ($role === 'orang_tua' && $user->parent) {
+                $contextData['children_count'] = $user->parent->students->count();
+                $contextData['children'] = $user->parent->students
+                    ->map(fn($s) => [
+                        'name' => $s->user->name,
+                        'class' => $s->currentStudyGroup()?->nama_rombel,
+                    ])
+                    ->toArray();
+            }
+        } catch (\Exception $e) {
+            Log::debug('Error building contextual data: ' . $e->getMessage());
+        }
+
+        return $contextData;
     }
 
     // ========================================================================
