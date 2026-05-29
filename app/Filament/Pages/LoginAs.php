@@ -37,6 +37,7 @@ class LoginAs extends Page implements HasTable
             ->query(
                 User::query()
                     ->where('id', '!=', auth()->id())
+                    ->with('roles')
             )
             ->columns([
                 TextColumn::make('name')
@@ -65,13 +66,16 @@ class LoginAs extends Page implements HasTable
                         'super_admin' => '👑 Super Admin',
                         'admin' => '🛡️ Admin',
                         default => $state
-                    }),
+                    })
+                    ->limit(1),
             ])
             ->filters([
                 SelectFilter::make('roles')
                     ->label('Filter Peran (Role)')
                     ->relationship('roles', 'name')
-                    ->preload(),
+                    ->preload()
+                    ->multiple()
+                    ->distinct(),
             ])
             ->actions([
                 Action::make('login_as')
@@ -87,22 +91,28 @@ class LoginAs extends Page implements HasTable
                         }
 
                         $currentUser = auth()->user();
-                        if ($currentUser) {
-                            // Save original admin user ID in session
-                            session(['impersonator_id' => $currentUser->id]);
+                        if (!$currentUser) {
+                            return;
+                        }
 
-                            // Login as the target user
-                            \Illuminate\Support\Facades\Auth::login($record);
+                        // Save original admin user ID in session
+                        session(['impersonator_id' => $currentUser->id]);
 
-                            // Redirect based on target user role
-                            $targetRole = strtolower($record->roles->first()?->name ?? '');
-                            if (in_array($targetRole, ['siswa', 'orang_tua', 'wali', 'parent'])) {
-                                return redirect()->to('/dashboard')->with('success', "Berhasil masuk sebagai {$record->name}.");
-                            } else {
-                                return redirect()->to('/admin')->with('success', "Berhasil masuk sebagai {$record->name}.");
-                            }
+                        // Login as the target user
+                        \Illuminate\Support\Facades\Auth::login($record);
+
+                        // Redirect based on target user role
+                        $targetRole = strtolower($record->roles->first()?->name ?? '');
+                        if (in_array($targetRole, ['siswa', 'orang_tua', 'wali', 'parent'])) {
+                            return redirect()->to('/dashboard')->with('success', "Berhasil masuk sebagai {$record->name}.");
+                        } else {
+                            return redirect()->to('/admin')->with('success', "Berhasil masuk sebagai {$record->name}.");
                         }
                     }),
-            ]);
+            ])
+            ->paginated([10, 25, 50])
+            ->striped()
+            ->emptyStateHeading('Tidak ada pengguna')
+            ->emptyStateDescription('Semua pengguna sudah Anda impersonasi atau tidak ada pengguna lain.');
     }
 }
