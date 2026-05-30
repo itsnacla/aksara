@@ -74,8 +74,7 @@ class LoginAs extends Page implements HasTable
                     ->label('Filter Peran (Role)')
                     ->relationship('roles', 'name')
                     ->preload()
-                    ->multiple()
-                    ->distinct(),
+                    ->multiple(),
             ])
             ->actions([
                 Action::make('login_as')
