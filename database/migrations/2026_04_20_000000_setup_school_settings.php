@@ -42,7 +42,7 @@ return new class extends Migration
             ['id' => 1],
             [
                 'name' => 'Aksara Academic System',
-                'motto' => 'Digital Education Excellence',
+                'motto' => 'Membangun Karakter, Meraih Prestasi',
             ]
         );
     }

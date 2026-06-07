@@ -80,7 +80,7 @@ class SchoolSetting extends Model
     {
         return self::first() ?: self::create([
             'name' => 'Aksara Academic System',
-            'motto' => 'Digital Education Excellence',
+            'motto' => 'Membangun Karakter, Meraih Prestasi.',
         ]);
     }
 }

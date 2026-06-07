@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             GraduateProfileSeeder::class,
             DummyDataSeeder::class,
+            GradesAndReportsSeeder::class,
         ]);
     }
 }
