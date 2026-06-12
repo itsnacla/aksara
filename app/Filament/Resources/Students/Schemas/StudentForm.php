@@ -288,6 +288,7 @@ class StudentForm
                 Grid::make(2)->schema([
                     Section::make('Informasi Orang Tua Kandung')
                         ->description('Data Ayah dan Ibu Kandung')
+                        ->visible(fn (Get $get, string $operation) => $operation === 'edit' || $get('create_new_parent'))
                         ->schema([
                             TextInput::make('parent.father_name')
                                 ->label('Nama Ayah')
@@ -303,14 +304,14 @@ class StudentForm
                                 ->maxLength(255),
                             Textarea::make('parent.address')
                                 ->label('Alamat Orang Tua')
-                                ->required()
+                                ->required(fn (Get $get, string $operation) => $operation === 'edit' || $get('create_new_parent'))
                                 ->rows(2)
                                 ->columnSpanFull(),
                             Grid::make(2)->schema([
                                 Select::make('parent.province')
                                     ->label('Provinsi')
                                     ->options(fn () => RegionService::getProvinces())
-                                    ->required()
+                                    ->required(fn (Get $get, string $operation) => $operation === 'edit' || $get('create_new_parent'))
                                     ->searchable()
                                     ->live()
                                     ->afterStateUpdated(function ($set) {
@@ -321,7 +322,7 @@ class StudentForm
                                 Select::make('parent.city')
                                     ->label('Kota')
                                     ->options(fn (Get $get) => RegionService::getRegencies($get('parent.province')))
-                                    ->required()
+                                    ->required(fn (Get $get, string $operation) => $operation === 'edit' || $get('create_new_parent'))
                                     ->searchable()
                                     ->live()
                                     ->afterStateUpdated(function ($set) {
@@ -331,7 +332,7 @@ class StudentForm
                                 Select::make('parent.district')
                                     ->label('Kecamatan')
                                     ->options(fn (Get $get) => RegionService::getDistricts($get('parent.city')))
-                                    ->required()
+                                    ->required(fn (Get $get, string $operation) => $operation === 'edit' || $get('create_new_parent'))
                                     ->searchable()
                                     ->live()
                                     ->afterStateUpdated(function ($set) {
@@ -340,7 +341,7 @@ class StudentForm
                                 Select::make('parent.village')
                                     ->label('Desa')
                                     ->options(fn (Get $get) => RegionService::getVillages($get('parent.district'), $get('parent.city')))
-                                    ->required()
+                                    ->required(fn (Get $get, string $operation) => $operation === 'edit' || $get('create_new_parent'))
                                     ->searchable(),
                             ]),
                         ])->columnSpan(1),
@@ -364,6 +365,7 @@ class StudentForm
 
                 Section::make('Informasi Wali Murid (Opsional)')
                     ->description('Hanya jika tidak tinggal bersama orang tua kandung')
+                    ->visible(fn (Get $get, string $operation) => $operation === 'edit' || $get('create_new_parent'))
                     ->schema([
                         Grid::make(2)->schema([
                             TextInput::make('parent.guardian_name')

@@ -83,7 +83,26 @@ class StudyGroupsTable
                 ->color('info')
                 ->url(fn ($record) => route('student.cards.rombel', ['studyGroupId' => $record->id]))
                 ->openUrlInNewTab(),
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->before(function (DeleteAction $action, StudyGroup $record) {
+                    $hasStudents = $record->students()->exists();
+                    $hasSchedules = $record->schedules()->exists();
+
+                    if ($hasStudents || $hasSchedules) {
+                        $relatedItems = [];
+                        if ($hasStudents) $relatedItems[] = 'Siswa';
+                        if ($hasSchedules) $relatedItems[] = 'Jadwal';
+
+                        Notification::make()
+                            ->title('Tidak Dapat Menghapus Rombel')
+                            ->danger()
+                            ->body('Rombel ini masih memiliki data terkait: ' . implode(', ', $relatedItems) . '. Lepaskan atau hapus data terkait terlebih dahulu.')
+                            ->persistent()
+                            ->send();
+
+                        $action->cancel();
+                    }
+                }),
         ];
     }
 
@@ -91,7 +110,20 @@ class StudyGroupsTable
     {
         return [
             \Filament\Actions\BulkActionGroup::make([
-                \Filament\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\DeleteBulkAction::make()
+                    ->before(function (\Filament\Actions\DeleteBulkAction $action, \Illuminate\Database\Eloquent\Collection $records) {
+                        foreach ($records as $record) {
+                            if ($record->students()->exists() || $record->schedules()->exists()) {
+                                Notification::make()
+                                    ->title('Penghapusan Massal Dibatalkan')
+                                    ->danger()
+                                    ->body("Rombel {$record->nama_rombel} tidak dapat dihapus karena masih memiliki data Siswa atau Jadwal.")
+                                    ->persistent()
+                                    ->send();
+                                $action->cancel();
+                            }
+                        }
+                    }),
             ]),
         ];
     }

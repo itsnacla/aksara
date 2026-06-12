@@ -450,6 +450,8 @@ class ListStudents extends ListRecords
                         'username' => $data['user_username'],
                         'email' => $data['user_email'],
                         'password' => Hash::make($data['user_password']),
+                        'is_active' => $data['user_is_active'] ?? true,
+                        'photo' => $data['user_photo'] ?? null,
                     ]);
 
                     // Assign role
@@ -459,7 +461,7 @@ class ListStudents extends ListRecords
                     $data['user_id'] = $user->id;
 
                     // Remove user and nested parent fields from data, keep only student fields
-                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['parent']);
+                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['user_photo'], $data['user_is_active'], $data['parent']);
 
                     return $data;
                 }),
