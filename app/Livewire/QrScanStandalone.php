@@ -67,6 +67,7 @@ class QrScanStandalone extends Component
             if ($attendance) {
                 $attendance->update([
                     'status' => 'hadir',
+                    'check_in' => $attendance->check_in ?? now()->format('H:i:s'),
                     'catatan' => $attendance->catatan . ' | Scan ulang pada ' . now()->format('H:i:s'),
                 ]);
             } else {
@@ -75,6 +76,7 @@ class QrScanStandalone extends Component
                     'study_group_id' => $rombelId,
                     'tanggal' => $today,
                     'status' => 'hadir',
+                    'check_in' => now()->format('H:i:s'),
                     'catatan' => 'Scan QR pada ' . now()->format('H:i:s'),
                 ]);
             }

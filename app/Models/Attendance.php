@@ -38,6 +38,12 @@ class Attendance extends Model
 
     protected static function booted()
     {
+        static::saving(function ($attendance) {
+            if ($attendance->status === 'hadir' && empty($attendance->check_in)) {
+                $attendance->check_in = now()->format('H:i:s');
+            }
+        });
+
         static::created(function ($attendance) {
             event(new \App\Events\AttendanceLogged(
                 $attendance,

@@ -23,7 +23,8 @@ class ScheduleForm
     {
         return $schema
             ->components([
-                Hidden::make('id'),
+                Hidden::make('id')
+                    ->dehydrated(false),
                 
                 Fieldset::make('Informasi Rombel & Mapel')
                     ->schema([
@@ -136,7 +137,8 @@ class ScheduleForm
                             })
                             ->helperText(fn (Get $get) => "Beban Mingguan: " . (Subject::find($get('subject_id'))?->total_jp ?? 0) . " JP | Sisa: " . ($get('remaining_jp') ?? 0) . " JP"),
                         
-                        Hidden::make('remaining_jp'),
+                        Hidden::make('remaining_jp')
+                            ->dehydrated(false),
                     ])
                     ->columns(1),
 

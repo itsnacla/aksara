@@ -307,6 +307,7 @@ class ListStaff extends ListRecords
                         'username' => $data['user_username'],
                         'email' => $data['user_email'],
                         'password' => Hash::make($data['user_password']),
+                        'is_active' => $data['user_is_active'] ?? true,
                     ]);
 
                     // Assign role
@@ -316,7 +317,7 @@ class ListStaff extends ListRecords
                     $data['user_id'] = $user->id;
 
                     // Remove user fields from data
-                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
+                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['user_is_active']);
 
                     return $data;
                 }),

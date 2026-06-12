@@ -46,6 +46,15 @@ class WAService
                 'Authorization' => $token,
             ])->post($url, $payload);
 
+            $status = $response->successful() ? 'success' : 'failed';
+            
+            \App\Models\WhatsAppLog::create([
+                'phone' => $phone,
+                'message' => $message,
+                'status' => $status,
+                'response' => $response->body(),
+            ]);
+
             if ($response->successful()) {
                 return true;
             }
@@ -54,6 +63,12 @@ class WAService
             return false;
 
         } catch (\Exception $e) {
+            \App\Models\WhatsAppLog::create([
+                'phone' => $phone,
+                'message' => $message,
+                'status' => 'failed',
+                'response' => $e->getMessage(),
+            ]);
             Log::error('WA Service Exception: ' . $e->getMessage());
             return false;
         }
