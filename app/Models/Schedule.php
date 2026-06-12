@@ -49,10 +49,6 @@ class Schedule extends Model
         return $this->belongsTo(TimeSlot::class, 'end_time_slot_id');
     }
 
-    public function academicYear()
-    {
-        return $this->belongsTo(AcademicYear::class);
-    }
 
     public function attendances()
     {

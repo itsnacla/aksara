@@ -115,7 +115,7 @@ class AcademicYearsTable
                         $hasGrades = $record->grades()->exists();
                         $hasReports = $record->eReports()->exists();
                         $hasSchedules = $record->schedules()->exists();
-                        $hasClassrooms = $record->classrooms()->exists();
+                        $hasClassrooms = $record->studyGroups()->exists();
 
                         if ($hasGrades || $hasReports || $hasSchedules || $hasClassrooms) {
                             $relatedItems = [];

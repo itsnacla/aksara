@@ -42,11 +42,11 @@ class AcademicYear extends Model
 
     public function schedules()
     {
-        return $this->hasMany(Schedule::class);
+        return $this->hasManyThrough(Schedule::class, StudyGroup::class);
     }
 
-    public function classrooms()
+    public function studyGroups()
     {
-        return $this->hasMany(Classroom::class);
+        return $this->hasMany(StudyGroup::class);
     }
 }

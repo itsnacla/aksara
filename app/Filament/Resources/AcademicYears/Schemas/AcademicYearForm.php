@@ -21,13 +21,10 @@ class AcademicYearForm
                     ->unique(
                         table: 'academic_years',
                         column: 'tahun_ajaran',
-                        ignoreRecord: true,
-                        modifyRuleUsing: function ($rule, $get) {
-                            return $rule->where('semester', $get('semester'));
-                        }
+                        ignoreRecord: true
                     )
                     ->validationMessages([
-                        'unique' => 'Tahun ajaran dengan semester ini sudah ada.',
+                        'unique' => 'Tahun ajaran ini sudah ada.',
                     ]),
                 Select::make('semester')
                     ->options([

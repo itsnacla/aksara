@@ -34,7 +34,7 @@ class GetExamSchedule implements Tool
         $scheduleType = $request['schedule_type'] ?? 'all'; // 'all', 'exam', 'regular'
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
 
-        $query = Schedule::query()->with(['studyGroup.classroom', 'subject', 'teacher.user', 'academicYear', 'dayConfig']);
+        $query = Schedule::query()->with(['studyGroup.classroom', 'studyGroup.academicYear', 'subject', 'teacher.user', 'dayConfig']);
 
         // Filter berdasarkan role
         if (str_contains($roleName, 'siswa')) {
@@ -86,7 +86,7 @@ class GetExamSchedule implements Tool
                 'kelas' => $schedule->studyGroup?->nama_rombel,
                 'ruangan' => $schedule->studyGroup?->classroom?->nama_ruangan,
                 'jenis' => $schedule->jenis_jadwal ?? 'pelajaran',
-                'tahun_ajaran' => $schedule->academicYear?->tahun_ajaran,
+                'tahun_ajaran' => $schedule->studyGroup?->academicYear?->tahun_ajaran,
             ];
         })->toArray();
 
