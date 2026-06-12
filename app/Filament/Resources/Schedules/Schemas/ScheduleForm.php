@@ -441,7 +441,22 @@ class ScheduleForm
                                             ->where('urutan', '<=', $endSlot->urutan)
                                             ->count();
 
-                                        $remaining = $get('remaining_jp') ?? 0;
+                                        $subjectId = $get('subject_id');
+                                        $subject = Subject::find($subjectId);
+                                        $usedJp = 0;
+                                        if ($subject) {
+                                            $usedJp = Schedule::where('study_group_id', $rombelId)
+                                                ->where('subject_id', $subjectId)
+                                                ->where('id', '!=', $recordId)
+                                                ->get()
+                                                ->sum(function($s) {
+                                                    $sStart = TimeSlot::find($s->start_time_slot_id);
+                                                    $sEnd = TimeSlot::find($s->end_time_slot_id);
+                                                    return ($sStart && $sEnd) ? abs($sEnd->urutan - $sStart->urutan) + 1 : 0;
+                                                });
+                                        }
+                                        $remaining = max(0, ($subject->total_jp ?? 0) - $usedJp);
+
                                         if ($jpCount > $remaining) {
                                             $fail("Total {$jpCount} JP melebihi sisa beban mingguan Mapel ini ({$remaining} JP)!");
                                         }
