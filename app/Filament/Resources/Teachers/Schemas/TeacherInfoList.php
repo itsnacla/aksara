@@ -12,7 +12,7 @@ class TeacherInfoList
     {
         return $schema
             ->components([
-                TextEntry::make('user.name')
+                TextEntry::make('nama_lengkap')
                     ->label('Nama Lengkap'),
                 TextEntry::make('user.username')
                     ->label('Username'),

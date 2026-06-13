@@ -151,7 +151,7 @@
                                     </span>
                                     @if($showTeacherCode)
                                         <span class="teacher-code">
-                                            {{ $item->teacher->kode_guru ?? $item->teacher->user->name }}
+                                            {{ $item->teacher->kode_guru ?? $item->teacher->nama_lengkap }}
                                         </span>
                                     @endif
                                 @endif

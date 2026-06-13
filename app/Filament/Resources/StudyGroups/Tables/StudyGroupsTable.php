@@ -42,8 +42,9 @@ class StudyGroupsTable
                 ->color('primary')
                 ->wrap(),
             
-            TextColumn::make('waliKelas.user.name')
+            TextColumn::make('waliKelas.nama_lengkap')
                 ->label('Wali Kelas')
+                ->searchable(['user.name'])
                 ->icon('heroicon-m-user-circle')
                 ->color('gray')
                 ->description(fn ($record) => "NIP/ID: " . ($record->waliKelas?->nip ?? '-'))

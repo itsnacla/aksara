@@ -71,6 +71,7 @@ class PortalController extends Controller
                 ->pluck('total', 'status')
                 ->toArray();
 
+            /** @var array<string, mixed> $data */
             $data = [
                 'attendance' => $todayAttendance ? [
                     'status' => $todayAttendance->status,
@@ -193,7 +194,15 @@ class PortalController extends Controller
             ->take(5)
             ->get();
 
-        return [
+        // Published Rapors (for recommendations)
+        $publishedRapors = StudentRapor::with(['academicYear'])
+            ->where('student_id', $studentId)
+            ->where('is_published', true)
+            ->latest()
+            ->get();
+
+        /** @var array<string, mixed> $result */
+        $result = [
             'student' => $student,
             'studyGroup' => $studyGroup,
             'attendance' => $student?->attendances()
@@ -216,7 +225,10 @@ class PortalController extends Controller
             'attendancePercentage' => $attendancePercentage,
             'recentNotifications' => $recentNotifications,
             'academicYear' => $activeYear,
+            'publishedRapors' => $publishedRapors,
         ];
+
+        return $result;
     }
 
     private function getParentDashboardData($user): array
@@ -279,7 +291,15 @@ class PortalController extends Controller
             ->take(5)
             ->get();
 
-        return [
+        // Published Rapors (for recommendations)
+        $publishedRapors = StudentRapor::whereIn('student_id', $childIds)
+            ->where('is_published', true)
+            ->with(['student.user', 'academicYear'])
+            ->latest()
+            ->get();
+
+        /** @var array<string, mixed> $result */
+        $result = [
             'parent' => $user->parent,
             'children' => $user->parent?->students()->with(['user', 'attendances' => function($q) {
                 $q->where('tanggal', now()->toDateString());
@@ -300,7 +320,10 @@ class PortalController extends Controller
             'attendancePercentage' => $attendancePercentage,
             'recentNotifications' => $recentNotifications,
             'academicYear' => $activeYear,
+            'publishedRapors' => $publishedRapors,
         ];
+
+        return $result;
     }
 
     public function logout(Request $request)

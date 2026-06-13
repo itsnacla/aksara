@@ -34,10 +34,10 @@ class ExtracurricularsTable
                     ->counts('students')
                     ->badge()
                     ->color('info'),
-                TextColumn::make('coordinator.name')
+                TextColumn::make('coordinator.nama_lengkap')
                     ->label('Koordinator')
                     ->placeholder('Belum ditentukan')
-                    ->searchable(),
+                    ->searchable(['name']),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime()

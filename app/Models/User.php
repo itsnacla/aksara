@@ -79,4 +79,12 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->is_active;
     }
+
+    public function getNamaLengkapAttribute()
+    {
+        if ($this->teacher) {
+            return $this->teacher->nama_lengkap;
+        }
+        return $this->name;
+    }
 }

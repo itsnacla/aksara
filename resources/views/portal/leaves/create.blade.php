@@ -94,7 +94,7 @@
             </div>
         </div>
 
-        <button type="submit" class="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:translate-y-[-2px] transition-all">
+        <button type="submit" class="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-sm hover:shadow-sm hover:translate-y-[-2px] transition-all">
             Kirim Permohonan Izin
         </button>
     </form>

@@ -10,7 +10,7 @@
             <p class="text-gray-500">Riwayat permohonan izin dan sakit siswa.</p>
         </div>
         @if(auth()->user()->hasRole('wali'))
-        <a href="{{ route('leaves.create') }}" class="bg-primary text-white px-6 py-3 rounded-full font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+        <a href="{{ route('leaves.create') }}" class="bg-primary text-white px-6 py-3 rounded-full font-bold shadow-md hover:shadow-sm transition-all flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>

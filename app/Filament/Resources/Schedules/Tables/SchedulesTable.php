@@ -36,8 +36,9 @@ class SchedulesTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('teacher.user.name')
+                TextColumn::make('teacher.nama_lengkap')
                     ->label('Guru / Pengajar')
+                    ->searchable(['user.name'])
                     ->description(fn ($record) => $record->teacher?->kode_guru ? "Kode: {$record->teacher->kode_guru}" : null)
                     ->searchable()
                     ->sortable()

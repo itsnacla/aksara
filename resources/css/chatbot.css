@@ -622,8 +622,7 @@
     margin-bottom: 4px;
 }
 
-/* --- Responsive --- */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     .chatbot-window {
         width: calc(100vw - 32px);
         right: -8px;
@@ -633,7 +632,7 @@
     }
 
     .chatbot-wrapper {
-        bottom: 16px;
+        bottom: 89px;
         right: 16px;
     }
 }
