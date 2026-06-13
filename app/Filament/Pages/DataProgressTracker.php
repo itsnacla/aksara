@@ -18,7 +18,7 @@ class DataProgressTracker extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasAnyRole(['super_admin', 'staff']) ?? false;
+        return auth()->user()?->can('View:DataProgressTracker') ?? false;
     }
 
     public function getHeaderWidgetsColumns(): int|array
