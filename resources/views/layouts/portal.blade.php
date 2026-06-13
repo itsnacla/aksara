@@ -6,8 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Aksara Portal - @yield('title', 'Dashboard')</title>
 
-    <!-- Tailwind 4 Styles -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Tailwind 4 Styles & App Scripts -->
+    @vite(['resources/css/app.css', 'resources/css/chatbot.css', 'resources/js/app.js', 'resources/js/chatbot.js'])
     
     <!-- Livewire Styles -->
     @livewireStyles

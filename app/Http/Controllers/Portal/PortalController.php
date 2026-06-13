@@ -61,66 +61,11 @@ class PortalController extends Controller
         $data = [];
 
         if ($user->can('AccessStudentPortal')) {
-            $student = $user->student;
-            $studentId = $student?->id;
-
-            $todayAttendance = $student?->attendances()
-                ->where('tanggal', now()->toDateString())
-                ->first();
-
-            $stats = Attendance::where('student_id', $studentId)
-                ->whereMonth('tanggal', now()->month)
-                ->selectRaw('status, count(*) as total')
-                ->groupBy('status')
-                ->pluck('total', 'status')
-                ->toArray();
-
-            /** @var array<string, mixed> $data */
-            $data = [
-                'attendance' => $todayAttendance ? [
-                    'status' => $todayAttendance->status,
-                    'check_in' => $todayAttendance->check_in,
-                    'time' => $todayAttendance->created_at->format('H:i'),
-                ] : null,
-                'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
-                'notifications_count' => Notification::where('student_id', $studentId)
-                    ->where('is_read', false)->count(),
-            ];
+            $data = $this->getStudentRealtimeData($user);
         }
 
         if ($user->can('AccessParentPortal')) {
-            $childIds = $user->parent?->students()->pluck('id') ?? [];
-
-            $stats = Attendance::whereIn('student_id', $childIds)
-                ->whereMonth('tanggal', now()->month)
-                ->selectRaw('status, count(*) as total')
-                ->groupBy('status')
-                ->pluck('total', 'status')
-                ->toArray();
-
-            $childrenStatus = [];
-            $children = $user->parent?->students()->with(['user', 'attendances' => function ($q) {
-                $q->where('tanggal', now()->toDateString());
-            }])->get() ?? collect();
-
-            foreach ($children as $child) {
-                $att = $child->attendances->first();
-                $childrenStatus[] = [
-                    'id' => $child->id,
-                    'name' => $child->user->name,
-                    'attendance' => $att ? [
-                        'status' => $att->status,
-                        'time' => $att->created_at->format('H:i'),
-                    ] : null,
-                ];
-            }
-
-            $data = array_merge($data, [
-                'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
-                'childrenStatus' => $childrenStatus,
-                'notifications_count' => Notification::whereIn('student_id', $childIds)
-                    ->where('is_read', false)->count(),
-            ]);
+            $data = array_merge($data, $this->getParentRealtimeData($user));
         }
 
         return response()->json($data);
@@ -130,14 +75,15 @@ class PortalController extends Controller
      * @param \App\Models\User $user
      * @return array<string, mixed>
      */
-    private function getStudentDashboardData($user): array
+    private function getStudentRealtimeData($user): array
     {
         $student = $user->student;
         $studentId = $student?->id;
-        $studyGroup = $student?->currentStudyGroup();
-        $activeYear = AcademicYear::where('is_active', true)->first();
 
-        // Stats Kehadiran Bulan Ini
+        $todayAttendance = $student?->attendances()
+            ->where('tanggal', now()->toDateString())
+            ->first();
+
         $stats = Attendance::where('student_id', $studentId)
             ->whereMonth('tanggal', now()->month)
             ->selectRaw('status, count(*) as total')
@@ -145,8 +91,179 @@ class PortalController extends Controller
             ->pluck('total', 'status')
             ->toArray();
 
-        // Attendance trend (last 6 months)
-        $attendanceTrend = \Illuminate\Support\Facades\Cache::remember("attendance_trend_{$studentId}", 3600, function () use ($studentId) {
+        return [
+            'attendance' => $todayAttendance ? [
+                'status' => $todayAttendance->status,
+                'check_in' => $todayAttendance->check_in,
+                'time' => $todayAttendance->created_at->format('H:i'),
+            ] : null,
+            'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
+            'notifications_count' => Notification::where('student_id', $studentId)
+                ->where('is_read', false)->count(),
+        ];
+    }
+
+    /**
+     * @param \App\Models\User $user
+     * @return array<string, mixed>
+     */
+    private function getParentRealtimeData($user): array
+    {
+        $childIds = $user->parent?->students()->pluck('id') ?? [];
+
+        $stats = Attendance::whereIn('student_id', $childIds)
+            ->whereMonth('tanggal', now()->month)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        $childrenStatus = [];
+        $children = $user->parent?->students()->with(['user', 'attendances' => function ($q) {
+            $q->where('tanggal', now()->toDateString());
+        }])->get() ?? collect();
+
+        foreach ($children as $child) {
+            $att = $child->attendances->first();
+            $childrenStatus[] = [
+                'id' => $child->id,
+                'name' => $child->user->name,
+                'attendance' => $att ? [
+                    'status' => $att->status,
+                    'time' => $att->created_at->format('H:i'),
+                ] : null,
+            ];
+        }
+
+        return [
+            'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
+            'childrenStatus' => $childrenStatus,
+            'notifications_count' => Notification::whereIn('student_id', $childIds)
+                ->where('is_read', false)->count(),
+        ];
+    }
+
+    /**
+     * @param \App\Models\User $user
+     * @return array<string, mixed>
+     */
+    private function getStudentDashboardData($user): array
+    {
+        $studentId = $user->student?->id;
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $cacheKey = "student_dashboard_{$studentId}_" . ($activeYear ? $activeYear->id : '0');
+
+        /** @var array<string, mixed> $result */
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, fn () => $this->buildStudentDashboardArray($user, $activeYear));
+
+        return $result;
+    }
+
+    private function buildStudentDashboardArray($user, $activeYear): array
+    {
+        $student = $user->student;
+        $studentId = $student?->id;
+        $studyGroup = $student?->currentStudyGroup();
+
+        $stats = $this->getStudentAttendanceStats($studentId);
+        $attendanceTrend = $this->getStudentAttendanceTrend($studentId);
+        
+        $attendancePercentage = $this->getStudentAttendancePercentage($studentId, $stats);
+        $grades = $this->getStudentGrades($studentId, $activeYear);
+        $gradeAverage = $this->calculateGradeAverage($grades);
+
+        $todaySchedules = $this->getStudentTodaySchedules($studyGroup);
+        $recentNotifications = $this->getStudentRecentNotifications($studentId);
+        $publishedRapors = $this->getStudentPublishedRapors($studentId);
+        $recentGrades = $this->getStudentRecentGrades($studentId);
+            
+        $extracurriculars = $this->getExtracurricularsList();
+        $attendanceToday = $student?->attendances()->where('tanggal', now()->toDateString())->first();
+        $totalSubjects = $grades->unique('subject_id')->count();
+        $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
+
+        return [
+            'student' => $student,
+            'studyGroup' => $studyGroup,
+            'attendance' => $attendanceToday,
+            'attendanceStats' => $attendanceStatsMerged,
+            'recentGrades' => $recentGrades,
+            'extracurriculars' => $extracurriculars,
+            'todaySchedules' => $todaySchedules,
+            'attendanceTrend' => $attendanceTrend,
+            'gradeAverage' => $gradeAverage,
+            'totalSubjects' => $totalSubjects,
+            'attendancePercentage' => $attendancePercentage,
+            'recentNotifications' => $recentNotifications,
+            'academicYear' => $activeYear,
+            'publishedRapors' => $publishedRapors,
+        ];
+    }
+
+    private function getStudentAttendancePercentage(int $studentId, array $stats): int
+    {
+        $totalAttendances = Attendance::where('student_id', $studentId)
+            ->whereMonth('tanggal', now()->month)
+            ->count();
+        $totalHadir = $stats['hadir'] ?? 0;
+        return $totalAttendances > 0 ? (int) round(($totalHadir / $totalAttendances) * 100) : 0;
+    }
+
+    private function getStudentGrades(int $studentId, $activeYear)
+    {
+        return Grade::where('student_id', $studentId)
+            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
+    }
+
+    private function getStudentAttendanceStats(int $studentId): array
+    {
+        return Attendance::where('student_id', $studentId)
+            ->whereMonth('tanggal', now()->month)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+    }
+
+    private function getStudentRecentNotifications(int $studentId)
+    {
+        return Notification::where('student_id', $studentId)
+            ->latest()
+            ->take(5)
+            ->get();
+    }
+
+    private function getStudentPublishedRapors(int $studentId)
+    {
+        return StudentRapor::with(['academicYear'])
+            ->where('student_id', $studentId)
+            ->where('is_published', true)
+            ->latest()
+            ->get();
+    }
+
+    private function getStudentRecentGrades(int $studentId)
+    {
+        return Grade::where('student_id', $studentId)
+            ->with(['subject'])
+            ->latest()
+            ->take(5)
+            ->get();
+    }
+
+    private function calculateGradeAverage(\Illuminate\Database\Eloquent\Collection $grades): float
+    {
+        $gradeValues = $grades->map(function ($g) {
+            $vals = array_filter([$g->nilai_tugas, $g->nilai_uts, $g->nilai_uas]);
+            return count($vals) > 0 ? array_sum($vals) / count($vals) : null;
+        })->filter();
+        return $gradeValues->count() > 0 ? round($gradeValues->avg(), 1) : 0;
+    }
+
+    private function getStudentAttendanceTrend(int $studentId): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember("attendance_trend_{$studentId}", 3600, function () use ($studentId) {
             $trend = [];
             for ($i = 5; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
@@ -170,81 +287,19 @@ class PortalController extends Controller
             }
             return $trend;
         });
+    }
 
-        // Overall attendance percentage
-        $totalAttendances = Attendance::where('student_id', $studentId)
-            ->whereMonth('tanggal', now()->month)
-            ->count();
-        $totalHadir = $stats['hadir'] ?? 0;
-        $attendancePercentage = $totalAttendances > 0 ? round(($totalHadir / $totalAttendances) * 100) : 0;
-
-        // Grade Average
-        $grades = Grade::where('student_id', $studentId)
-            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
-            ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
-        $gradeValues = $grades->map(function ($g) {
-            $vals = array_filter([$g->nilai_tugas, $g->nilai_uts, $g->nilai_uas]);
-            return count($vals) > 0 ? array_sum($vals) / count($vals) : null;
-        })->filter();
-        $gradeAverage = $gradeValues->count() > 0 ? round($gradeValues->avg(), 1) : 0;
-
-        // Today's schedule
+    private function getStudentTodaySchedules($studyGroup)
+    {
         $dayMap = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
         $today = $dayMap[now()->format('l')] ?? now()->format('l');
-        $todaySchedules = $studyGroup
+        return $studyGroup
             ? Schedule::where('study_group_id', $studyGroup->id)
                 ->where('hari', $today)
                 ->with(['subject', 'teacher.user', 'startTimeSlot', 'endTimeSlot'])
                 ->orderBy('start_time_slot_id')
                 ->get()
             : collect();
-
-        // Recent Notifications
-        $recentNotifications = Notification::where('student_id', $studentId)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // Published Rapors (for recommendations)
-        $publishedRapors = StudentRapor::with(['academicYear'])
-            ->where('student_id', $studentId)
-            ->where('is_published', true)
-            ->latest()
-            ->get();
-
-        /** @var array<string, mixed> $result */
-        $cacheKey = "student_dashboard_{$studentId}_" . ($activeYear ? $activeYear->id : '0');
-        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($studentId, $studyGroup, $activeYear, $student, $stats, $attendanceTrend, $gradeAverage, $grades, $attendancePercentage, $todaySchedules, $recentNotifications, $publishedRapors) {
-            return [
-                'student' => $student,
-                'studyGroup' => $studyGroup,
-                'attendance' => $student?->attendances()
-                    ->where('tanggal', now()->toDateString())
-                    ->first(),
-                'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
-                'recentGrades' => Grade::where('student_id', $studentId)
-                    ->with(['subject'])
-                    ->latest()
-                    ->take(5)
-                    ->get(),
-                'extracurriculars' => \Illuminate\Support\Facades\Cache::remember('extracurriculars_list', 3600, function() {
-                    return Extracurricular::with('coordinator')
-                        ->orderBy('kategori', 'asc')
-                        ->orderBy('nama_ekskul', 'asc')
-                        ->get();
-                }),
-                'todaySchedules' => $todaySchedules,
-                'attendanceTrend' => $attendanceTrend,
-                'gradeAverage' => $gradeAverage,
-                'totalSubjects' => $grades->unique('subject_id')->count(),
-                'attendancePercentage' => $attendancePercentage,
-                'recentNotifications' => $recentNotifications,
-                'academicYear' => $activeYear,
-                'publishedRapors' => $publishedRapors,
-            ];
-        });
-
-        return $result;
     }
 
     /**
@@ -255,18 +310,119 @@ class PortalController extends Controller
     {
         $childIds = $user->parent?->students()->pluck('id') ?? [];
         $activeYear = AcademicYear::where('is_active', true)->first();
+        
+        $cacheKey = "parent_dashboard_" . implode('_', $childIds) . "_" . ($activeYear ? $activeYear->id : '0');
 
-        // Stats Kehadiran Bulan Ini (Semua Anak)
-        $stats = Attendance::whereIn('student_id', $childIds)
+        /** @var array<string, mixed> $result */
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, fn () => $this->buildParentDashboardArray($user, $childIds, $activeYear));
+
+        return $result;
+    }
+
+    private function buildParentDashboardArray($user, $childIds, $activeYear): array
+    {
+        $stats = $this->getParentAttendanceStats($childIds);
+        $attendanceTrend = $this->getParentAttendanceTrend($childIds);
+
+        $attendancePercentage = $this->getParentAttendancePercentage($childIds, $stats);
+        $grades = $this->getParentGrades($childIds, $activeYear);
+        $gradeAverage = $this->calculateGradeAverage($grades);
+
+        $recentNotifications = $this->getParentRecentNotifications($childIds);
+        $publishedRapors = $this->getParentPublishedRapors($childIds);
+
+        $childrenData = $user->parent?->students()->with(['user', 'attendances' => function($q) {
+            $q->where('tanggal', now()->toDateString());
+        }])->get() ?? collect();
+
+        $recentGrades = $this->getParentRecentGrades($childIds);
+
+        $extracurriculars = $this->getExtracurricularsList();
+        $totalSubjects = $grades->unique('subject_id')->count();
+        $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
+
+        return [
+            'parent' => $user->parent,
+            'children' => $childrenData,
+            'attendanceStats' => $attendanceStatsMerged,
+            'recentGrades' => $recentGrades,
+            'extracurriculars' => $extracurriculars,
+            'attendanceTrend' => $attendanceTrend,
+            'gradeAverage' => $gradeAverage,
+            'totalSubjects' => $totalSubjects,
+            'attendancePercentage' => $attendancePercentage,
+            'recentNotifications' => $recentNotifications,
+            'academicYear' => $activeYear,
+            'publishedRapors' => $publishedRapors,
+        ];
+    }
+
+    private function getParentAttendancePercentage(array $childIds, array $stats): int
+    {
+        $totalAttendances = Attendance::whereIn('student_id', $childIds)
+            ->whereMonth('tanggal', now()->month)
+            ->count();
+        $totalHadir = $stats['hadir'] ?? 0;
+        return $totalAttendances > 0 ? (int) round(($totalHadir / $totalAttendances) * 100) : 0;
+    }
+
+    private function getParentGrades(array $childIds, $activeYear)
+    {
+        return Grade::whereIn('student_id', $childIds)
+            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
+    }
+
+    private function getParentAttendanceStats(array $childIds): array
+    {
+        return Attendance::whereIn('student_id', $childIds)
             ->whereMonth('tanggal', now()->month)
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status')
             ->toArray();
+    }
 
-        // Attendance Trend (last 6 months, all children)
-        $cacheKey = "parent_trend_" . implode('_', $childIds);
-        $attendanceTrend = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($childIds) {
+    private function getParentRecentNotifications(array $childIds)
+    {
+        return Notification::whereIn('student_id', $childIds)
+            ->with('student.user')
+            ->latest()
+            ->take(5)
+            ->get();
+    }
+
+    private function getParentPublishedRapors(array $childIds)
+    {
+        return StudentRapor::whereIn('student_id', $childIds)
+            ->where('is_published', true)
+            ->with(['student.user', 'academicYear'])
+            ->latest()
+            ->get();
+    }
+
+    private function getParentRecentGrades(array $childIds)
+    {
+        return Grade::whereIn('student_id', $childIds)
+            ->with(['student.user', 'subject'])
+            ->latest()
+            ->take(5)
+            ->get();
+    }
+
+    private function getExtracurricularsList()
+    {
+        return \Illuminate\Support\Facades\Cache::remember('extracurriculars_list', 3600, function() {
+            return Extracurricular::with('coordinator')
+                ->orderBy('kategori', 'asc')
+                ->orderBy('nama_ekskul', 'asc')
+                ->get();
+        });
+    }
+
+    private function getParentAttendanceTrend(array $childIds): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember("attendance_trend_parent_" . implode('_', $childIds), 3600, function () use ($childIds) {
             $trend = [];
             for ($i = 5; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
@@ -290,69 +446,6 @@ class PortalController extends Controller
             }
             return $trend;
         });
-
-        // Overall attendance percentage
-        $totalAttendances = Attendance::whereIn('student_id', $childIds)
-            ->whereMonth('tanggal', now()->month)
-            ->count();
-        $totalHadir = $stats['hadir'] ?? 0;
-        $attendancePercentage = $totalAttendances > 0 ? round(($totalHadir / $totalAttendances) * 100) : 0;
-
-        // Grade Average for all children
-        $grades = Grade::whereIn('student_id', $childIds)
-            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
-            ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
-        $gradeValues = $grades->map(function ($g) {
-            $vals = array_filter([$g->nilai_tugas, $g->nilai_uts, $g->nilai_uas]);
-            return count($vals) > 0 ? array_sum($vals) / count($vals) : null;
-        })->filter();
-        $gradeAverage = $gradeValues->count() > 0 ? round($gradeValues->avg(), 1) : 0;
-
-        // Recent Notifications for all children
-        $recentNotifications = Notification::whereIn('student_id', $childIds)
-            ->with('student.user')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // Published Rapors (for recommendations)
-        $publishedRapors = StudentRapor::whereIn('student_id', $childIds)
-            ->where('is_published', true)
-            ->with(['student.user', 'academicYear'])
-            ->latest()
-            ->get();
-
-        /** @var array<string, mixed> $result */
-        $cacheKey = "parent_dashboard_" . implode('_', $childIds) . "_" . ($activeYear ? $activeYear->id : '0');
-        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($user, $childIds, $activeYear, $stats, $attendanceTrend, $gradeAverage, $grades, $attendancePercentage, $recentNotifications, $publishedRapors) {
-            return [
-                'parent' => $user->parent,
-                'children' => $user->parent?->students()->with(['user', 'attendances' => function($q) {
-                    $q->where('tanggal', now()->toDateString());
-                }])->get() ?? collect(),
-                'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
-                'recentGrades' => Grade::whereIn('student_id', $childIds)
-                    ->with(['student.user', 'subject'])
-                    ->latest()
-                    ->take(5)
-                    ->get(),
-                'extracurriculars' => \Illuminate\Support\Facades\Cache::remember('extracurriculars_list', 3600, function() {
-                    return Extracurricular::with('coordinator')
-                        ->orderBy('kategori', 'asc')
-                        ->orderBy('nama_ekskul', 'asc')
-                        ->get();
-                }),
-                'attendanceTrend' => $attendanceTrend,
-                'gradeAverage' => $gradeAverage,
-                'totalSubjects' => $grades->unique('subject_id')->count(),
-                'attendancePercentage' => $attendancePercentage,
-                'recentNotifications' => $recentNotifications,
-                'academicYear' => $activeYear,
-                'publishedRapors' => $publishedRapors,
-            ];
-        });
-
-        return $result;
     }
 
     public function logout(Request $request)

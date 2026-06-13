@@ -98,7 +98,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 'panels::head.end',
-                fn (): string => \Illuminate\Support\Facades\Blade::render("@vite(['resources/css/app.css', 'resources/css/chatbot.css', 'resources/js/chatbot.js'])"),
+                fn (): string => Blade::render("@vite(['resources/css/app.css', 'resources/css/chatbot.css', 'resources/js/chatbot.js'])"),
             )
             ->renderHook(
                 'panels::body.start',

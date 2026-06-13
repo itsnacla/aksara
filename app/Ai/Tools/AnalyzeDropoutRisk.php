@@ -36,17 +36,28 @@ class AnalyzeDropoutRisk implements Tool
         })->first();
         if (!$student) return 'Siswa dengan nama ' . $studentName . ' tidak ditemukan di database.';
 
-        $studentId = $student->id;
+        if (!$this->hasAccessToStudent(strtolower($roleName), $student)) {
+            return 'Akses ditolak. Siswa ini tidak berada di kelas perwalian Anda.';
+        }
 
-        // Validasi akses jika Guru
-        if (str_contains(strtolower($roleName), 'guru') && $this->user->teacher) {
+        return $this->buildAnalysisData($student);
+    }
+
+    private function hasAccessToStudent(string $roleName, \App\Models\Student $student): bool
+    {
+        if (str_contains($roleName, 'guru') && $this->user->teacher) {
             $rombelIds = $this->user->teacher->studyGroups()->pluck('id')->toArray();
             $studentRombs = $student->studyGroups()->pluck('study_groups.id')->toArray();
             if (empty(array_intersect($rombelIds, $studentRombs))) {
-                return 'Akses ditolak. Siswa ini tidak berada di kelas perwalian Anda.';
+                return false;
             }
         }
+        return true;
+    }
 
+    private function buildAnalysisData(\App\Models\Student $student): string
+    {
+        $studentId = $student->id;
         $grades = Grade::with('subject')->where('student_id', $studentId)->latest()->take(50)->get()->map(fn($g) => [
             'mapel' => $g->subject->nama_mapel ?? 'N/A',
             'tugas' => $g->nilai_tugas,
