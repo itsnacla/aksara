@@ -22,6 +22,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const historyPanel = document.getElementById("chatbot-history-panel");
     const historyList = document.getElementById("chatbot-history-list");
     const newChatBtn = document.getElementById("chatbot-new-chat-btn");
+    
+    // Custom Confirm
+    const confirmDialog = document.getElementById("chatbot-confirm-dialog");
+    const confirmCancelBtn = document.getElementById("chatbot-confirm-cancel");
+    const confirmYesBtn = document.getElementById("chatbot-confirm-yes");
 
     let isOpen = false;
     let isMaximized = false;
@@ -160,8 +165,31 @@ document.addEventListener("DOMContentLoaded", function () {
             historyData.forEach(conv => {
                 const item = document.createElement("div");
                 item.className = "chatbot-history-item";
-                item.innerHTML = `<h5>${conv.title}</h5><span>${new Date(conv.updated_at).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>`;
-                item.addEventListener("click", () => fetchConversation(conv.id));
+                item.style.display = "flex";
+                item.style.justifyContent = "space-between";
+                item.style.alignItems = "center";
+                
+                const infoDiv = document.createElement("div");
+                infoDiv.style.flex = "1";
+                infoDiv.style.cursor = "pointer";
+                infoDiv.innerHTML = `<h5>${conv.title}</h5><span>${new Date(conv.updated_at).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>`;
+                infoDiv.addEventListener("click", () => fetchConversation(conv.id));
+                
+                const delBtn = document.createElement("button");
+                delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+                delBtn.style.background = "none";
+                delBtn.style.border = "none";
+                delBtn.style.color = "#ef4444";
+                delBtn.style.cursor = "pointer";
+                delBtn.style.padding = "4px";
+                delBtn.style.borderRadius = "4px";
+                delBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    showConfirmDelete(conv.id);
+                });
+                
+                item.appendChild(infoDiv);
+                item.appendChild(delBtn);
                 historyList.appendChild(item);
             });
         } catch {
@@ -193,6 +221,46 @@ document.addEventListener("DOMContentLoaded", function () {
             toggleHistory(); // close history panel
         } catch {
             alert('Gagal memuat percakapan.');
+        }
+    }
+
+    let conversationToDelete = null;
+
+    function showConfirmDelete(id) {
+        conversationToDelete = id;
+        confirmDialog.style.display = 'flex';
+    }
+
+    function closeConfirmDelete() {
+        conversationToDelete = null;
+        confirmDialog.style.display = 'none';
+    }
+
+    if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', closeConfirmDelete);
+    if (confirmYesBtn) confirmYesBtn.addEventListener('click', () => {
+        if (conversationToDelete) deleteConversation(conversationToDelete);
+        closeConfirmDelete();
+    });
+
+    async function deleteConversation(id) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+            const res = await fetch(`/chatbot/conversation/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken,
+                    "Accept": "application/json"
+                }
+            });
+            
+            if (res.ok) {
+                if (currentConversationId === id) {
+                    startNewChat();
+                }
+                loadHistory();
+            }
+        } catch (e) {
+            alert("Gagal menghapus percakapan.");
         }
     }
 
@@ -301,6 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.conversation_id) {
+                        currentConversationId = data.conversation_id;
                         setupEcho(data.conversation_id);
                     }
                     // Only add message if it's not already handled by Echo or if Echo is not active

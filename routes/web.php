@@ -33,6 +33,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/chatbot/chat', [ChatbotController::class, 'chat'])->name('chatbot.chat');
     Route::get('/chatbot/history', [ChatbotController::class, 'history'])->name('chatbot.history');
     Route::get('/chatbot/conversation/{id}', [ChatbotController::class, 'loadConversation'])->name('chatbot.conversation');
+    Route::delete('/chatbot/conversation/{id}', [ChatbotController::class, 'destroyConversation'])->name('chatbot.conversation.destroy');
 
     // Student Cards
     Route::get('/student-card/{student}', [\App\Http\Controllers\StudentCardController::class, 'print'])->name('student.card');

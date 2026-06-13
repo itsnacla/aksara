@@ -77,9 +77,24 @@
                     </svg> Chat Baru
                 </button>
             </div>
+            <div class="chatbot-history-warning" style="font-size: 11px; color: var(--cb-text-faint); padding: 8px 16px; background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--cb-border); text-align: center;">
+                ⏳ Riwayat percakapan akan dihapus otomatis setelah 7 hari.
+            </div>
             <div id="chatbot-history-list" class="chatbot-history-list">
                 {{-- Loaded via JS --}}
                 <div class="chatbot-history-loading">Memuat riwayat...</div>
+            </div>
+            
+            {{-- Custom Confirm Dialog --}}
+            <div id="chatbot-confirm-dialog" class="chatbot-confirm-dialog" style="display: none;">
+                <div class="chatbot-confirm-box">
+                    <h5>Hapus Percakapan?</h5>
+                    <p>Tindakan ini tidak dapat dibatalkan.</p>
+                    <div class="chatbot-confirm-actions">
+                        <button id="chatbot-confirm-cancel" class="chatbot-btn-cancel">Batal</button>
+                        <button id="chatbot-confirm-yes" class="chatbot-btn-danger">Hapus</button>
+                    </div>
+                </div>
             </div>
         </div>
 

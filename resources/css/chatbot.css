@@ -729,3 +729,85 @@
     color: var(--cb-text-faint);
     font-size: 13px;
 }
+
+/* --- Custom Confirm Dialog --- */
+.chatbot-confirm-dialog {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: chatbot-fade-in 0.2s ease;
+}
+
+.chatbot-confirm-box {
+    background: var(--cb-surface);
+    padding: 20px;
+    border-radius: 16px;
+    width: 80%;
+    max-width: 280px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    text-align: center;
+    transform: translateY(0);
+    animation: chatbot-scale-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes chatbot-scale-in {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.chatbot-confirm-box h5 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    color: var(--cb-text);
+}
+
+.chatbot-confirm-box p {
+    margin: 0 0 20px 0;
+    font-size: 13px;
+    color: var(--cb-text-faint);
+}
+
+.chatbot-confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.chatbot-confirm-actions button {
+    flex: 1;
+    padding: 8px 0;
+    border-radius: 10px;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chatbot-btn-cancel {
+    background: var(--cb-surface-alt);
+    color: var(--cb-text);
+}
+
+.chatbot-btn-cancel:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.dark .chatbot-btn-cancel:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.chatbot-btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.chatbot-btn-danger:hover {
+    background: #dc2626;
+    transform: scale(1.02);
+}

@@ -106,10 +106,24 @@ class ChatbotController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get(['id', 'title', 'updated_at']);
 
-        // Generate dynamic title if empty
-        $conversations->transform(function ($conv) {
+        $messagesTable = config('ai.conversations.tables.messages', 'agent_conversation_messages');
+        
+        $firstMessages = \Illuminate\Support\Facades\DB::table($messagesTable)
+            ->whereIn('conversation_id', $conversations->pluck('id'))
+            ->where('role', 'user')
+            ->orderBy('created_at', 'asc')
+            ->get(['conversation_id', 'content'])
+            ->groupBy('conversation_id');
+
+        $conversations->transform(function ($conv) use ($firstMessages) {
             if (empty($conv->title)) {
-                $conv->title = 'Obrolan ' . \Carbon\Carbon::parse($conv->updated_at)->diffForHumans();
+                $firstMsg = $firstMessages->get($conv->id)?->first();
+                if ($firstMsg && !empty($firstMsg->content)) {
+                    $cleanContent = preg_replace('/--- SISTEM CONTEXT.*/s', '', $firstMsg->content);
+                    $conv->title = \Illuminate\Support\Str::limit(trim(strip_tags($cleanContent)), 30);
+                } else {
+                    $conv->title = 'Obrolan ' . \Carbon\Carbon::parse($conv->updated_at)->diffForHumans();
+                }
             }
             return $conv;
         });
@@ -142,11 +156,48 @@ class ChatbotController extends Controller
             ->orderBy('created_at', 'asc')
             ->get(['id', 'role', 'content', 'created_at']);
 
+        $messages->transform(function ($msg) {
+            if ($msg->role === 'user') {
+                $msg->content = preg_replace('/--- SISTEM CONTEXT.*/s', '', $msg->content);
+                $msg->content = trim($msg->content);
+            }
+            return $msg;
+        });
+
         return response()->json([
             'id' => $conversation->id,
             'title' => $conversation->title,
             'messages' => $messages,
         ]);
+    }
+
+    /**
+     * Delete a conversation.
+     */
+    public function destroyConversation(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $conversationsTable = config('ai.conversations.tables.conversations', 'agent_conversations');
+        $messagesTable = config('ai.conversations.tables.messages', 'agent_conversation_messages');
+
+        $conversation = \Illuminate\Support\Facades\DB::table($conversationsTable)
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$conversation) {
+            return response()->json(['error' => 'Conversation not found'], 404);
+        }
+
+        // Delete messages first, then conversation
+        \Illuminate\Support\Facades\DB::table($messagesTable)->where('conversation_id', $id)->delete();
+        \Illuminate\Support\Facades\DB::table($conversationsTable)->where('id', $id)->delete();
+
+        return response()->json(['success' => true]);
     }
 
     /**
