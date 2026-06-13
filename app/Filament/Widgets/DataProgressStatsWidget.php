@@ -60,7 +60,9 @@ class DataProgressStatsWidget extends BaseWidget
         // 2. Rapor Progress
         $expectedRapor = $studyGroups->sum('students_count');
         $currentRapor = StudentRapor::where('academic_year_id', $activeYear->id)
-            ->whereIn('student_id', $studyGroups->flatMap->students->pluck('id'))
+            ->whereHas('student.studyGroups', function($q) use ($studyGroups) {
+                $q->whereIn('study_groups.id', $studyGroups->pluck('id'));
+            })
             ->count();
         $raporPercent = $expectedRapor > 0 ? round(($currentRapor / $expectedRapor) * 100, 1) : 0;
         if ($raporPercent > 100) $raporPercent = 100;

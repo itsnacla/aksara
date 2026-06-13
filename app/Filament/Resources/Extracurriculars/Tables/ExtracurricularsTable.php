@@ -41,7 +41,7 @@ class ExtracurricularsTable
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime()
-                    ->sortable()
+                    ->sortable(false)
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

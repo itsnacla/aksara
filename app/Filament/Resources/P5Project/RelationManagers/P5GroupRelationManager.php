@@ -127,8 +127,8 @@ class P5GroupRelationManager extends RelationManager
 
                 TextColumn::make('teacher.nama_lengkap')
                     ->label('Koordinator')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(false)
+                    ->sortable(false),
 
                 TextColumn::make('students_count')
                     ->label('Anggota')

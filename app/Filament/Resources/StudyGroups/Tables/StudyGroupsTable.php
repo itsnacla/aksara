@@ -48,7 +48,7 @@ class StudyGroupsTable
                 ->icon('heroicon-m-user-circle')
                 ->color('gray')
                 ->description(fn ($record) => "NIP/ID: " . ($record->waliKelas?->nip ?? '-'))
-                ->sortable()
+                ->sortable(false)
                 ->formatStateUsing(fn ($record) => $record->waliKelas?->nama_lengkap ?? '-'),
 
             TextColumn::make('students_count')

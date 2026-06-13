@@ -49,8 +49,8 @@ class DataProgressTableWidget extends BaseWidget
                 
                 Tables\Columns\TextColumn::make('waliKelas.nama_lengkap')
                     ->label('Wali Kelas')
-                    ->searchable()
-                    ->sortable()
+                    ->searchable(false)
+                    ->sortable(false)
                     ->default('-'),
 
                 Tables\Columns\TextColumn::make('progress_nilai')
