@@ -126,6 +126,4 @@
         </div>
     </div>
 </div>
-
-@vite(['resources/css/chatbot.css', 'resources/js/chatbot.js'])
 @endauth

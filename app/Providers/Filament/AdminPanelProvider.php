@@ -97,8 +97,8 @@ class AdminPanelProvider extends PanelProvider
                 HandleHybridRedirect::class,
             ])
             ->renderHook(
-                'panels::head.done',
-                fn (): string => Blade::render("@vite(['resources/css/app.css'])"),
+                'panels::head.end',
+                fn (): string => \Illuminate\Support\Facades\Blade::render("@vite(['resources/css/app.css', 'resources/css/chatbot.css', 'resources/js/chatbot.js'])"),
             )
             ->renderHook(
                 'panels::body.start',

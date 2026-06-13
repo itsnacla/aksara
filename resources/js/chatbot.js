@@ -1,9 +1,10 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
-document.addEventListener("DOMContentLoaded", function () {
+function initChatbot() {
     const wrapper = document.getElementById("aksara-chatbot");
-    if (!wrapper) return;
+    if (!wrapper || wrapper.dataset.initialized) return;
+    wrapper.dataset.initialized = "true";
 
     const toggle = document.getElementById("chatbot-toggle");
     const window_ = document.getElementById("chatbot-window");
@@ -392,4 +393,11 @@ document.addEventListener("DOMContentLoaded", function () {
             input.focus();
         });
     }
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initChatbot);
+} else {
+    initChatbot();
+}
+document.addEventListener("livewire:navigated", initChatbot);
