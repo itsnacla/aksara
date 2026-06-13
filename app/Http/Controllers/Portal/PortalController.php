@@ -146,27 +146,30 @@ class PortalController extends Controller
             ->toArray();
 
         // Attendance trend (last 6 months)
-        $attendanceTrend = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $monthAttendances = Attendance::where('student_id', $studentId)
-                ->whereYear('tanggal', $month->year)
-                ->whereMonth('tanggal', $month->month)
-                ->selectRaw('status, count(*) as total')
-                ->groupBy('status')
-                ->pluck('total', 'status')
-                ->toArray();
+        $attendanceTrend = \Illuminate\Support\Facades\Cache::remember("attendance_trend_{$studentId}", 3600, function () use ($studentId) {
+            $trend = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $monthAttendances = Attendance::where('student_id', $studentId)
+                    ->whereYear('tanggal', $month->year)
+                    ->whereMonth('tanggal', $month->month)
+                    ->selectRaw('status, count(*) as total')
+                    ->groupBy('status')
+                    ->pluck('total', 'status')
+                    ->toArray();
 
-            $total = array_sum($monthAttendances);
-            $attendanceTrend[] = [
-                'month' => $month->translatedFormat('M'),
-                'hadir' => $monthAttendances['hadir'] ?? 0,
-                'izin' => $monthAttendances['izin'] ?? 0,
-                'sakit' => $monthAttendances['sakit'] ?? 0,
-                'alpa' => $monthAttendances['alpa'] ?? 0,
-                'percentage' => $total > 0 ? round((($monthAttendances['hadir'] ?? 0) / $total) * 100) : 0,
-            ];
-        }
+                $total = array_sum($monthAttendances);
+                $trend[] = [
+                    'month' => $month->translatedFormat('M'),
+                    'hadir' => $monthAttendances['hadir'] ?? 0,
+                    'izin' => $monthAttendances['izin'] ?? 0,
+                    'sakit' => $monthAttendances['sakit'] ?? 0,
+                    'alpa' => $monthAttendances['alpa'] ?? 0,
+                    'percentage' => $total > 0 ? round((($monthAttendances['hadir'] ?? 0) / $total) * 100) : 0,
+                ];
+            }
+            return $trend;
+        });
 
         // Overall attendance percentage
         $totalAttendances = Attendance::where('student_id', $studentId)
@@ -178,7 +181,7 @@ class PortalController extends Controller
         // Grade Average
         $grades = Grade::where('student_id', $studentId)
             ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
-            ->get();
+            ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
         $gradeValues = $grades->map(function ($g) {
             $vals = array_filter([$g->nilai_tugas, $g->nilai_uts, $g->nilai_uas]);
             return count($vals) > 0 ? array_sum($vals) / count($vals) : null;
@@ -210,31 +213,36 @@ class PortalController extends Controller
             ->get();
 
         /** @var array<string, mixed> $result */
-        $result = [
-            'student' => $student,
-            'studyGroup' => $studyGroup,
-            'attendance' => $student?->attendances()
-                ->where('tanggal', now()->toDateString())
-                ->first(),
-            'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
-            'recentGrades' => Grade::where('student_id', $studentId)
-                ->with(['subject'])
-                ->latest()
-                ->take(5)
-                ->get(),
-            'extracurriculars' => Extracurricular::with('coordinator')
-                ->orderBy('kategori', 'asc')
-                ->orderBy('nama_ekskul', 'asc')
-                ->get(),
-            'todaySchedules' => $todaySchedules,
-            'attendanceTrend' => $attendanceTrend,
-            'gradeAverage' => $gradeAverage,
-            'totalSubjects' => $grades->unique('subject_id')->count(),
-            'attendancePercentage' => $attendancePercentage,
-            'recentNotifications' => $recentNotifications,
-            'academicYear' => $activeYear,
-            'publishedRapors' => $publishedRapors,
-        ];
+        $cacheKey = "student_dashboard_{$studentId}_" . ($activeYear ? $activeYear->id : '0');
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($studentId, $studyGroup, $activeYear, $student, $stats, $attendanceTrend, $gradeAverage, $grades, $attendancePercentage, $todaySchedules, $recentNotifications, $publishedRapors) {
+            return [
+                'student' => $student,
+                'studyGroup' => $studyGroup,
+                'attendance' => $student?->attendances()
+                    ->where('tanggal', now()->toDateString())
+                    ->first(),
+                'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
+                'recentGrades' => Grade::where('student_id', $studentId)
+                    ->with(['subject'])
+                    ->latest()
+                    ->take(5)
+                    ->get(),
+                'extracurriculars' => \Illuminate\Support\Facades\Cache::remember('extracurriculars_list', 3600, function() {
+                    return Extracurricular::with('coordinator')
+                        ->orderBy('kategori', 'asc')
+                        ->orderBy('nama_ekskul', 'asc')
+                        ->get();
+                }),
+                'todaySchedules' => $todaySchedules,
+                'attendanceTrend' => $attendanceTrend,
+                'gradeAverage' => $gradeAverage,
+                'totalSubjects' => $grades->unique('subject_id')->count(),
+                'attendancePercentage' => $attendancePercentage,
+                'recentNotifications' => $recentNotifications,
+                'academicYear' => $activeYear,
+                'publishedRapors' => $publishedRapors,
+            ];
+        });
 
         return $result;
     }
@@ -257,27 +265,31 @@ class PortalController extends Controller
             ->toArray();
 
         // Attendance Trend (last 6 months, all children)
-        $attendanceTrend = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $monthAttendances = Attendance::whereIn('student_id', $childIds)
-                ->whereYear('tanggal', $month->year)
-                ->whereMonth('tanggal', $month->month)
-                ->selectRaw('status, count(*) as total')
-                ->groupBy('status')
-                ->pluck('total', 'status')
-                ->toArray();
+        $cacheKey = "parent_trend_" . implode('_', $childIds);
+        $attendanceTrend = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($childIds) {
+            $trend = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $monthAttendances = Attendance::whereIn('student_id', $childIds)
+                    ->whereYear('tanggal', $month->year)
+                    ->whereMonth('tanggal', $month->month)
+                    ->selectRaw('status, count(*) as total')
+                    ->groupBy('status')
+                    ->pluck('total', 'status')
+                    ->toArray();
 
-            $total = array_sum($monthAttendances);
-            $attendanceTrend[] = [
-                'month' => $month->translatedFormat('M'),
-                'hadir' => $monthAttendances['hadir'] ?? 0,
-                'izin' => $monthAttendances['izin'] ?? 0,
-                'sakit' => $monthAttendances['sakit'] ?? 0,
-                'alpa' => $monthAttendances['alpa'] ?? 0,
-                'percentage' => $total > 0 ? round((($monthAttendances['hadir'] ?? 0) / $total) * 100) : 0,
-            ];
-        }
+                $total = array_sum($monthAttendances);
+                $trend[] = [
+                    'month' => $month->translatedFormat('M'),
+                    'hadir' => $monthAttendances['hadir'] ?? 0,
+                    'izin' => $monthAttendances['izin'] ?? 0,
+                    'sakit' => $monthAttendances['sakit'] ?? 0,
+                    'alpa' => $monthAttendances['alpa'] ?? 0,
+                    'percentage' => $total > 0 ? round((($monthAttendances['hadir'] ?? 0) / $total) * 100) : 0,
+                ];
+            }
+            return $trend;
+        });
 
         // Overall attendance percentage
         $totalAttendances = Attendance::whereIn('student_id', $childIds)
@@ -289,7 +301,7 @@ class PortalController extends Controller
         // Grade Average for all children
         $grades = Grade::whereIn('student_id', $childIds)
             ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
-            ->get();
+            ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
         $gradeValues = $grades->map(function ($g) {
             $vals = array_filter([$g->nilai_tugas, $g->nilai_uts, $g->nilai_uas]);
             return count($vals) > 0 ? array_sum($vals) / count($vals) : null;
@@ -311,29 +323,34 @@ class PortalController extends Controller
             ->get();
 
         /** @var array<string, mixed> $result */
-        $result = [
-            'parent' => $user->parent,
-            'children' => $user->parent?->students()->with(['user', 'attendances' => function($q) {
-                $q->where('tanggal', now()->toDateString());
-            }])->get() ?? collect(),
-            'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
-            'recentGrades' => Grade::whereIn('student_id', $childIds)
-                ->with(['student.user', 'subject'])
-                ->latest()
-                ->take(5)
-                ->get(),
-            'extracurriculars' => Extracurricular::with('coordinator')
-                ->orderBy('kategori', 'asc')
-                ->orderBy('nama_ekskul', 'asc')
-                ->get(),
-            'attendanceTrend' => $attendanceTrend,
-            'gradeAverage' => $gradeAverage,
-            'totalSubjects' => $grades->unique('subject_id')->count(),
-            'attendancePercentage' => $attendancePercentage,
-            'recentNotifications' => $recentNotifications,
-            'academicYear' => $activeYear,
-            'publishedRapors' => $publishedRapors,
-        ];
+        $cacheKey = "parent_dashboard_" . implode('_', $childIds) . "_" . ($activeYear ? $activeYear->id : '0');
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($user, $childIds, $activeYear, $stats, $attendanceTrend, $gradeAverage, $grades, $attendancePercentage, $recentNotifications, $publishedRapors) {
+            return [
+                'parent' => $user->parent,
+                'children' => $user->parent?->students()->with(['user', 'attendances' => function($q) {
+                    $q->where('tanggal', now()->toDateString());
+                }])->get() ?? collect(),
+                'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
+                'recentGrades' => Grade::whereIn('student_id', $childIds)
+                    ->with(['student.user', 'subject'])
+                    ->latest()
+                    ->take(5)
+                    ->get(),
+                'extracurriculars' => \Illuminate\Support\Facades\Cache::remember('extracurriculars_list', 3600, function() {
+                    return Extracurricular::with('coordinator')
+                        ->orderBy('kategori', 'asc')
+                        ->orderBy('nama_ekskul', 'asc')
+                        ->get();
+                }),
+                'attendanceTrend' => $attendanceTrend,
+                'gradeAverage' => $gradeAverage,
+                'totalSubjects' => $grades->unique('subject_id')->count(),
+                'attendancePercentage' => $attendancePercentage,
+                'recentNotifications' => $recentNotifications,
+                'academicYear' => $activeYear,
+                'publishedRapors' => $publishedRapors,
+            ];
+        });
 
         return $result;
     }

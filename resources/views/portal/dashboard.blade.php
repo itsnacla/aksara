@@ -151,7 +151,18 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(() => {});
     }
-    setInterval(pollData, 15000);
+
+    // Call once on load to ensure sync
+    pollData();
+
+    if (window.Echo) {
+        window.Echo.channel('attendance')
+            .listen('AttendanceLogged', (e) => {
+                pollData();
+            });
+    } else {
+        setInterval(pollData, 30000); // Fallback to slower polling
+    }
 });
 </script>
 @endsection
