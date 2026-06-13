@@ -62,19 +62,7 @@ class RaporResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
 
-        // Shield permission check (configurable via Filament Shield UI)
-        if (!static::canViewAny()) return false;
-
-        // super_admin & staff: full access
-        if ($user->hasAnyRole(['super_admin', 'staff'])) return true;
-
-        // guru: hanya wali kelas yang bisa akses
-        if ($user->hasRole('guru')) {
-            return \App\Models\StudyGroup::where('walikelas_id', $user->teacher?->id ?? 0)->exists();
-        }
-
-        // Role lain yang di-grant via Shield: ikuti Shield permission
-        return true;
+        return static::canViewAny();
     }
 
     public static function getEloquentQuery(): Builder
@@ -91,9 +79,22 @@ class RaporResource extends Resource
             });
 
         $user = auth()->user();
-        if ($user && $user->hasRole('guru')) {
-            $query->whereHas('studyGroups', function ($q) use ($user) {
-                $q->where('walikelas_id', $user->teacher->id ?? 0);
+
+        // Super admin and staff: full access
+        if ($user && $user->hasAnyRole(['super_admin', 'staff'])) {
+            return $query;
+        }
+
+        if ($user && $user->hasRole('guru') && $user->teacher) {
+            $teacherId = $user->teacher->id;
+            $query->whereHas('studyGroups', function ($q) use ($teacherId) {
+                $q->where('walikelas_id', $teacherId)
+                  ->orWhereExists(function ($subquery) use ($teacherId) {
+                      $subquery->select(\DB::raw(1))
+                          ->from('schedules')
+                          ->where('schedules.teacher_id', $teacherId)
+                          ->whereColumn('schedules.study_group_id', 'study_groups.id');
+                  });
             });
         }
 

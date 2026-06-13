@@ -40,6 +40,11 @@ class PerkembanganNilai extends Page implements HasForms
         return 10;
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('View:PerkembanganNilai') ?? false;
+    }
+
     protected string $view = 'filament.pages.perkembangan-nilai';
 
     public ?int $study_group_id = null;
@@ -47,9 +52,20 @@ class PerkembanganNilai extends Page implements HasForms
 
     public function mount()
     {
-        $firstGroup = StudyGroup::with('academicYear')->whereHas('academicYear', function ($q) {
+        $query = StudyGroup::with('academicYear')->whereHas('academicYear', function ($q) {
             $q->where('is_active', true);
-        })->first();
+        });
+
+        $user = auth()->user();
+        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+            $teacherId = $user->teacher->id;
+            $query->where(function ($q) use ($teacherId) {
+                $q->where('walikelas_id', $teacherId)
+                  ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId));
+            });
+        }
+
+        $firstGroup = $query->first();
 
         if ($firstGroup) {
             $this->form->fill([
@@ -67,11 +83,24 @@ class PerkembanganNilai extends Page implements HasForms
             ->schema([
                 Select::make('study_group_id')
                     ->label('Pilih Kelas')
-                    ->options(StudyGroup::whereHas('academicYear', function ($q) {
-                        $q->where('is_active', true);
-                    })->with('academicYear')->get()->mapWithKeys(function ($sg) {
-                        return [$sg->id => $sg->nama_rombel . ' (' . ($sg->academicYear ? $sg->academicYear->tahun_ajaran : '-') . ')'];
-                    }))
+                    ->options(function () {
+                        $query = StudyGroup::whereHas('academicYear', function ($q) {
+                            $q->where('is_active', true);
+                        })->with('academicYear');
+
+                        $user = auth()->user();
+                        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                            $teacherId = $user->teacher->id;
+                            $query->where(function ($q) use ($teacherId) {
+                                $q->where('walikelas_id', $teacherId)
+                                  ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId));
+                            });
+                        }
+
+                        return $query->get()->mapWithKeys(function ($sg) {
+                            return [$sg->id => $sg->nama_rombel . ' (' . ($sg->academicYear ? $sg->academicYear->tahun_ajaran : '-') . ')'];
+                        });
+                    })
                     ->searchable()
                     ->live()
                     ->afterStateUpdated(function ($set, $state) {

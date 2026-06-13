@@ -45,15 +45,18 @@ class PelengkapRaporResource extends Resource
             return $query;
         }
 
-        // Guru wali kelas: only their study group students
-        if ($user && $user->hasRole('guru')) {
-            $teacher = $user->teacher;
-            if ($teacher && $teacher->is_walikelas) {
-                $studyGroupIds = \App\Models\StudyGroup::where('walikelas_id', $teacher->id)->pluck('id');
-                return $query->whereHas('studyGroups', function ($q) use ($studyGroupIds) {
-                    $q->whereIn('study_groups.id', $studyGroupIds);
-                });
-            }
+        // Guru (Wali Kelas / Mapel)
+        if ($user && $user->hasRole('guru') && $user->teacher) {
+            $teacherId = $user->teacher->id;
+            return $query->whereHas('studyGroups', function ($q) use ($teacherId) {
+                $q->where('walikelas_id', $teacherId)
+                  ->orWhereExists(function ($subquery) use ($teacherId) {
+                      $subquery->select(\DB::raw(1))
+                          ->from('schedules')
+                          ->where('schedules.teacher_id', $teacherId)
+                          ->whereColumn('schedules.study_group_id', 'study_groups.id');
+                  });
+            });
         }
 
         // Default: no access
@@ -172,49 +175,26 @@ class PelengkapRaporResource extends Resource
 
     public static function canViewAny(): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-
-        // Super admin has full access
-        if ($user->hasRole('super_admin')) return true;
-
-        // Staff has full access
-        if ($user->hasRole('staff')) return true;
-
-        // Guru: only wali kelas can access
-        if ($user->hasRole('guru')) {
-            $teacher = $user->teacher;
-            return $teacher && $teacher->is_walikelas;
-        }
-
-        return false;
+        return auth()->user()?->can('ViewAny:PelengkapRapor') ?? false;
     }
 
     public static function canCreate(): bool
     {
-        return false; // Buku Induk tidak bisa dibuat manual, hanya generate
+        return false; // Pelengkap Rapor tidak bisa dibuat manual
     }
 
     public static function canEdit($record): bool
     {
-        return false; // Buku Induk tidak bisa diedit langsung
+        return false; // Pelengkap Rapor tidak bisa diedit langsung
     }
 
     public static function canDelete($record): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-
-        // Only super_admin and staff can delete
-        return $user->hasAnyRole(['super_admin', 'staff']);
+        return auth()->user()?->hasAnyRole(['super_admin', 'staff']) ?? false;
     }
 
     public static function canDeleteAny(): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-
-        // Only super_admin and staff can bulk delete
-        return $user->hasAnyRole(['super_admin', 'staff']);
+        return auth()->user()?->hasAnyRole(['super_admin', 'staff']) ?? false;
     }
 }

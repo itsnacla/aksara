@@ -406,6 +406,9 @@ class PermissionSeeder extends Seeder
             'AccessParentPortal',
             'AccessStudentPortal',
             'Impersonate',
+            'ViewAny:BukuInduk',
+            'ViewAny:PelengkapRapor',
+            'View:PerkembanganNilai',
         ];
 
         foreach ($permissions as $permission) {
@@ -808,6 +811,9 @@ class PermissionSeeder extends Seeder
             'ScanAttendance',
             'AccessParentPortal',
             'AccessStudentPortal',
+            'ViewAny:BukuInduk',
+            'ViewAny:PelengkapRapor',
+            'View:PerkembanganNilai',
         ]);
 
         $role = Role::firstOrCreate([
@@ -1130,6 +1136,9 @@ class PermissionSeeder extends Seeder
             'View:LatestLeaveRequestTable',
             'ScanAttendance',
             'Impersonate',
+            'ViewAny:BukuInduk',
+            'ViewAny:PelengkapRapor',
+            'View:PerkembanganNilai',
         ]);
 
         $role = Role::firstOrCreate([
@@ -1198,6 +1207,9 @@ class PermissionSeeder extends Seeder
             'View:LatestLeaveRequestTable',
             'View:AcademicInfoOverview',
             'ScanAttendance',
+            'ViewAny:BukuInduk',
+            'ViewAny:PelengkapRapor',
+            'View:PerkembanganNilai',
         ]);
 
         $role = Role::firstOrCreate([
