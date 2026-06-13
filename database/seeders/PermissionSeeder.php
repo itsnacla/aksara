@@ -851,6 +851,9 @@ class PermissionSeeder extends Seeder
             'ViewAny:BukuInduk',
             'ViewAny:PelengkapRapor',
             'View:PerkembanganNilai',
+            'View:DataProgressTracker',
+            'View:DataProgressStatsWidget',
+            'View:DataProgressTableWidget',
         ]);
 
         $role = Role::firstOrCreate([

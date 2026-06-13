@@ -23,6 +23,18 @@ class DataProgressTableWidget extends BaseWidget
         $query = StudyGroup::query();
         if ($activeYear) {
             $query->where('academic_year_id', $activeYear->id);
+            
+            if (auth()->user() && auth()->user()->hasRole('guru')) {
+                $teacherId = auth()->user()->teacher?->id;
+                if ($teacherId) {
+                    $query->where(function($q) use ($teacherId) {
+                        $q->where('walikelas_id', $teacherId)
+                          ->orWhereHas('schedules', fn($sq) => $sq->where('teacher_id', $teacherId));
+                    });
+                } else {
+                    $query->where('id', 0);
+                }
+            }
         } else {
             $query->where('id', 0); // Return empty if no active year
         }
