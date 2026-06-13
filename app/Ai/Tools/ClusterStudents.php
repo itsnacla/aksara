@@ -22,16 +22,20 @@ class ClusterStudents implements Tool
     {
         if (!$this->user) return 'Error: User context missing.';
 
-        $studyGroupId = $request['study_group_id'] ?? null;
-        if (!$studyGroupId) return 'Error: study_group_id is required.';
+        $className = $request['class_name'] ?? null;
+        if (!$className) return 'Error: class_name is required.';
 
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
         if (!in_array(strtolower($roleName), ['admin', 'super_admin', 'guru', 'staff'])) {
             return 'Akses ditolak. Fitur Clustering hanya untuk Guru dan Admin.';
         }
 
-        $studyGroup = StudyGroup::with(['students.grades.subject', 'students.user'])->find($studyGroupId);
-        if (!$studyGroup) return 'Kelas/Rombel tidak ditemukan.';
+        $studyGroup = StudyGroup::with(['students.grades.subject', 'students.user'])
+            ->where('nama_rombel', 'like', '%' . $className . '%')
+            ->first();
+        if (!$studyGroup) return 'Kelas/Rombel dengan nama ' . $className . ' tidak ditemukan.';
+        
+        $studyGroupId = $studyGroup->id;
 
         // Validasi akses jika Guru
         if (str_contains(strtolower($roleName), 'guru') && $this->user->teacher) {
@@ -75,7 +79,7 @@ class ClusterStudents implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'study_group_id' => $schema->integer()->description('ID Rombongan Belajar (Kelas) yang akan dicluster'),
+            'class_name' => $schema->string()->description('Nama Rombongan Belajar / Kelas yang akan dicluster (misal: X IPA 1)'),
         ];
     }
 }

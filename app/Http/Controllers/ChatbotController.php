@@ -207,8 +207,8 @@ class ChatbotController extends Controller
             'admin' => [
                 ['label' => '👥 Data Siswa', 'message' => 'Bagaimana cara mengelola data siswa?'],
                 ['label' => '👨‍🏫 Data Guru', 'message' => 'Bagaimana cara mengelola data guru?'],
-                ['label' => '🚨 Prediksi Risiko', 'message' => 'Tolong prediksi risiko siswa dengan ID 1'],
-                ['label' => '🧠 Clustering Siswa', 'message' => 'Lakukan clustering karakteristik belajar untuk rombongan belajar ID 1'],
+                ['label' => '🚨 Prediksi Risiko', 'message' => 'Tolong prediksi risiko dropout untuk Budi'],
+                ['label' => '🧠 Clustering Siswa', 'message' => 'Lakukan clustering karakteristik belajar untuk kelas X IPA 1'],
             ],
             'guru' => [
                 ['label' => '📅 Jadwal Mengajar', 'message' => 'Bagaimana cara melihat jadwal mengajar saya?'],

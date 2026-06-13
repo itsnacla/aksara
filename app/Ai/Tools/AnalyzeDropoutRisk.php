@@ -23,16 +23,20 @@ class AnalyzeDropoutRisk implements Tool
     {
         if (!$this->user) return 'Error: User context missing.';
 
-        $studentId = $request['student_id'] ?? null;
-        if (!$studentId) return 'Error: student_id is required. Gunakan tool pencarian siswa jika tidak tahu ID-nya.';
+        $studentName = $request['student_name'] ?? null;
+        if (!$studentName) return 'Error: student_name is required.';
 
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
         if (!in_array(strtolower($roleName), ['admin', 'super_admin', 'guru', 'staff'])) {
             return 'Akses ditolak. Fitur Early Warning System hanya untuk Guru dan Admin.';
         }
 
-        $student = \App\Models\Student::with('user')->find($studentId);
-        if (!$student) return 'Siswa tidak ditemukan.';
+        $student = \App\Models\Student::with('user')->whereHas('user', function($q) use ($studentName) {
+            $q->where('name', 'like', '%' . $studentName . '%');
+        })->first();
+        if (!$student) return 'Siswa dengan nama ' . $studentName . ' tidak ditemukan di database.';
+
+        $studentId = $student->id;
 
         // Validasi akses jika Guru
         if (str_contains(strtolower($roleName), 'guru') && $this->user->teacher) {
@@ -66,7 +70,7 @@ class AnalyzeDropoutRisk implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'student_id' => $schema->integer()->description('ID internal siswa yang akan dianalisis risikonya'),
+            'student_name' => $schema->string()->description('Nama siswa (atau potongan nama) yang akan dianalisis risikonya'),
         ];
     }
 }
