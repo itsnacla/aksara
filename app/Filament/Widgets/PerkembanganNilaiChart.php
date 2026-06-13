@@ -10,6 +10,8 @@ use Livewire\Attributes\On;
 
 class PerkembanganNilaiChart extends ChartWidget
 {
+    protected static bool $isDiscovered = false;
+
     public ?int $studyGroupId = null;
     public ?string $studentId = 'all';
 

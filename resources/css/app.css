@@ -110,7 +110,17 @@
         @apply transition-opacity duration-500;
     }
 
-    /* Stats overview grid spacing */
+    /* Stats overview grid spacing and transparency */
+    .fi-wi-stats-overview,
+    .fi-wi-stats-overview .fi-section,
+    .fi-wi-stats-overview.fi-section {
+        @apply !bg-transparent !shadow-none !border-none;
+    }
+    
+    .fi-wi-stats-overview .fi-section-content {
+        @apply !p-0;
+    }
+
     .fi-wi-stats-overview-stats {
         @apply !gap-4 lg:!gap-6;
     }

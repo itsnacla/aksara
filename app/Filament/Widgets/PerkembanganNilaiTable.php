@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PerkembanganNilaiTable extends TableWidget
 {
+    protected static bool $isDiscovered = false;
+
     public ?int $studyGroupId = null;
     public ?string $studentId = 'all';
     
