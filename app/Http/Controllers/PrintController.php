@@ -13,9 +13,9 @@ use Illuminate\View\View;
 class PrintController extends Controller
 {
     /**
-     * Print Buku Induk for Level 1 / Kelas 1
+     * Print Pelengkap Rapor
      */
-    public function printBukuInduk(Student $student): View
+    public function printPelengkapRapor(Student $student): View
     {
         $school = SchoolSetting::current();
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
@@ -23,7 +23,7 @@ class PrintController extends Controller
         $student->load(['user', 'parent', 'studyGroups.level']);
         $rombel = $student->currentStudyGroup();
 
-        return view('reports.buku-induk', compact('student', 'school', 'principal', 'rombel'));
+        return view('reports.pelengkap-rapor', compact('student', 'school', 'principal', 'rombel'));
     }
 
     /**
@@ -81,9 +81,9 @@ class PrintController extends Controller
     }
 
     /**
-     * Print Buku Induk Bulk for Multiple Students
+     * Print Pelengkap Rapor Bulk for Multiple Students
      */
-    public function printBukuIndukBulk(Request $request): View
+    public function printPelengkapRaporBulk(Request $request): View
     {
         $studentIds = explode(',', $request->input('student_ids'));
         $school = SchoolSetting::current();
@@ -103,9 +103,67 @@ class PrintController extends Controller
             ];
         }
 
-        return view('reports.buku-induk', [
+        return view('reports.pelengkap-rapor', [
             'isBulk' => true,
             'reports' => $reports,
+        ]);
+    }
+
+    /**
+     * Print Buku Induk for Level 1 / Kelas 1
+     */
+    public function printBukuInduk(Student $student): View
+    {
+        $school = SchoolSetting::current();
+        $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
+        
+        $student->load(['user', 'parent', 'studyGroups.level']);
+        $rombel = $student->currentStudyGroup();
+
+        $dataBuilder = new \App\Services\Academic\BukuIndukDataBuilder();
+        $chunkedData = $dataBuilder->getBukuIndukData($student);
+
+        return view('reports.buku-induk', [
+            'records' => [
+                [
+                    'student' => $student,
+                    'school' => $school,
+                    'principal' => $principal,
+                    'rombel' => $rombel,
+                    'chunkedData' => $chunkedData,
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * Print Buku Induk Bulk for Multiple Students
+     */
+    public function printBukuIndukBulk(Request $request): View
+    {
+        $studentIds = explode(',', $request->input('student_ids'));
+        $school = SchoolSetting::current();
+        $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
+
+        $students = Student::with(['user', 'parent', 'studyGroups.level'])
+            ->whereIn('id', $studentIds)
+            ->get();
+
+        $dataBuilder = new \App\Services\Academic\BukuIndukDataBuilder();
+        $reports = [];
+        foreach ($students as $student) {
+            $reports[] = [
+                'student' => $student,
+                'school' => $school,
+                'principal' => $principal,
+                'rombel' => $student->currentStudyGroup(),
+                'chunkedData' => $dataBuilder->getBukuIndukData($student),
+            ];
+        }
+
+        return view('reports.buku-induk', [
+            'isBulk' => true,
+            'records' => $reports, // The scaffold uses $records
         ]);
     }
 }

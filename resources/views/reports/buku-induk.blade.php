@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buku Induk Siswa - {{ isset($isBulk) && $isBulk ? 'Cetak Massal' : $student->user->name }}</title>
+    <title>Buku Induk - {{ $student->user->name ?? 'Siswa' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
             box-sizing: border-box;
         }
         body {
-            font-family: 'Times New Roman', Times, serif;
+            font-family: Arial, Helvetica, sans-serif;
             background-color: #f3f4f6;
             margin: 0;
             padding: 0;
             color: #000;
+            font-size: 13px;
+            line-height: 1.4;
         }
         
         /* A4 Size Emulation for Screen */
@@ -24,12 +26,11 @@
             margin: 30px auto;
             width: 21cm;
             height: 29.7cm;
-            padding: 2cm 2cm;
+            padding: 1.5cm 1.5cm;
             position: relative;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
         }
         
         /* Print Styles */
@@ -57,49 +58,31 @@
             }
         }
 
-        .cover-box {
-            border: 1px solid #000;
-            padding: 6px;
-            width: 320px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 15px;
-            margin: 0 auto;
-        }
-        
-        .title-spacing {
-            margin: 40px 0;
-        }
-        
-        .formal-table {
+        table {
             width: 100%;
             border-collapse: collapse;
         }
-        .formal-table th, .formal-table td {
-            border: 1px solid #000;
-            padding: 8px 10px;
-            vertical-align: top;
+        th, td {
+            border: 1px solid black;
+            padding: 4px 6px;
+            text-align: center;
         }
-
-        /* Lists */
-        .identitas-row {
+        .text-left { text-align: left; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        
+        .row-data {
             display: flex;
-            align-items: flex-start;
-            margin-bottom: 6px;
-            font-size: 14px;
+            margin-bottom: 2px;
         }
-        .identitas-num {
-            width: 30px;
-        }
-        .identitas-label {
-            width: 200px;
-        }
-        .identitas-colon {
-            width: 15px;
-        }
-        .identitas-val {
-            flex-grow: 1;
-        }
+        .label-num { width: 25px; text-align: right; margin-right: 8px; }
+        .label-text { width: 160px; }
+        .label-colon { width: 15px; }
+        .label-val { flex: 1; }
+        
+        .sub-row { padding-left: 33px; display: flex; margin-bottom: 2px; }
+        .sub-num { width: 20px; }
+        .sub-text { width: 140px; }
     </style>
 </head>
 <body class="bg-gray-100 p-4">
@@ -117,477 +100,373 @@
         </button>
     </div>
 
-    @php
-        $records = isset($isBulk) && $isBulk ? $reports : [[
-            'student' => $student,
-            'school' => $school,
-            'principal' => $principal,
-            'rombel' => $rombel,
-        ]];
-    @endphp
-
     @foreach ($records as $index => $data)
         @php
             $student = $data['student'];
             $school = $data['school'];
             $principal = $data['principal'];
             $rombel = $data['rombel'];
-
-            $formatAddress = function($address, $village, $district, $city, $province) {
-                return $address ?: '-';
-            };
             
-            $getStudentAddress = function($student) use ($formatAddress) {
-                if ($student->address) return $formatAddress($student->address, $student->village, $student->district, $student->city, $student->province);
-                if ($student->parent && $student->parent->address) return $formatAddress($student->parent->address, $student->parent->village, $student->parent->district, $student->parent->city, $student->parent->province);
-                return '-';
-            };
+            // Format Data
+            $studentName = ucwords(strtolower($student->user->name ?? ''));
+            $nis = $student->nis ?? '-';
+            $nisn = $student->nisn ?? '-';
+            $gender = $student->gender == 'L' ? 'Laki-laki' : ($student->gender == 'P' ? 'Perempuan' : '-');
+            $pob = $student->pob ?? '-';
+            $dob = $student->dob ? \Carbon\Carbon::parse($student->dob)->locale('id')->translatedFormat('d F Y') : '-';
+            $religion = $student->religion ?? '-';
+            $familyStatus = $student->status_dalam_keluarga ?? '-';
+            $anakKe = $student->anak_ke ?? '-';
+            $address = $student->address ?? '-';
+            $phone = $student->phone ?? '-';
             
-            $getParentAddress = function($student) use ($formatAddress) {
-                if ($student->parent && $student->parent->address) return $formatAddress($student->parent->address, $student->parent->village, $student->parent->district, $student->parent->city, $student->parent->province);
-                if ($student->address) return $formatAddress($student->address, $student->village, $student->district, $student->city, $student->province);
-                return '-';
-            };
+            $parent = $student->parent;
+            $father = trim(preg_replace('/^(bapak|bpk\.|bpk)\s+/i', '', $student->ayah_nama ?: ($parent->father_name ?? '-')));
+            $mother = trim(preg_replace('/^(ibu|ibuk|ibu\.|ibuk\.)\s+/i', '', $student->ibu_nama ?: ($parent->mother_name ?? '-')));
+            $fatherJob = $parent->father_occupation ?? '-';
+            $motherJob = $parent->mother_occupation ?? '-';
+            $parentAddress = $parent->address ?? '-';
+            $parentPhone = $parent->no_whatsapp ?? '-';
             
-            $getStudentPhone = function($student) {
-                return $student->phone ?: ($student->parent->no_whatsapp ?? '-');
-            };
+            $guardian = $student->wali_nama ?? '-';
+            $guardianJob = $student->wali_pekerjaan ?? '-';
+            $guardianAddress = $student->wali_alamat ?? '-';
+            $guardianPhone = $student->wali_telepon ?? '-';
             
-            $getParentPhone = function($student) {
-                return $student->parent->no_whatsapp ?? ($student->phone ?: '-');
-            };
-
-            $levelMapping = [
-                'SD' => 'SEKOLAH DASAR',
-                'SMP' => 'SEKOLAH MENENGAH PERTAMA',
-                'SMA' => 'SEKOLAH MENENGAH ATAS',
-                'SMK' => 'SEKOLAH MENENGAH KEJURUAN',
-            ];
-            $fullSchoolLevel = $levelMapping[$school->school_level ?? 'SMA'] ?? 'SEKOLAH MENENGAH ATAS';
-            $shortSchoolLevel = $school->school_level ?? 'SMA';
+            $schoolOrigin = $student->previous_school ?? '-';
+            $acceptedClass = $rombel ? str_replace('Kelas ', '', $rombel->level->nama_tingkatan) : '-';
+            $acceptedDate = $student->created_at ? \Carbon\Carbon::parse($student->created_at)->locale('id')->translatedFormat('d F Y') : '-';
+            $admissionYear = $student->created_at ? \Carbon\Carbon::parse($student->created_at)->locale('id')->translatedFormat('Y') : '-';
+            
+            $signatureLocation = ucwords(strtolower($school->village ?? 'Kota'));
+            $signatureDate = now()->locale('id')->translatedFormat('d F Y');
         @endphp
 
-        <!-- ======================================= -->
-        <!-- PAGE 1: COVER PAGE                      -->
-        <!-- ======================================= -->
-        <div class="page-container" style="justify-content: space-around; text-align: center;">
-            <div style="margin-top: 2rem;">
-                @if($school && $school->logo_pemda)
-                    <img src="{{ asset('storage/' . $school->logo_pemda) }}" alt="Logo Pemda" class="h-32 object-contain mx-auto">
-                @else
-                    <div class="h-32 w-32 border border-dashed border-gray-400 mx-auto flex items-center justify-center text-xs text-gray-500">Logo Pemda</div>
-                @endif
+        <!-- PAGE 1: KETERANGAN SISWA -->
+        <div class="page-container" style="justify-content: flex-start; padding-top: 1rem;">
+            <div class="text-center mb-4">
+                <h1 class="text-lg font-bold tracking-wide underline">Buku Induk Siswa {{ $school->name ?? 'Sekolah' }}</h1>
+            </div>
+            
+            <div class="flex justify-between font-bold mb-6 text-[15px]">
+                <div>Nomor Induk : {{ $nis }}</div>
+                <div>NISN : {{ $nisn }}</div>
+                <div>Thn Masuk : {{ $admissionYear }}</div>
             </div>
 
-            <div class="title-spacing">
-                <h1 class="text-xl font-bold uppercase tracking-wide">{{ $fullSchoolLevel }}</h1>
-                <h1 class="text-xl font-bold uppercase tracking-wide mt-1">( {{ $shortSchoolLevel }} )</h1>
-            </div>
-
-            <div>
-                @if($school && $school->logo)
-                    <img src="{{ asset('storage/' . $school->logo) }}" alt="Logo Sekolah" class="h-32 object-contain mx-auto">
-                @else
-                    <div class="h-32 w-32 border border-dashed border-gray-400 mx-auto flex items-center justify-center text-xs text-gray-500">Logo Sekolah</div>
-                @endif
-            </div>
-
-            <div class="my-10 space-y-6">
-                <div>
-                    <div class="text-base font-bold mb-2">Nama Peserta Didik</div>
-                    <div class="cover-box capitalize">{{ $student->user->name }}</div>
-                </div>
-                <div>
-                    <div class="text-base font-bold mb-2">NISN / NIS</div>
-                    <div class="cover-box">{{ $student->nisn ?: '-' }} / {{ $student->nis ?: '-' }}</div>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 2rem;">
-                <h2 class="text-lg font-bold uppercase tracking-wide">KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH</h2>
-                <h2 class="text-lg font-bold uppercase tracking-wide mt-2">REPUBLIK INDONESIA</h2>
-            </div>
-        </div>
-
-        <!-- ======================================= -->
-        <!-- PAGE 2: IDENTITAS SEKOLAH               -->
-        <!-- ======================================= -->
-        <div class="page-container" style="justify-content: flex-start; padding-top: 4rem;">
-            <div class="text-center mb-16">
-                <h2 class="text-lg font-bold uppercase tracking-wide">{{ $fullSchoolLevel }}</h2>
-                <h2 class="text-lg font-bold uppercase tracking-wide mt-1">( {{ $shortSchoolLevel }} )</h2>
-            </div>
-
-            <div class="pl-12 pr-8 space-y-4 text-[15px]">
-                <div class="flex">
-                    <div class="w-48">Nama Sekolah</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->name ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">NPSN</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->npsn ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">NIS/NSS/NDS</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">-</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">Alamat Sekolah</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->address ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">Kelurahan / Desa</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->village ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">Kecamatan</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->district ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">Kota/Kabupaten</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->city ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">Provinsi</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->province ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">Website</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->website ?? '-' }}</div>
-                </div>
-                <div class="flex">
-                    <div class="w-48">E-mail</div>
-                    <div class="w-6">:</div>
-                    <div class="flex-grow">{{ $school->email ?? '-' }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ======================================= -->
-        <!-- PAGE 3: IDENTITAS PESERTA DIDIK         -->
-        <!-- ======================================= -->
-        <div class="page-container" style="justify-content: flex-start; padding-top: 3rem;">
-            <div class="text-center mb-10">
-                <h2 class="text-lg font-bold uppercase tracking-wide">IDENTITAS PESERTA DIDIK</h2>
-            </div>
-
-            <div class="px-8">
-                <!-- 1 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">1.</div>
-                    <div class="identitas-label">Nama Lengkap Peserta Didik</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val capitalize">{{ $student->user->name }}</div>
-                </div>
-                <!-- 2 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">2.</div>
-                    <div class="identitas-label">Nomor Induk/NISN</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->nis ?: '-' }} / {{ $student->nisn ?: '-' }}</div>
-                </div>
-                <!-- 3 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">3.</div>
-                    <div class="identitas-label">Tempat ,Tanggal Lahir</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val capitalize">{{ $student->pob ?: '-' }}, {{ $student->dob ? \Carbon\Carbon::parse($student->dob)->locale('id')->translatedFormat('d F Y') : '-' }}</div>
-                </div>
-                <!-- 4 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">4.</div>
-                    <div class="identitas-label">Jenis Kelamin</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->gender === 'L' ? 'Laki-Laki' : ($student->gender === 'P' ? 'Perempuan' : '-') }}</div>
-                </div>
-                <!-- 5 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">5.</div>
-                    <div class="identitas-label">Agama</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ ucfirst($student->religion) ?: '-' }}</div>
-                </div>
-                <!-- 6 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">6.</div>
-                    <div class="identitas-label">Status dalam Keluarga</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->lives_with_parent ? 'Anak Kandung' : '-' }}</div>
-                </div>
-                <!-- 7 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">7.</div>
-                    <div class="identitas-label">Anak ke</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->anak_ke ?: '-' }}</div>
-                </div>
-                <!-- 8 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">8.</div>
-                    <div class="identitas-label">Alamat Peserta Didik</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $getStudentAddress($student) }}</div>
-                </div>
-                <!-- 9 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">9.</div>
-                    <div class="identitas-label">Nomor Telepon Rumah</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $getStudentPhone($student) }}</div>
-                </div>
-                <!-- 10 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">10.</div>
-                    <div class="identitas-label">Sekolah Asal</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val capitalize">{{ $student->previous_school ?: '-' }}</div>
-                </div>
-                <!-- 11 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">11.</div>
-                    <div class="identitas-label" style="width: 100%;">Diterima di sekolah ini</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px;">
-                    <div class="identitas-label" style="width: 200px;">Di kelas</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $rombel && $rombel->level ? $rombel->level->nama_tingkatan : 'X' }}</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px;">
-                    <div class="identitas-label" style="width: 200px;">Pada tanggal</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->created_at ? \Carbon\Carbon::parse($student->created_at)->locale('id')->translatedFormat('d F Y') : '-' }}</div>
-                </div>
-                <!-- 12 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">12.</div>
-                    <div class="identitas-label" style="width: 100%;">Nama Orang Tua</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px;">
-                    <div class="identitas-label" style="width: 200px;">a. Ayah</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val capitalize">{{ $student->ayah_nama ?: ($student->parent->father_name ?? '-') }}</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px;">
-                    <div class="identitas-label" style="width: 200px;">b. Ibu</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val capitalize">{{ $student->ibu_nama ?: ($student->parent->mother_name ?? '-') }}</div>
-                </div>
-                <!-- 13 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">13.</div>
-                    <div class="identitas-label">Alamat Orang Tua</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $getParentAddress($student) }}</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px; margin-top: -6px;">
-                    <div class="identitas-label" style="width: 200px;">Nomor Telepon Rumah</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $getParentPhone($student) }}</div>
-                </div>
-                <!-- 14 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">14.</div>
-                    <div class="identitas-label" style="width: 100%;">Pekerjaan Orang Tua :</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px;">
-                    <div class="identitas-label" style="width: 200px;">a. Ayah</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->ayah_pekerjaan ?: ($student->parent->father_occupation ?? '-') }}</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px;">
-                    <div class="identitas-label" style="width: 200px;">b. Ibu</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->ibu_pekerjaan ?: ($student->parent->mother_occupation ?? '-') }}</div>
-                </div>
-                <!-- 15 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">15.</div>
-                    <div class="identitas-label">Nama Wali Siswa</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val capitalize">{{ $student->wali_nama ?: ($student->parent->guardian_name ?? '') }}</div>
-                </div>
-                <!-- 16 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">16.</div>
-                    <div class="identitas-label">Alamat Wali Peserta Didik</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->wali_nama ? $getParentAddress($student) : '' }}</div>
-                </div>
-                <div class="identitas-row" style="padding-left: 30px; margin-top: -6px;">
-                    <div class="identitas-label" style="width: 200px;">Nomor Telepon Rumah</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->wali_nama ? $getParentPhone($student) : '' }}</div>
-                </div>
-                <!-- 17 -->
-                <div class="identitas-row">
-                    <div class="identitas-num">17.</div>
-                    <div class="identitas-label">Pekerjaan Wali Peserta Didik</div>
-                    <div class="identitas-colon">:</div>
-                    <div class="identitas-val">{{ $student->wali_pekerjaan ?: ($student->parent->guardian_occupation ?? '') }}</div>
-                </div>
-            </div>
-
-            <!-- Bottom Section (Photo & Signature) -->
-            <div class="mt-12 px-12 flex justify-between items-end">
-                <div class="w-32 h-40 bg-gray-200 border border-gray-300 relative flex items-center justify-center">
-                    <!-- Photo placeholder silhoutte like in image -->
-                    <svg class="w-20 h-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <div class="font-bold mb-2">A. KETERANGAN SISWA</div>
+            
+            <div class="relative">
+                <div class="w-3/4">
+                    <div class="row-data">
+                        <div class="label-num">1.</div>
+                        <div class="label-text">Nama Siswa</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $studentName }}</div>
+                    </div>
+                    <div class="row-data">
+                        <div class="label-num">2.</div>
+                        <div class="label-text">Jenis Kelamin</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $gender }}</div>
+                    </div>
+                    <div class="row-data">
+                        <div class="label-num">3.</div>
+                        <div class="label-text">Kelahiran</div>
+                        <div class="label-colon"></div>
+                        <div class="label-val"></div>
+                    </div>
+                    <div class="sub-row">
+                        <div class="sub-num">a.</div>
+                        <div class="sub-text">Tempat</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $pob }}</div>
+                    </div>
+                    <div class="sub-row">
+                        <div class="sub-num">b.</div>
+                        <div class="sub-text">Tanggal</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $dob }}</div>
+                    </div>
+                    <div class="row-data">
+                        <div class="label-num">4.</div>
+                        <div class="label-text">Agama</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $religion }}</div>
+                    </div>
+                    <div class="row-data">
+                        <div class="label-num">5.</div>
+                        <div class="label-text">Status dalam Keluarga</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $familyStatus }}</div>
+                    </div>
+                    <div class="row-data">
+                        <div class="label-num">6.</div>
+                        <div class="label-text">Anak ke</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $anakKe }}</div>
+                    </div>
+                    <div class="row-data">
+                        <div class="label-num">7.</div>
+                        <div class="label-text">Alamat</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val pr-4">{{ $address }}</div>
+                    </div>
+                    <div class="row-data">
+                        <div class="label-num">8.</div>
+                        <div class="label-text">Nomor Telepon</div>
+                        <div class="label-colon">:</div>
+                        <div class="label-val">{{ $phone }}</div>
+                    </div>
                 </div>
                 
-                <div class="text-left w-64">
-                    <p class="mb-1 text-[14px]">{{ $school->city ?? 'Kota' }}, {{ now()->locale('id')->translatedFormat('d F Y') }}</p>
-                    <p class="mb-16 text-[14px]">Kepala Sekolah</p>
-                    <p class="font-bold text-[14px] underline">{{ $principal?->nama_lengkap ?? '.........................................' }}</p>
-                    <p class="font-bold text-[14px]">NIP. {{ $principal?->nip ?? '.........................................' }}</p>
+                <!-- Photo Box -->
+                <div class="absolute right-0 top-0 w-[3cm] h-[4cm] bg-gray-200 border border-gray-300 flex items-center justify-center">
+                    <svg class="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+            </div>
+
+            <div class="font-bold mt-4 mb-2">B. KETERANGAN ORANG TUA/WALI SISWA</div>
+            
+            <div class="row-data">
+                <div class="label-text" style="padding-left: 25px; width: 193px;">Nama Orangtua</div>
+                <div class="label-colon"></div>
+                <div class="label-val"></div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">a.</div>
+                <div class="sub-text">Ayah</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $father }}</div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">b.</div>
+                <div class="sub-text">Ibu</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $mother }}</div>
+            </div>
+            
+            <div class="row-data">
+                <div class="label-text" style="padding-left: 25px; width: 193px;">Pekerjaan Orangtua</div>
+                <div class="label-colon"></div>
+                <div class="label-val"></div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">a.</div>
+                <div class="sub-text">Ayah</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $fatherJob }}</div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">b.</div>
+                <div class="sub-text">Ibu</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $motherJob }}</div>
+            </div>
+            
+            <div class="row-data" style="margin-top: 4px;">
+                <div class="label-text" style="padding-left: 25px; width: 193px;">Alamat Orangtua</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $parentAddress }}</div>
+            </div>
+            <div class="row-data" style="margin-top: 4px;">
+                <div class="label-text" style="padding-left: 25px; width: 193px;">Telepon Orangtua</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $parentPhone }}</div>
+            </div>
+            
+            <div class="row-data mt-2">
+                <div class="label-text" style="padding-left: 25px; width: 193px;">Wali Siswa</div>
+                <div class="label-colon"></div>
+                <div class="label-val"></div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">a.</div>
+                <div class="sub-text">Nama</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $guardian }}</div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">b.</div>
+                <div class="sub-text">Pekerjaan</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $guardianJob }}</div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">c.</div>
+                <div class="sub-text">Alamat</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $guardianAddress }}</div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">d.</div>
+                <div class="sub-text">Telepon</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $guardianPhone }}</div>
+            </div>
+
+            <div class="font-bold mt-4 mb-2">C. PERKEMBANGAN SISWA</div>
+            
+            <div class="row-data">
+                <div class="label-text" style="padding-left: 25px; width: 193px;">Sekolah Asal</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $schoolOrigin }}</div>
+            </div>
+            <div class="row-data mt-1">
+                <div class="label-text" style="padding-left: 25px; width: 193px;">Diterima di sekolah ini</div>
+                <div class="label-colon"></div>
+                <div class="label-val"></div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">a.</div>
+                <div class="sub-text">Dikelas</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $acceptedClass }}</div>
+            </div>
+            <div class="sub-row">
+                <div class="sub-num">b.</div>
+                <div class="sub-text">Pada Tanggal</div>
+                <div class="label-colon">:</div>
+                <div class="label-val">{{ $acceptedDate }}</div>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="mt-4 flex justify-between absolute bottom-12 w-[calc(100%-3cm)]">
+                <div class="w-1/2"></div>
+                <div class="w-1/2 text-left" style="padding-left: 2rem;">
+                    <p class="mb-1">{{ $signatureLocation }}, {{ $signatureDate }}</p>
+                    <p class="mb-14">Kepala Sekolah</p>
+                    <p class="font-bold underline">{{ $principal?->nama_lengkap ?? '.........................................' }}</p>
+                    <p class="font-bold">NIP. {{ $principal?->nip ?? '.........................................' }}</p>
                 </div>
             </div>
         </div>
+        
+        @php
+            $chunkedData = $data['chunkedData'] ?? [];
+        @endphp
 
-        <!-- ======================================= -->
-        <!-- PAGE 4: KETERANGAN PINDAH SEKOLAH (KELUAR) -->
-        <!-- ======================================= -->
-        <div class="page-container" style="justify-content: flex-start; padding-top: 3rem;">
-            <div class="text-center mb-10">
-                <h2 class="text-lg font-bold uppercase tracking-wide">KETERANGAN PINDAH SEKOLAH</h2>
+        @foreach($chunkedData as $chunkIndex => $chunkData)
+        <!-- PAGE 2: HASIL BELAJAR SISWA -->
+        <div class="page-container" style="justify-content: flex-start; padding-top: 2rem;">
+            @if($chunkIndex === 0)
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold tracking-wide">Hasil Belajar Siswa</h1>
             </div>
+            @endif
+            
+            <table class="w-full text-sm font-bold border-2 border-black">
+                <tr>
+                    <td colspan="2" class="text-left bg-gray-100" style="width: 55%;">NAMA : {{ $studentName }}</td>
+                    @foreach($chunkData['tahun_ajarans'] as $ta)
+                    <td colspan="2" class="bg-gray-100 w-[15%]">{{ $ta }}</td>
+                    @endforeach
+                    @for($i = count($chunkData['tahun_ajarans']); $i < 3; $i++)
+                    <td colspan="2" class="bg-gray-100 w-[15%]">........ / ........</td>
+                    @endfor
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-left bg-gray-100">NISN : {{ $nisn }}</td>
+                    @for($i = 0; $i < 3; $i++)
+                    <td colspan="2" class="bg-gray-100">SEMESTER</td>
+                    @endfor
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-left bg-gray-100">NIS : {{ $nis }}</td>
+                    @for($i = 0; $i < 3; $i++)
+                    <td class="bg-gray-100 w-[7.5%]">Ganjil</td>
+                    <td class="bg-gray-100 w-[7.5%]">Genap</td>
+                    @endfor
+                </tr>
+                <tr>
+                    <td class="bg-gray-100 w-10">NO</td>
+                    <td class="bg-gray-100">MATA PELAJARAN</td>
+                    @for($i = 0; $i < 6; $i++)
+                    <td class="bg-gray-100">NILAI</td>
+                    @endfor
+                </tr>
+                
+                @foreach($chunkData['subjects'] as $i => $subject)
+                <tr class="font-normal">
+                    <td>{{ $i + 1 }}</td>
+                    <td class="text-left">{{ $subject['nama'] }}</td>
+                    @foreach($chunkData['tahun_ajarans'] as $ta)
+                    <td>{{ $subject['grades'][$ta]['ganjil'] ?? '-' }}</td>
+                    <td>{{ $subject['grades'][$ta]['genap'] ?? '-' }}</td>
+                    @endforeach
+                    @for($j = count($chunkData['tahun_ajarans']); $j < 3; $j++)
+                    <td>-</td>
+                    <td>-</td>
+                    @endfor
+                </tr>
+                @endforeach
+            </table>
+            
+            <table class="w-full text-sm font-bold border-2 border-black mt-4">
+                <tr>
+                    <td class="bg-gray-100 w-10">NO</td>
+                    <td class="bg-gray-100" style="width: calc(55% - 40px);">EKSTRAKURIKULER</td>
+                    @for($i = 0; $i < 6; $i++)
+                    <td class="bg-gray-100 w-[7.5%]">NILAI</td>
+                    @endfor
+                </tr>
+                @forelse($chunkData['ekskuls'] as $i => $eks)
+                <tr class="font-normal">
+                    <td>{{ $i + 1 }}</td>
+                    <td class="text-left">{{ $eks['nama'] }}</td>
+                    @foreach($chunkData['tahun_ajarans'] as $ta)
+                    <td>{{ $eks['grades'][$ta]['ganjil'] ?? '-' }}</td>
+                    <td>{{ $eks['grades'][$ta]['genap'] ?? '-' }}</td>
+                    @endforeach
+                    @for($j = count($chunkData['tahun_ajarans']); $j < 3; $j++)
+                    <td>-</td>
+                    <td>-</td>
+                    @endfor
+                </tr>
+                @empty
+                <tr class="font-normal">
+                    <td colspan="8" class="text-center py-2 text-gray-500">Tidak ada data ekstrakurikuler</td>
+                </tr>
+                @endforelse
+            </table>
+            
+            <table class="w-full text-sm font-bold border-2 border-black mt-4">
+                <tr>
+                    <td class="bg-gray-100 w-10">NO</td>
+                    <td class="bg-gray-100" style="width: calc(55% - 40px);">KETIDAKHADIRAN</td>
+                    @for($i = 0; $i < 6; $i++)
+                    <td class="bg-gray-100 w-[7.5%]">HARI</td>
+                    @endfor
+                </tr>
+                @php $attTypes = ['Sakit' => 'sakit', 'Izin' => 'izin', 'Tanpa Keterangan' => 'alpha']; @endphp
+                @php $idx = 1; @endphp
+                @foreach($attTypes as $label => $key)
+                <tr class="font-normal">
+                    <td>{{ $idx++ }}.</td>
+                    <td class="text-left">{{ $label }}</td>
+                    @foreach($chunkData['tahun_ajarans'] as $ta)
+                    <td>{{ $chunkData['attendances'][$key][$ta]['ganjil'] ?? '-' }}</td>
+                    <td>{{ $chunkData['attendances'][$key][$ta]['genap'] ?? '-' }}</td>
+                    @endforeach
+                    @for($j = count($chunkData['tahun_ajarans']); $j < 3; $j++)
+                    <td>-</td>
+                    <td>-</td>
+                    @endfor
+                </tr>
+                @endforeach
+            </table>
 
-            <div class="px-2">
-                <div class="flex items-center mb-6 text-sm">
-                    <span class="w-36">Nama Peserta Didik</span>
-                    <span class="mr-3">:</span>
-                    <span class="border-b border-black font-bold flex-grow border-dotted border-b-2 border-black/50">{{ $student->user->name }}</span>
+            <!-- Signature Section -->
+            <div class="mt-4 flex justify-end">
+                <div class="w-64 text-left mr-8">
+                    <p class="mb-1">{{ $signatureLocation }}, {{ $signatureDate }}</p>
+                    <p class="mb-16">Kepala Sekolah</p>
+                    <p class="font-bold underline">{{ $principal?->nama_lengkap ?? '.........................................' }}</p>
+                    <p class="font-bold">NIP. {{ $principal?->nip ?? '.........................................' }}</p>
                 </div>
-
-                <table class="formal-table text-[13px]">
-                    <thead>
-                        <tr>
-                            <th colspan="4" class="text-center uppercase font-bold bg-white">KELUAR</th>
-                        </tr>
-                        <tr>
-                            <th class="text-center w-24">Tanggal</th>
-                            <th class="text-center w-36">Kelas yang ditinggalkan</th>
-                            <th class="text-center">Sebab-sebab Keluar atau Atas Permintaan (Tertulis)</th>
-                            <th class="text-center w-64">Tanda Tangan Kepala Sekolah, Stempel Sekolah, dan Tanda Tangan Orang Tua/Wali</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for($i=0; $i<3; $i++)
-                        <tr>
-                            <td class="h-44"></td>
-                            <td></td>
-                            <td></td>
-                            <td class="relative">
-                                <div class="absolute top-2 left-2 text-[11px] w-full pr-4">
-                                    <p>........................................, ...........</p>
-                                    <p>Kepala Sekolah,</p>
-                                </div>
-                                <div class="absolute top-20 left-2 text-[11px]">
-                                    <p>...........................................................</p>
-                                    <p>NIP.</p>
-                                </div>
-                                <div class="absolute bottom-12 left-2 text-[11px]">
-                                    <p>Orang Tua/Wali,</p>
-                                </div>
-                                <div class="absolute bottom-2 left-2 text-[11px]">
-                                    <p>...........................................................</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endfor
-                    </tbody>
-                </table>
             </div>
         </div>
-
-        <!-- ======================================= -->
-        <!-- PAGE 5: KETERANGAN PINDAH SEKOLAH (MASUK) -->
-        <!-- ======================================= -->
-        <div class="page-container" style="justify-content: flex-start; padding-top: 3rem;">
-            <div class="text-center mb-10">
-                <h2 class="text-lg font-bold uppercase tracking-wide">KETERANGAN PINDAH SEKOLAH</h2>
-            </div>
-
-            <div class="px-2">
-                <div class="flex items-center mb-6 text-sm">
-                    <span class="w-36">Nama Peserta Didik</span>
-                    <span class="mr-3">:</span>
-                    <span class="border-b border-black font-bold flex-grow border-dotted border-b-2 border-black/50">{{ $student->user->name }}</span>
-                </div>
-
-                <table class="formal-table text-[13px]">
-                    <thead>
-                        <tr>
-                            <th class="text-center w-12 font-bold uppercase">NO</th>
-                            <th colspan="2" class="text-center uppercase font-bold">MASUK</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for($i=1; $i<=3; $i++)
-                        <tr>
-                            <td class="text-center font-bold text-base h-48 align-middle">{{ $i }}.</td>
-                            <td class="p-4 align-top border-r-0" style="width: 60%; border-right: none;">
-                                <div class="flex mb-3">
-                                    <div class="w-32">Nama Siswa</div>
-                                    <div class="w-8">________________</div>
-                                    <div class="flex-grow">_______________________</div>
-                                </div>
-                                <div class="flex mb-3">
-                                    <div class="w-32">Nomor Induk</div>
-                                    <div class="w-8">________________</div>
-                                    <div class="flex-grow">_______________________</div>
-                                </div>
-                                <div class="flex mb-3">
-                                    <div class="w-32">Nama Sekolah</div>
-                                    <div class="w-8">________________</div>
-                                    <div class="flex-grow">_______________________</div>
-                                </div>
-                                <div class="flex mb-2">
-                                    <div class="w-32">Masuk di Sekolah ini:</div>
-                                    <div class="flex-grow"></div>
-                                </div>
-                                <div class="flex mb-2 pl-4">
-                                    <div class="w-28">a. Tanggal</div>
-                                    <div class="w-8">________________</div>
-                                    <div class="flex-grow">_______________________</div>
-                                </div>
-                                <div class="flex mb-3 pl-4">
-                                    <div class="w-28">b. Di Kelas</div>
-                                    <div class="w-8">________________</div>
-                                    <div class="flex-grow">_______________________</div>
-                                </div>
-                                <div class="flex mb-1">
-                                    <div class="w-32">Tahun Ajaran</div>
-                                    <div class="w-8">________________</div>
-                                    <div class="flex-grow">_______________________</div>
-                                </div>
-                            </td>
-                            <td class="p-4 align-top relative" style="width: 40%; border-left: none;">
-                                <div class="text-[11px]">
-                                    <p>........................................, ...........</p>
-                                    <p class="mt-2">Kepala Sekolah,</p>
-                                </div>
-                                <div class="absolute bottom-4 left-4 text-[11px]">
-                                    <p>...........................................................</p>
-                                    <p>NIP.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endfor
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
+        @endforeach
     @endforeach
-
 </body>
 </html>

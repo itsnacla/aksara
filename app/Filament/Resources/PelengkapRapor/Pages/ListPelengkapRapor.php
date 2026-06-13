@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Filament\Resources\BukuInduk\Pages;
+namespace App\Filament\Resources\PelengkapRapor\Pages;
 
-use App\Filament\Resources\BukuInduk\BukuIndukKelas1Resource;
+use App\Filament\Resources\PelengkapRapor\PelengkapRaporResource;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use App\Models\StudyGroup;
 use App\Models\Student;
 
-class ListBukuIndukKelas1s extends ListRecords
+class ListPelengkapRapor extends ListRecords
 {
-    protected static string $resource = BukuIndukKelas1Resource::class;
+    protected static string $resource = PelengkapRaporResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -74,11 +74,11 @@ class ListBukuIndukKelas1s extends ListRecords
                         ->success()
                         ->send();
                 }),
-            Action::make('cetak_buku_induk_batch')
-                ->label('Cetak Per Batch')
+            Action::make('cetak_pelengkap_batch')
+                ->label('Cetak Pelengkap Batch')
                 ->icon('heroicon-o-printer')
-                ->color('warning')
-                ->modalHeading('Cetak Buku Induk Per Rombongan Belajar (Batch)')
+                ->color('info')
+                ->modalHeading('Cetak Pelengkap Rapor Per Rombongan Belajar (Batch)')
                 ->modalWidth('lg')
                 ->form([
                     Select::make('study_group_id')
@@ -89,7 +89,7 @@ class ListBukuIndukKelas1s extends ListRecords
                         ->required()
                         ->searchable(),
                 ])
-                ->action(function (array $data, ListBukuIndukKelas1s $livewire) {
+                ->action(function (array $data, ListPelengkapRapor $livewire) {
                     $studyGroupId = $data['study_group_id'];
                     $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
                     
@@ -114,12 +114,12 @@ class ListBukuIndukKelas1s extends ListRecords
                         return;
                     }
                     
-                    $url = route('print.buku-induk-bulk', [
+                    $url = route('print.pelengkap-rapor-bulk', [
                         'student_ids' => $studentIds,
                     ]);
                     
                     $livewire->js("window.open('{$url}', '_blank');");
-                })
+                }),
         ];
     }
 }

@@ -160,6 +160,9 @@ Route::middleware(['auth'])->group(function () {
     })->name('download.template');
 
     // Cetak Buku Induk & Rapor
+    Route::get('/pelengkap-rapor/print-bulk', [\App\Http\Controllers\PrintController::class, 'printPelengkapRaporBulk'])->name('print.pelengkap-rapor-bulk');
+    Route::get('/pelengkap-rapor/print/{student}', [\App\Http\Controllers\PrintController::class, 'printPelengkapRapor'])->name('print.pelengkap-rapor');
+    
     Route::get('/buku-induk/print-bulk', [\App\Http\Controllers\PrintController::class, 'printBukuIndukBulk'])->name('print.buku-induk-bulk');
     Route::get('/buku-induk/print/{student}', [\App\Http\Controllers\PrintController::class, 'printBukuInduk'])->name('print.buku-induk');
     Route::get('/rapor/print-bulk', [\App\Http\Controllers\PrintController::class, 'printRaporBulk'])->name('print.rapor.bulk');

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\BukuInduk;
+namespace App\Filament\Resources\PelengkapRapor;
 
-use App\Filament\Resources\BukuInduk\Pages\ListBukuIndukKelas1s;
+use App\Filament\Resources\PelengkapRapor\Pages\ListPelengkapRapor;
 use App\Models\Student;
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
@@ -13,13 +13,13 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Illuminate\Database\Eloquent\Builder;
 
-class BukuIndukKelas1Resource extends Resource
+class PelengkapRaporResource extends Resource
 {
     protected static ?string $model = Student::class;
 
     protected static ?string $recordTitleAttribute = 'nisn';
 
-    protected static ?string $slug = 'buku-induk';
+    protected static ?string $slug = 'pelengkap-rapor';
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-book-open';
 
@@ -27,11 +27,11 @@ class BukuIndukKelas1Resource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Buku Induk';
+    protected static ?string $navigationLabel = 'Pelengkap Rapor';
 
-    protected static ?string $modelLabel = 'Buku Induk';
+    protected static ?string $modelLabel = 'Pelengkap Rapor';
 
-    protected static ?string $pluralModelLabel = 'Buku Induk';
+    protected static ?string $pluralModelLabel = 'Pelengkap Rapor';
 
     public static function getEloquentQuery(): Builder
     {
@@ -148,11 +148,11 @@ class BukuIndukKelas1Resource extends Resource
                             ->send();
                     })
                     ->visible(fn(Student $record) => !$record->is_buku_induk_generated),
-                Action::make('cetak')
-                    ->label('Cetak')
+                Action::make('cetak_pelengkap')
+                    ->label('Cetak Pelengkap')
                     ->icon('heroicon-o-printer')
                     ->color('info')
-                    ->url(fn(Student $record): string => route('print.buku-induk', $record))
+                    ->url(fn(Student $record): string => route('print.pelengkap-rapor', $record))
                     ->openUrlInNewTab()
                     ->visible(fn(Student $record) => (bool) $record->is_buku_induk_generated),
             ])
@@ -166,7 +166,7 @@ class BukuIndukKelas1Resource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListBukuIndukKelas1s::route('/'),
+            'index' => ListPelengkapRapor::route('/'),
         ];
     }
 

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property string|null $school_level
  * @property string|null $npsn
+ * @property string|null $nis_nss_nds
  * @property string|null $logo
  * @property string|null $logo_pemda
  * @property string|null $address
@@ -35,6 +36,7 @@ use Illuminate\Database\Eloquent\Model;
     'name',
     'school_level',
     'npsn',
+    'nis_nss_nds',
     'logo',
     'logo_pemda',
     'address',

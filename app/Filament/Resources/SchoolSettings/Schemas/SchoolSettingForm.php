@@ -93,6 +93,10 @@ class SchoolSettingForm
                                             ->send();
                                     })
                             ),
+                        TextInput::make('nis_nss_nds')
+                            ->label('NIS / NSS / NDS')
+                            ->maxLength(20)
+                            ->placeholder('Masukkan NIS, NSS, atau NDS Sekolah'),
                         TextInput::make('motto')
                             ->label('Moto / Slogan Sekolah')
                             ->maxLength(255),
