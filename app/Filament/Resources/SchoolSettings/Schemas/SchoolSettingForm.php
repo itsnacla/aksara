@@ -28,6 +28,15 @@ class SchoolSettingForm
                             ->label('Nama Sekolah')
                             ->required()
                             ->maxLength(255),
+                        Select::make('school_level')
+                            ->label('Tingkat Sekolah')
+                            ->options([
+                                'SD' => 'SD',
+                                'SMP' => 'SMP',
+                                'SMA' => 'SMA',
+                                'SMK' => 'SMK',
+                            ])
+                            ->placeholder('Pilih Tingkat Sekolah'),
                         TextInput::make('npsn')
                             ->label('NPSN')
                             ->maxLength(20)
@@ -57,6 +66,9 @@ class SchoolSettingForm
                                         }
 
                                         $set('name', $data['name']);
+                                        if (isset($data['school_level']) && in_array($data['school_level'], ['SD', 'SMP', 'SMA', 'SMK'])) {
+                                            $set('school_level', $data['school_level']);
+                                        }
                                         $set('address', $data['address']);
                                         $set('email', $data['email']);
                                         $set('website', $data['website']);
@@ -92,6 +104,12 @@ class SchoolSettingForm
                             ->columnSpanFull(),
                         FileUpload::make('logo_pemda')
                             ->label('Logo Pemerintah Daerah')
+                            ->image()
+                            ->disk('public')
+                            ->directory('school')
+                            ->columnSpanFull(),
+                        FileUpload::make('logo_tut_wuri')
+                            ->label('Logo Tut Wuri Handayani')
                             ->image()
                             ->disk('public')
                             ->directory('school')

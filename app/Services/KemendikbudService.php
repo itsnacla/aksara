@@ -39,6 +39,7 @@ class KemendikbudService
                 'success' => true,
                 'name' => self::extract($html, '/Nama<\/td>\s*<td>:<\/td>\s*<td>(.*?)<\/td>/is'),
                 'npsn' => $npsn,
+                'school_level' => self::extract($html, '/Bentuk Pendidikan<\/td>\s*<td>:<\/td>\s*<td>(.*?)<\/td>/is'),
                 'address' => self::extract($html, '/Alamat<\/td>\s*<td>:<\/td>\s*<td>(.*?)<\/td>/is'),
                 'village' => self::extract($html, '/Desa\/Kelurahan<\/td>\s*<td>:<\/td>\s*<td>(.*?)<\/td>/is'),
                 'district' => self::extract($html, '/Kecamatan\/Kota \(LN\)<\/td>\s*<td>:<\/td>\s*<td>(.*?)<\/td>/is'),

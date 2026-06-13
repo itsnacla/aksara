@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $id
  * @property string $name
+ * @property string|null $school_level
  * @property string|null $npsn
  * @property string|null $logo
  * @property string|null $logo_pemda
+ * @property string|null $logo_tut_wuri
  * @property string|null $address
  * @property string|null $village
  * @property string|null $district
@@ -32,9 +34,11 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable([
     'id', // Diperlukan agar updateOrCreate di seeder/migration tidak error
     'name',
+    'school_level',
     'npsn',
     'logo',
     'logo_pemda',
+    'logo_tut_wuri',
     'address',
     'village',
     'district',
