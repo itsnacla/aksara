@@ -31,6 +31,8 @@ Route::middleware(['auth'])->group(function () {
     // AI Chatbot
     Route::get('/chatbot/config', [ChatbotController::class, 'config'])->name('chatbot.config');
     Route::post('/chatbot/chat', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+    Route::get('/chatbot/history', [ChatbotController::class, 'history'])->name('chatbot.history');
+    Route::get('/chatbot/conversation/{id}', [ChatbotController::class, 'loadConversation'])->name('chatbot.conversation');
 
     // Student Cards
     Route::get('/student-card/{student}', [\App\Http\Controllers\StudentCardController::class, 'print'])->name('student.card');

@@ -18,8 +18,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const statusEl = document.querySelector(".chatbot-status");
     const backdrop = document.getElementById("chatbot-backdrop");
 
+    const historyToggle = document.getElementById("chatbot-history-toggle");
+    const historyPanel = document.getElementById("chatbot-history-panel");
+    const historyList = document.getElementById("chatbot-history-list");
+    const newChatBtn = document.getElementById("chatbot-new-chat-btn");
+
     let isOpen = false;
     let isMaximized = false;
+    let isHistoryOpen = false;
     let configLoaded = false;
     let conversationHistory = [];
     let currentConversationId = null;
@@ -113,6 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function closeChat() {
         isOpen = false;
         if (isMaximized) toggleMaximize();
+        if (isHistoryOpen) toggleHistory();
         window_.style.display = "none";
         fabIcon.style.display = "flex";
         fabClose.style.display = "none";
@@ -134,6 +141,84 @@ document.addEventListener("DOMContentLoaded", function () {
         messages.scrollTop = messages.scrollHeight;
         setTimeout(() => input.focus(), 100);
     }
+
+    async function loadHistory() {
+        if (!historyList) return;
+        try {
+            const res = await fetch("/chatbot/history", {
+                headers: { Accept: "application/json" },
+            });
+            if (!res.ok) throw new Error();
+            const historyData = await res.json();
+            
+            historyList.innerHTML = "";
+            if (historyData.length === 0) {
+                historyList.innerHTML = '<div class="chatbot-history-empty">Belum ada riwayat percakapan.</div>';
+                return;
+            }
+
+            historyData.forEach(conv => {
+                const item = document.createElement("div");
+                item.className = "chatbot-history-item";
+                item.innerHTML = `<h5>${conv.title}</h5><span>${new Date(conv.updated_at).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>`;
+                item.addEventListener("click", () => fetchConversation(conv.id));
+                historyList.appendChild(item);
+            });
+        } catch {
+            historyList.innerHTML = '<div class="chatbot-history-empty">Gagal memuat riwayat.</div>';
+        }
+    }
+
+    async function fetchConversation(id) {
+        try {
+            const res = await fetch(`/chatbot/conversation/${id}`, {
+                headers: { Accept: "application/json" },
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            
+            // Clear current chat
+            messages.innerHTML = "";
+            currentConversationId = data.id;
+            setupEcho(currentConversationId);
+            
+            // Add messages
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    addMessage(msg.content, msg.role === 'user');
+                });
+            } else {
+                addMessage(`Percakapan kosong.`);
+            }
+            toggleHistory(); // close history panel
+        } catch {
+            alert('Gagal memuat percakapan.');
+        }
+    }
+
+    function toggleHistory() {
+        isHistoryOpen = !isHistoryOpen;
+        if (isHistoryOpen) {
+            historyPanel.style.display = "flex";
+            loadHistory();
+        } else {
+            historyPanel.style.display = "none";
+        }
+    }
+
+    function startNewChat() {
+        currentConversationId = null;
+        messages.innerHTML = "";
+        if (window.Echo && currentConversationId) {
+            window.Echo.leave(`conversations.${currentConversationId}`);
+        }
+        configLoaded = false;
+        loadConfig(); // load greeting again
+        if (isHistoryOpen) toggleHistory();
+    }
+
+    if (historyToggle) historyToggle.addEventListener("click", toggleHistory);
+    if (newChatBtn) newChatBtn.addEventListener("click", startNewChat);
 
     if (toggle)
         toggle.addEventListener("click", () =>
@@ -207,7 +292,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         "X-CSRF-TOKEN": csrfToken,
                         Accept: "application/json",
                     },
-                    body: JSON.stringify({ message }),
+                    body: JSON.stringify({ 
+                        message, 
+                        conversation_id: currentConversationId 
+                    }),
                 });
                 removeTyping();
                 if (response.ok) {

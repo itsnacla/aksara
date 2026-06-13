@@ -16,6 +16,8 @@ use App\Ai\Tools\GetStudentAnalytics;
 use App\Ai\Tools\GetStudentDetails;
 use App\Ai\Tools\GetTodaySchedule;
 use App\Ai\Tools\SearchStudentByFilter;
+use App\Ai\Tools\AnalyzeDropoutRisk;
+use App\Ai\Tools\ClusterStudents;
 use App\Models\User;
 use Laravel\Ai\Attributes\MaxSteps;
 use Laravel\Ai\Attributes\Model;
@@ -204,6 +206,10 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
             new GetExamSchedule($this->user),
             new GetLearningObjectives($this->user),
             new SearchStudentByFilter($this->user),
+            
+            // 🤖 DATA SCIENCE & PREDICTIVE TOOLS
+            new AnalyzeDropoutRisk($this->user),         // "Prediksi risiko dropout"
+            new ClusterStudents($this->user),            // "Cluster belajar siswa di kelas X"
         ];
     }
 

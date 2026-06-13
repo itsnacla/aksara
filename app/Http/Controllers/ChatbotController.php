@@ -92,6 +92,64 @@ class ChatbotController extends Controller
     }
 
     /**
+     * Get the chat history list for the current user.
+     */
+    public function history(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json([]);
+        }
+
+        $conversations = \Illuminate\Support\Facades\DB::table(config('ai.conversations.tables.conversations', 'agent_conversations'))
+            ->where('user_id', $user->id)
+            ->orderBy('updated_at', 'desc')
+            ->get(['id', 'title', 'updated_at']);
+
+        // Generate dynamic title if empty
+        $conversations->transform(function ($conv) {
+            if (empty($conv->title)) {
+                $conv->title = 'Obrolan ' . \Carbon\Carbon::parse($conv->updated_at)->diffForHumans();
+            }
+            return $conv;
+        });
+
+        return response()->json($conversations);
+    }
+
+    /**
+     * Load messages for a specific conversation.
+     */
+    public function loadConversation(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Verify ownership
+        $conversation = \Illuminate\Support\Facades\DB::table(config('ai.conversations.tables.conversations', 'agent_conversations'))
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$conversation) {
+            return response()->json(['error' => 'Conversation not found'], 404);
+        }
+
+        $messages = \Illuminate\Support\Facades\DB::table(config('ai.conversations.tables.messages', 'agent_conversation_messages'))
+            ->where('conversation_id', $id)
+            ->orderBy('created_at', 'asc')
+            ->get(['id', 'role', 'content', 'created_at']);
+
+        return response()->json([
+            'id' => $conversation->id,
+            'title' => $conversation->title,
+            'messages' => $messages,
+        ]);
+    }
+
+    /**
      * Determine the user's primary role.
      */
     private function getUserRole($user): string
@@ -149,14 +207,14 @@ class ChatbotController extends Controller
             'admin' => [
                 ['label' => '👥 Data Siswa', 'message' => 'Bagaimana cara mengelola data siswa?'],
                 ['label' => '👨‍🏫 Data Guru', 'message' => 'Bagaimana cara mengelola data guru?'],
-                ['label' => '📊 Laporan', 'message' => 'Bagaimana cara melihat laporan sekolah?'],
-                ['label' => '⚙️ Pengaturan', 'message' => 'Bagaimana cara mengatur sistem?'],
+                ['label' => '🚨 Prediksi Risiko', 'message' => 'Tolong prediksi risiko siswa dengan ID 1'],
+                ['label' => '🧠 Clustering Siswa', 'message' => 'Lakukan clustering karakteristik belajar untuk rombongan belajar ID 1'],
             ],
             'guru' => [
                 ['label' => '📅 Jadwal Mengajar', 'message' => 'Bagaimana cara melihat jadwal mengajar saya?'],
-                ['label' => '📝 Input Nilai', 'message' => 'Bagaimana cara menginput nilai siswa?'],
                 ['label' => '📋 Presensi Kelas', 'message' => 'Bagaimana cara melihat presensi kelas saya?'],
-                ['label' => '🏫 Wali Kelas', 'message' => 'Bagaimana cara mengelola kelas perwalian saya?'],
+                ['label' => '🚨 Prediksi Risiko', 'message' => 'Tolong analisis risiko dropout untuk siswa perwalian saya'],
+                ['label' => '🧠 Clustering Siswa', 'message' => 'Lakukan clustering belajar untuk kelas perwalian saya'],
             ],
             'staff' => [
                 ['label' => '📄 Surat', 'message' => 'Bagaimana cara mengelola surat-menyurat?'],

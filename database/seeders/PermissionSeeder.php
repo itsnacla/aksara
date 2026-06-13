@@ -424,6 +424,8 @@ class PermissionSeeder extends Seeder
             'View:DataProgressTracker',
             'View:DataProgressStatsWidget',
             'View:DataProgressTableWidget',
+            'View:EarlyWarningSystem',
+            'View:StudentClustering',
             'View:LoginAs',
             'View:PerkembanganNilaiChart',
             'View:PerkembanganNilaiTable',
@@ -780,6 +782,8 @@ class PermissionSeeder extends Seeder
             'View:DataProgressTracker',
             'View:DataProgressStatsWidget',
             'View:DataProgressTableWidget',
+            'View:EarlyWarningSystem',
+            'View:StudentClustering',
         ]);
 
         $role = Role::firstOrCreate([
@@ -854,6 +858,8 @@ class PermissionSeeder extends Seeder
             'View:DataProgressTracker',
             'View:DataProgressStatsWidget',
             'View:DataProgressTableWidget',
+            'View:EarlyWarningSystem',
+            'View:StudentClustering',
         ]);
 
         $role = Role::firstOrCreate([
