@@ -57,6 +57,22 @@ class AdminPanelProvider extends PanelProvider
                     ->sort(1)
                     ->visible(fn (): bool => auth()->user()?->can('ScanAttendance') ?? false),
             ])
+            ->navigationGroups([
+                \Filament\Navigation\NavigationGroup::make()
+                     ->label('Master Data'),
+                \Filament\Navigation\NavigationGroup::make()
+                     ->label('Kurikulum & Referensi'),
+                \Filament\Navigation\NavigationGroup::make()
+                     ->label('Jadwal Pelajaran'),
+                \Filament\Navigation\NavigationGroup::make()
+                     ->label('Akademik & KBM'),
+                \Filament\Navigation\NavigationGroup::make()
+                     ->label('Buku Induk & Rapor'),
+                \Filament\Navigation\NavigationGroup::make()
+                     ->label('Pengembangan Diri'),
+                \Filament\Navigation\NavigationGroup::make()
+                     ->label('Sistem & Konfigurasi'),
+            ])
             ->userMenuItems([
                 Action::make('impersonate')
                     ->label('Login As')

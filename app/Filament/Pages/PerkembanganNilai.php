@@ -22,7 +22,7 @@ class PerkembanganNilai extends Page implements HasForms
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Akademik & KBM';
+        return 'Akademik & Penilaian';
     }
 
     public static function getNavigationLabel(): string

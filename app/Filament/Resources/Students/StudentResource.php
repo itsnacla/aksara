@@ -25,7 +25,7 @@ class StudentResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
     protected static ?int $navigationSort = 1;
 

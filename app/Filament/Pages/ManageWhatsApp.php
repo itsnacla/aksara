@@ -37,7 +37,7 @@ class ManageWhatsApp extends Page implements HasForms
 
     protected static ?string $slug = 'manage-whats-app';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pengaturan Aplikasi';
+    protected static UnitEnum|string|null $navigationGroup = 'Sistem & Konfigurasi';
 
     protected static ?int $navigationSort = 3;
 

@@ -20,7 +20,7 @@ class ExtracurricularResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-trophy';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pengembangan Diri & P5';
+    protected static UnitEnum|string|null $navigationGroup = 'Pengembangan Diri';
 
     protected static ?int $navigationSort = 4;
 

@@ -31,7 +31,7 @@ class StudyGroupResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user-group';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
     protected static ?int $navigationSort = 5;
 

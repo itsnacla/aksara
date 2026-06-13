@@ -26,7 +26,7 @@ class StaffResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-identification';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Data Kependidikan';
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
     protected static ?int $navigationSort = 4;
 

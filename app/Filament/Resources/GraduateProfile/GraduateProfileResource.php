@@ -28,7 +28,7 @@ class GraduateProfileResource extends Resource
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengembangan Diri & P5';
+    protected static \UnitEnum|string|null $navigationGroup = 'Akademik & Penilaian';
 
     protected static ?int $navigationSort = 1; // Put it first before Tema, Kegiatan, Kelompok
 

@@ -20,7 +20,7 @@ class P5ThemeResource extends Resource
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-swatch';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengembangan Diri & P5';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengembangan Diri';
 
     protected static ?int $navigationSort = 1;
 

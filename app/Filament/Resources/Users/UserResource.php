@@ -23,7 +23,7 @@ class UserResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pengaturan Aplikasi';
+    protected static UnitEnum|string|null $navigationGroup = 'Sistem & Konfigurasi';
 
     protected static ?int $navigationSort = 1;
 
