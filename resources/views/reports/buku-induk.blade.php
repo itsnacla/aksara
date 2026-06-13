@@ -185,10 +185,10 @@
             </div>
 
             <div>
-                @if($school && $school->logo_tut_wuri)
-                    <img src="{{ asset('storage/' . $school->logo_tut_wuri) }}" alt="Logo Tut Wuri" class="h-40 object-contain mx-auto">
+                @if($school && $school->logo)
+                    <img src="{{ asset('storage/' . $school->logo) }}" alt="Logo Sekolah" class="h-32 object-contain mx-auto">
                 @else
-                    <div class="h-40 w-40 border border-dashed border-gray-400 mx-auto flex items-center justify-center text-xs text-gray-500">Logo Tut Wuri</div>
+                    <div class="h-32 w-32 border border-dashed border-gray-400 mx-auto flex items-center justify-center text-xs text-gray-500">Logo Sekolah</div>
                 @endif
             </div>
 

@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $npsn
  * @property string|null $logo
  * @property string|null $logo_pemda
- * @property string|null $logo_tut_wuri
  * @property string|null $address
  * @property string|null $village
  * @property string|null $district
@@ -38,7 +37,6 @@ use Illuminate\Database\Eloquent\Model;
     'npsn',
     'logo',
     'logo_pemda',
-    'logo_tut_wuri',
     'address',
     'village',
     'district',

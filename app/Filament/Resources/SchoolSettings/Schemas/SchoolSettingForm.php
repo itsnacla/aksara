@@ -108,12 +108,6 @@ class SchoolSettingForm
                             ->disk('public')
                             ->directory('school')
                             ->columnSpanFull(),
-                        FileUpload::make('logo_tut_wuri')
-                            ->label('Logo Tut Wuri Handayani')
-                            ->image()
-                            ->disk('public')
-                            ->directory('school')
-                            ->columnSpanFull(),
                     ])
                     ->columns(1),
 
