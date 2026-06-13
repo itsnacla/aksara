@@ -51,6 +51,10 @@ class PortalController extends Controller
     /**
      * API endpoint for real-time polling data updates.
      */
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function realtimeData(Request $request)
     {
         $user = Auth::user();
@@ -122,6 +126,10 @@ class PortalController extends Controller
         return response()->json($data);
     }
 
+    /**
+     * @param \App\Models\User $user
+     * @return array<string, mixed>
+     */
     private function getStudentDashboardData($user): array
     {
         $student = $user->student;
@@ -231,6 +239,10 @@ class PortalController extends Controller
         return $result;
     }
 
+    /**
+     * @param \App\Models\User $user
+     * @return array<string, mixed>
+     */
     private function getParentDashboardData($user): array
     {
         $childIds = $user->parent?->students()->pluck('id') ?? [];

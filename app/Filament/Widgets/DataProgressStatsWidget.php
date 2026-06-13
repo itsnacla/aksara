@@ -16,6 +16,9 @@ class DataProgressStatsWidget extends BaseWidget
 {
     protected ?string $pollingInterval = null;
 
+    /**
+     * @return array<int, Stat>
+     */
     protected function getStats(): array
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
