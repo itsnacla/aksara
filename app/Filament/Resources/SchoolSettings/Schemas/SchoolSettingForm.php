@@ -97,21 +97,20 @@ class SchoolSettingForm
                             ->label('NIS / NSS / NDS')
                             ->maxLength(20)
                             ->placeholder('Masukkan NIS, NSS, atau NDS Sekolah'),
-                        TextInput::make('motto')
-                            ->label('Moto / Slogan Sekolah')
-                            ->maxLength(255),
                         FileUpload::make('logo')
-                            ->label('Logo Resmi Sekolah')
+                            ->label('Logo Sekolah')
                             ->image()
-                            ->disk('public')
-                            ->directory('school')
-                            ->columnSpanFull(),
-                        FileUpload::make('logo_pemda')
-                            ->label('Logo Pemerintah Daerah')
+                            ->directory('school-settings')
+                            ->maxSize(1024)
+                            ->columnSpan('full')
+                            ->helperText('Rekomendasi ukuran: 200x200px (Max 1MB). Akan digunakan pada kop surat dan laporan.'),
+                            
+                        FileUpload::make('kop_surat')
+                            ->label('Kop Surat Khusus (Opsional)')
                             ->image()
-                            ->disk('public')
-                            ->directory('school')
-                            ->columnSpanFull(),
+                            ->directory('school-settings/kop')
+                            ->maxSize(2048)
+                            ->columnSpan('full'),
                     ])
                     ->columns(1),
 

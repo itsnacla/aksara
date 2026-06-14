@@ -47,15 +47,25 @@ class ListStaff extends ListRecords
                             $file = is_array($state) ? reset($state) : $state;
                             $path = null;
 
+                            $isTempDownloaded = false;
                             if (is_string($file)) {
                                 if (file_exists($file)) {
                                     $path = $file;
-                                } elseif (Storage::disk('public')->exists($file)) {
-                                    $path = Storage::disk('public')->path($file);
                                 } elseif (Storage::exists($file)) {
-                                    $path = Storage::path($file);
+                                    $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                                    if (in_array($diskDriver, ['local', 'public'])) {
+                                        $path = Storage::path($file);
+                                    } else {
+                                        $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                        if (!file_exists(dirname($tmpPath))) {
+                                            mkdir(dirname($tmpPath), 0755, true);
+                                        }
+                                        file_put_contents($tmpPath, Storage::get($file));
+                                        $path = $tmpPath;
+                                        $isTempDownloaded = true;
+                                    }
                                 } else {
-                                    $tmpPath = storage_path('app/livewire-tmp/' . $file);
+                                    $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
                                     if (file_exists($tmpPath)) {
                                         $path = $tmpPath;
                                     }
@@ -72,8 +82,10 @@ class ListStaff extends ListRecords
                                 $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
                                 $allRows = $spreadsheet->getActiveSheet()->toArray();
                             } catch (\Exception $e) {
+                                if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
                                 return;
                             }
+                            if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
 
                             $rows = [];
                             foreach ($allRows as $r) {
@@ -166,15 +178,25 @@ class ListStaff extends ListRecords
                     $file = is_array($data['file']) ? reset($data['file']) : $data['file'];
                     $path = null;
 
+                    $isTempDownloaded = false;
                     if (is_string($file)) {
                         if (file_exists($file)) {
                             $path = $file;
-                        } elseif (Storage::disk('public')->exists($file)) {
-                            $path = Storage::disk('public')->path($file);
                         } elseif (Storage::exists($file)) {
-                            $path = Storage::path($file);
+                            $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                            if (in_array($diskDriver, ['local', 'public'])) {
+                                $path = Storage::path($file);
+                            } else {
+                                $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                if (!file_exists(dirname($tmpPath))) {
+                                    mkdir(dirname($tmpPath), 0755, true);
+                                }
+                                file_put_contents($tmpPath, Storage::get($file));
+                                $path = $tmpPath;
+                                $isTempDownloaded = true;
+                            }
                         } else {
-                            $tmpPath = storage_path('app/livewire-tmp/' . $file);
+                            $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
                             if (file_exists($tmpPath)) {
                                 $path = $tmpPath;
                             }
@@ -196,6 +218,7 @@ class ListStaff extends ListRecords
                         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
                         $allRows = $spreadsheet->getActiveSheet()->toArray();
                     } catch (\Exception $e) {
+                        if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
                         Notification::make()
                             ->title('Format berkas tidak didukung')
                             ->body('Pastikan berkas berformat CSV atau Excel (.xlsx/.xls) yang valid.')
@@ -203,6 +226,7 @@ class ListStaff extends ListRecords
                             ->send();
                         return;
                     }
+                    if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
 
                     $rows = [];
                     foreach ($allRows as $r) {

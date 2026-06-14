@@ -72,7 +72,7 @@ class SystemHealthWidget extends BaseWidget
     private function getInfraStatus(): Stat
     {
         $storage = 'Writable';
-        try { Storage::disk('public')->put('health_test.txt', '1'); } catch (\Exception $e) { $storage = 'Error'; }
+        try { Storage::put('health_test.txt', '1'); } catch (\Exception $e) { $storage = 'Error'; }
 
         return Stat::make('Infrastructure', 'Operational')
             ->description("Storage: {$storage} | Cache: OK")

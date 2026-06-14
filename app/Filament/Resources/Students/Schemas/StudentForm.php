@@ -78,7 +78,6 @@ class StudentForm
                                     ->label('Foto Siswa')
                                     ->image()
                                     ->avatar()
-                                    ->disk('public')
                                     ->directory('student-photos')
                                     ->columnSpanFull(),
                             ]),

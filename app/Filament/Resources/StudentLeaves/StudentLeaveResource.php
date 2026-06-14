@@ -83,12 +83,12 @@ class StudentLeaveResource extends Resource
                             ->visible(fn (string $context) => $context !== 'create')
                             ->columnSpanFull(),
                         FileUpload::make('attachment')
-                            ->label('Lampiran')
+                            ->label('Lampiran / Bukti')
+                            ->directory('student-leaves')
                             ->image()
-                            ->disk('public')
-                            ->directory('leaves')
-                            ->visible(fn (string $context) => $context === 'create')
-                            ->columnSpanFull(),
+                            ->maxSize(2048)
+                            ->columnSpanFull()
+                            ->visible(fn ($get) => in_array($get('type'), ['sakit', 'izin'])),
                     ])->columns(2),
                 
                 Section::make('Keputusan Admin')
