@@ -23,7 +23,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leaves', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'index'])->name('leaves.index');
     Route::get('/leaves/create', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'create'])->name('leaves.create');
     Route::post('/leaves', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'store'])->name('leaves.store');
-    Route::get('/leaves/{leave}/edit', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'edit'])->name('leaves.edit');
     Route::put('/leaves/{leave}', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'update'])->name('leaves.update');
 
     Route::post('/logout', [PortalController::class, 'logout'])->name('logout')->middleware('throttle:60,1');

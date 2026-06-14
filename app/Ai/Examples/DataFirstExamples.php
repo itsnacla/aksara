@@ -221,7 +221,7 @@ class DataFirstExamples
      *   3. AI call: GetTodaySchedule() [auto-filter by student class]
      *   4. AI format:
      * 
-     *      📅 JADWAL KU HARI INI
+     *      JADWAL KU HARI INI
      *      
      *      | Jam | Mapel | Guru | Ruangan |
      *      |-----|-------|------|---------|
@@ -239,7 +239,7 @@ class DataFirstExamples
                 '4. Tool: GetTodaySchedule() [auto-filter by class]',
                 '5. Format: Simple, friendly table untuk siswa',
             ],
-            'expected_response' => '📅 **Jadwal Ku Hari Ini** | 07:00: Matematika (Pak Ahmad) | 10:00: Olahraga (Bu Siti)',
+            'expected_response' => '**Jadwal Ku Hari Ini** | 07:00: Matematika (Pak Ahmad) | 10:00: Olahraga (Bu Siti)',
         ];
     }
 

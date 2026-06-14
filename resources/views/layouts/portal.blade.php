@@ -46,7 +46,7 @@
         </div>
     @endif
 
-    <div class="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0 relative bg-gray-50" x-data="{ tab: 'overview' }">
+    <div class="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0 relative bg-gray-50" x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || '{{ request()->routeIs('leaves.*') ? 'attendance' : 'overview' }}' }">
         
         <!-- Desktop Sidebar -->
         <aside class="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 h-screen sticky top-0 z-40">
@@ -55,22 +55,22 @@
             </div>
             
             <div class="px-4 flex-1 space-y-2">
-                <button @click="tab = 'overview'" :class="tab === 'overview' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
+                <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=overview' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'overview'; $event.preventDefault(); }" :class="tab === 'overview' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                     <span class="text-sm">Ringkasan</span>
-                </button>
-                <button @click="tab = 'attendance'" :class="tab === 'attendance' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
+                </a>
+                <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=attendance' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'attendance'; $event.preventDefault(); }" :class="tab === 'attendance' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span class="text-sm">Presensi & Izin</span>
-                </button>
-                <button @click="tab = 'academic'" :class="tab === 'academic' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
+                </a>
+                <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=academic' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'academic'; $event.preventDefault(); }" :class="tab === 'academic' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                     <span class="text-sm">Akademik</span>
-                </button>
-                <button @click="tab = 'activities'" :class="tab === 'activities' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
+                </a>
+                <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=activities' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'activities'; $event.preventDefault(); }" :class="tab === 'activities' ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
                     <span class="text-sm">Aktivitas</span>
-                </button>
+                </a>
             </div>
 
             <div class="p-4 border-t border-gray-100">
@@ -174,25 +174,25 @@
 
         <!-- Mobile Bottom Navigation -->
         <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-            <button @click="tab = 'overview'" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'overview' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
+            <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=overview' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'overview'; $event.preventDefault(); }" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'overview' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                 <span class="text-[9px]" :class="tab === 'overview' ? 'font-bold' : 'font-medium'">Ringkasan</span>
-            </button>
+            </a>
             
-            <button @click="tab = 'attendance'" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'attendance' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
+            <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=attendance' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'attendance'; $event.preventDefault(); }" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'attendance' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <span class="text-[9px]" :class="tab === 'attendance' ? 'font-bold' : 'font-medium'">Kehadiran</span>
-            </button>
+            </a>
 
-            <button @click="tab = 'academic'" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'academic' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
+            <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=academic' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'academic'; $event.preventDefault(); }" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'academic' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                 <span class="text-[9px]" :class="tab === 'academic' ? 'font-bold' : 'font-medium'">Akademik</span>
-            </button>
+            </a>
 
-            <button @click="tab = 'activities'" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'activities' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
+            <a href="{{ request()->routeIs('dashboard') ? '#' : route('dashboard') . '?tab=activities' }}" @click="if({{ request()->routeIs('dashboard') ? 'true' : 'false' }}) { tab = 'activities'; $event.preventDefault(); }" class="flex flex-col items-center gap-1 transition-colors" :class="tab === 'activities' ? 'text-primary' : 'text-gray-400 hover:text-gray-700'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
                 <span class="text-[9px]" :class="tab === 'activities' ? 'font-bold' : 'font-medium'">Aktivitas</span>
-            </button>
+            </a>
         </div>
     </div>
 
@@ -317,7 +317,7 @@
                                     'orang_tua', 'wali' => '👥 Orang Tua',
                                     'guru', 'teacher' => '👨‍🏫 Guru',
                                     'staff' => '⚙️ Staff',
-                                    default => '👤 ' . $uRole
+                                    default => '' . $uRole
                                 };
                             @endphp
                             <div class="user-item flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition-colors" data-search="{{ strtolower($u->name) }} {{ strtolower($u->email) }} {{ strtolower($uRole) }}">

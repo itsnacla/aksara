@@ -155,7 +155,7 @@
                     @if($student->user->photo)
                         <img src="{{ asset('storage/' . $student->user->photo) }}" alt="Photo">
                     @else
-                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 20pt;">👤</div>
+                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 20pt;"></div>
                     @endif
                 </div>
             </div>

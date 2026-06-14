@@ -213,7 +213,7 @@ class StudentLeaveResource extends Resource
                             $schoolName = strtoupper(\App\Models\SchoolSetting::current()->name);
                             $startDate = \Illuminate\Support\Carbon::parse($record->start_date)->format('d/m/Y');
                             
-                            $message = "📢 *PEMBERITAHUAN IZIN - $schoolName*\n\n";
+                            $message = "*PEMBERITAHUAN IZIN - $schoolName*\n\n";
                             $message .= "Yth. Orang Tua dari *$studentName*,\n\n";
                             $message .= "Permohonan izin untuk tanggal *$startDate* telah *DISETUJUI*.\n";
                             $message .= "Status presensi siswa otomatis diperbarui di sistem.\n\n";
@@ -251,7 +251,7 @@ class StudentLeaveResource extends Resource
                             $schoolName = strtoupper(\App\Models\SchoolSetting::current()->name);
                             $startDate = \Illuminate\Support\Carbon::parse($record->start_date)->format('d/m/Y');
                             
-                            $message = "📢 *PEMBERITAHUAN IZIN - $schoolName*\n\n";
+                            $message = "*PEMBERITAHUAN IZIN - $schoolName*\n\n";
                             $message .= "Yth. Orang Tua dari *$studentName*,\n\n";
                             $message .= "Permohonan izin untuk tanggal *$startDate* telah *DITOLAK*.\n\n";
                             $message .= "*Alasan:* " . $data['rejection_note'] . "\n\n";

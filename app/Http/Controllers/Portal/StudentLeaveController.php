@@ -41,15 +41,12 @@ class StudentLeaveController extends Controller
     public function create()
     {
         $user = Auth::user();
-        
         if (!$user->hasRole('wali')) {
-            return redirect()->route('leaves.index')->with('error', 'Hanya orang tua yang dapat mengajukan izin.');
+            return redirect()->route('dashboard');
         }
 
-        $parent = $user->parent;
-        $students = $parent->students()->with('user')->get();
-
-        return view('portal.leaves.create', compact('students'));
+        $children = $user->parent?->students()->with('user')->get() ?? collect();
+        return view('portal.leaves.create', compact('children'));
     }
 
     public function store(Request $request)
@@ -60,7 +57,7 @@ class StudentLeaveController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|min:10',
-            'attachment' => 'nullable|image|max:2048',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
         $user = Auth::user();
@@ -104,14 +101,14 @@ class StudentLeaveController extends Controller
                 ? $request->start_date 
                 : $request->start_date . ' s/d ' . $request->end_date;
 
-            $message = "📢 *NOTIFIKASI IZIN SISWA - $schoolName*\n\n";
+            $message = "*NOTIFIKASI IZIN SISWA - $schoolName*\n\n";
             $message .= "Yth. Bapak/Ibu *$teacher->kode_guru*,\n";
             $message .= "Pemberitahuan bahwa orang tua dari:\n\n";
-            $message .= "👤 *Siswa:* $studentName\n";
-            $message .= "📍 *Rombel:* $currentRombel->nama_rombel\n";
-            $message .= "📝 *Jenis:* $type\n";
-            $message .= "📅 *Waktu:* $dates\n";
-            $message .= "💡 *Alasan:* $request->reason\n\n";
+            $message .= "*Siswa:* $studentName\n";
+            $message .= "*Rombel:* $currentRombel->nama_rombel\n";
+            $message .= "*Jenis:* $type\n";
+            $message .= "*Waktu:* $dates\n";
+            $message .= "*Alasan:* $request->reason\n\n";
             $message .= "Mohon segera tinjau permohonan ini melalui Dashboard Aksara.\n";
             $message .= "--- _Powered by Aksara_ ---";
 
@@ -127,22 +124,6 @@ class StudentLeaveController extends Controller
         return redirect()->route('leaves.index')->with('success', 'Permohonan izin berhasil dikirim.');
     }
 
-    public function edit(StudentLeave $leave)
-    {
-        $user = Auth::user();
-        if ($leave->parent_id !== $user->parent->id) {
-            abort(403);
-        }
-
-        if ($leave->status !== 'rejected') {
-            return redirect()->route('leaves.index')->with('error', 'Hanya permohonan yang ditolak yang dapat diubah.');
-        }
-
-        $students = $user->parent->students()->with('user')->get();
-
-        return view('portal.leaves.edit', compact('leave', 'students'));
-    }
-
     public function update(Request $request, StudentLeave $leave)
     {
         $user = Auth::user();
@@ -156,7 +137,7 @@ class StudentLeaveController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|min:10',
-            'attachment' => 'nullable|image|max:2048',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
         $filePath = $leave->attachment;
@@ -185,18 +166,18 @@ class StudentLeaveController extends Controller
             $schoolName = strtoupper(SchoolSetting::current()->name);
             $studentName = $student->user->name;
 
-            $message = "📢 *REVISI IZIN SISWA - $schoolName*\n\n";
+            $message = "*REVISI IZIN SISWA - $schoolName*\n\n";
             $message .= "Yth. Bapak/Ibu *$teacher->kode_guru*,\n";
             $message .= "Orang tua telah mengirimkan REVISI permohonan izin untuk:\n\n";
-            $message .= "👤 *Siswa:* $studentName\n";
-            $message .= "📝 *Jenis:* " . strtoupper($request->type) . "\n";
-            $message .= "💡 *Alasan Baru:* $request->reason\n\n";
+            $message .= "*Siswa:* $studentName\n";
+            $message .= "*Jenis:* " . strtoupper($request->type) . "\n";
+            $message .= "*Alasan Baru:* $request->reason\n\n";
             $message .= "Mohon tinjau kembali melalui Dashboard Aksara.\n";
             $message .= "--- _Powered by Aksara_ ---";
 
             \App\Services\WAService::sendMessageAsync($teacher->no_whatsapp, $message);
         }
 
-        return redirect()->route('leaves.index')->with('success', 'Permohonan izin berhasil diperbarui.');
+        return back()->with('success', 'Permohonan izin berhasil diperbarui.');
     }
 }

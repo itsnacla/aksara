@@ -33,13 +33,46 @@
                 <a href="{{ route('leaves.index') }}" class="text-primary text-xs font-bold hover:underline">Lihat Semua</a>
             </div>
             <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-                <div class="p-10 text-center flex flex-col items-center justify-center">
-                    <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                @if($recentLeaves->count() > 0)
+                    <div class="divide-y divide-gray-100">
+                        @foreach($recentLeaves as $leave)
+                        <div class="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full {{ $leave->type === 'sakit' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500' }} flex items-center justify-center shrink-0">
+                                    @if($leave->type === 'sakit')
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    @else
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    @endif
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-sm text-gray-800">{{ strtoupper($leave->type) }}</h3>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">{{ $leave->start_date->format('d M') }} {{ $leave->start_date != $leave->end_date ? '- ' . $leave->end_date->format('d M') : '' }}</p>
+                                </div>
+                            </div>
+                            <div>
+                                @php
+                                    $statusClasses = [
+                                        'pending' => 'bg-gray-100 text-gray-600',
+                                        'approved' => 'bg-green-100 text-green-700',
+                                        'rejected' => 'bg-red-100 text-red-700',
+                                    ];
+                                @endphp
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold {{ $statusClasses[$leave->status] }}">
+                                    {{ strtoupper($leave->status) }}
+                                </span>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
-                    <p class="text-gray-500 text-sm font-medium">Buka menu Izin untuk melihat riwayat.</p>
-                    <a href="{{ route('leaves.create') }}" class="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/20 transition-colors">Ajukan Izin Baru</a>
-                </div>
+                @else
+                    <div class="p-10 text-center flex flex-col items-center justify-center">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        </div>
+                        <p class="text-gray-500 text-sm font-medium">Belum ada riwayat perizinan.</p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

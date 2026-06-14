@@ -182,6 +182,11 @@ class PortalController extends Controller
         $totalSubjects = $grades->unique('subject_id')->count();
         $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
 
+        $recentLeaves = StudentLeave::where('student_id', $studentId)
+            ->latest()
+            ->take(3)
+            ->get();
+
         return [
             'student' => $student,
             'studyGroup' => $studyGroup,
@@ -197,6 +202,7 @@ class PortalController extends Controller
             'recentNotifications' => $recentNotifications,
             'academicYear' => $activeYear,
             'publishedRapors' => $publishedRapors,
+            'recentLeaves' => $recentLeaves,
         ];
     }
 
@@ -341,6 +347,12 @@ class PortalController extends Controller
         $totalSubjects = $grades->unique('subject_id')->count();
         $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
 
+        $recentLeaves = StudentLeave::whereIn('student_id', $childIds)
+            ->with(['student.user'])
+            ->latest()
+            ->take(3)
+            ->get();
+
         return [
             'parent' => $user->parent,
             'children' => $childrenData,
@@ -354,6 +366,7 @@ class PortalController extends Controller
             'recentNotifications' => $recentNotifications,
             'academicYear' => $activeYear,
             'publishedRapors' => $publishedRapors,
+            'recentLeaves' => $recentLeaves,
         ];
     }
 

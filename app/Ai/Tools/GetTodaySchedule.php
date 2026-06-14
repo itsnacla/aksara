@@ -88,7 +88,7 @@ class GetTodaySchedule implements Tool
         $schedules = $query->get();
 
         if ($schedules->isEmpty()) {
-            return "📅 Tidak ada jadwal untuk hari {$dayNameId} ({$today->format('d-m-Y')}).";
+            return "Tidak ada jadwal untuk hari {$dayNameId} ({$today->format('d-m-Y')}).";
         }
 
         $result = $schedules->map(function ($schedule, $index) {
@@ -109,7 +109,7 @@ class GetTodaySchedule implements Tool
         // Sort by time
         usort($result, fn($a, $b) => strcmp(explode(' - ', $a['jam'])[0], explode(' - ', $b['jam'])[0]));
 
-        $responseText = "📅 **Jadwal Hari Ini** ({$dayNameId}, {$today->format('d-m-Y')})\n\n";
+        $responseText = "**Jadwal Hari Ini** ({$dayNameId}, {$today->format('d-m-Y')})\n\n";
         $responseText .= "| Jam | Mapel | Guru | Kelas | Ruangan |\n";
         $responseText .= "|-----|-------|------|-------|----------|\n";
         

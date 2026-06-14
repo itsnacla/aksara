@@ -1,102 +1,116 @@
 @extends('layouts.portal')
 
-@section('title', 'Buat Izin Siswa')
+@section('title', 'Buat Izin Baru')
 
 @section('content')
-<div class="max-w-3xl mx-auto space-y-8">
-    <div>
-        <a href="{{ route('leaves.index') }}" class="text-gray-400 hover:text-primary transition-colors flex items-center gap-2 mb-4 text-sm font-medium">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Kembali ke Daftar
-        </a>
-        <h1 class="text-4xl font-bold">Buat Izin Baru</h1>
-        <p class="text-gray-500">Ajukan permohonan izin atau keterangan sakit untuk anak Anda.</p>
-    </div>
-
-    @if(session('error'))
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-        {{ session('error') }}
-    </div>
-    @endif
-
-    <form action="{{ route('leaves.store') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-[2rem] p-8 md:p-12 shadow-sm space-y-8">
-        @csrf
+<div class="space-y-8" x-data="{ selectedFile: null }">
+    {{-- Hero Header --}}
+    <header class="flex justify-between items-center bg-primary rounded-3xl p-6 md:p-8 text-white shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+        <div class="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
         
-        <div class="space-y-6">
-            <!-- Student Selection -->
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Anak</label>
-                <select name="student_id" class="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-primary transition-all @error('student_id') ring-2 ring-red-500 @enderror">
-                    <option value="">-- Pilih --</option>
-                    @foreach($students as $student)
-                        <option value="{{ $student->id }}">{{ $student->user->name }} ({{ $student->nisn }})</option>
-                    @endforeach
-                </select>
-                @error('student_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
+        <div class="relative z-10 flex-1">
+            <h1 class="text-2xl md:text-3xl font-bold leading-tight mb-2">Ajukan Izin Baru</h1>
+            <p class="text-sm md:text-base text-white/80 max-w-md">Ajukan permohonan izin atau sakit untuk anak Anda dengan mengisi formulir di bawah ini.</p>
+        </div>
+    </header>
 
-            <!-- Type -->
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Izin</label>
-                <div class="flex gap-4">
-                    <label class="flex-1 cursor-pointer group">
-                        <input type="radio" name="type" value="sakit" class="hidden peer" checked>
-                        <div class="bg-gray-50 p-4 rounded-2xl text-center border-2 border-transparent peer-checked:border-primary peer-checked:bg-blue-50 transition-all">
-                            <span class="block font-bold">🤒 SAKIT</span>
-                        </div>
-                    </label>
-                    <label class="flex-1 cursor-pointer group">
-                        <input type="radio" name="type" value="izin" class="hidden peer">
-                        <div class="bg-gray-50 p-4 rounded-2xl text-center border-2 border-transparent peer-checked:border-primary peer-checked:bg-blue-50 transition-all">
-                            <span class="block font-bold">📝 IZIN</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Dates -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Mulai</label>
-                    <input type="date" name="start_date" value="{{ date('Y-m-d') }}" class="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-primary transition-all @error('start_date') ring-2 ring-red-500 @enderror">
-                    @error('start_date') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Selesai</label>
-                    <input type="date" name="end_date" value="{{ date('Y-m-d') }}" class="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-primary transition-all @error('end_date') ring-2 ring-red-500 @enderror">
-                    @error('end_date') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
-            </div>
-
-            <!-- Reason -->
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Alasan / Keterangan</label>
-                <textarea name="reason" rows="4" placeholder="Jelaskan alasan izin dengan detail..." class="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-primary transition-all @error('reason') ring-2 ring-red-500 @enderror"></textarea>
-                @error('reason') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
-
-            <!-- Attachment -->
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Unggah Bukti (Opsional)</label>
-                <div class="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center hover:border-primary transition-colors cursor-pointer relative group">
-                    <input type="file" name="attachment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                    <div class="space-y-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-gray-400 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <div class="bg-white rounded-[2rem] shadow-sm overflow-hidden p-6 md:p-8">
+        <form action="{{ route('leaves.store') }}" method="POST" enctype="multipart/form-data" class="max-w-2xl mx-auto">
+            @csrf
+            
+            @if($errors->any())
+                <div class="mb-8 bg-red-50 text-red-600 p-5 rounded-2xl border border-red-100 text-sm font-medium">
+                    <div class="flex items-center gap-3 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                         </svg>
-                        <p class="text-sm text-gray-500">Klik untuk unggah foto surat atau keterangan</p>
-                        <p class="text-xs text-gray-400">JPG, PNG (Maks 2MB)</p>
+                        <h4 class="font-bold">Gagal Menyimpan</h4>
+                    </div>
+                    <ul class="list-disc pl-8 space-y-1">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Anak <span class="text-red-500">*</span></label>
+                    <select name="student_id" required class="w-full rounded-xl border-gray-200 focus:border-primary focus:ring focus:ring-primary/20 transition-all text-sm py-3">
+                        <option value="">-- Pilih Anak --</option>
+                        @foreach($children as $child)
+                            <option value="{{ $child->id }}" {{ old('student_id', request('student_id')) == $child->id ? 'selected' : '' }}>{{ $child->user->name }} ({{ $child->currentStudyGroup()?->nama_rombel ?? 'Tanpa Rombel' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Perizinan <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="type" value="sakit" class="peer sr-only" required {{ old('type') == 'sakit' ? 'checked' : '' }}>
+                            <div class="p-4 rounded-xl border-2 border-gray-100 text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:bg-gray-50 transition-all">
+                                <span class="block font-bold text-gray-700 peer-checked:text-orange-700">SAKIT</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="type" value="izin" class="peer sr-only" required {{ old('type') == 'izin' ? 'checked' : '' }}>
+                            <div class="p-4 rounded-xl border-2 border-gray-100 text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 transition-all">
+                                <span class="block font-bold text-gray-700 peer-checked:text-blue-700">IZIN</span>
+                            </div>
+                        </label>
                     </div>
                 </div>
-                @error('attachment') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
-        </div>
 
-        <button type="submit" class="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-sm hover:shadow-sm hover:translate-y-[-2px] transition-all">
-            Kirim Permohonan Izin
-        </button>
-    </form>
+                <div class="grid grid-cols-2 gap-4 md:gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Mulai <span class="text-red-500">*</span></label>
+                        <input type="date" name="start_date" required min="{{ date('Y-m-d') }}" value="{{ old('start_date', date('Y-m-d')) }}" class="w-full rounded-xl border-gray-200 focus:border-primary focus:ring focus:ring-primary/20 transition-all text-sm py-3">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Selesai <span class="text-red-500">*</span></label>
+                        <input type="date" name="end_date" required min="{{ date('Y-m-d') }}" value="{{ old('end_date', date('Y-m-d')) }}" class="w-full rounded-xl border-gray-200 focus:border-primary focus:ring focus:ring-primary/20 transition-all text-sm py-3">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Alasan Lengkap <span class="text-red-500">*</span></label>
+                    <textarea name="reason" rows="4" required placeholder="Tuliskan alasan dengan jelas (minimal 10 karakter)..." class="w-full rounded-xl border-gray-200 focus:border-primary focus:ring focus:ring-primary/20 transition-all text-sm py-3 resize-none">{{ old('reason') }}</textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Bukti / Surat Keterangan (Opsional)</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-2xl hover:border-primary/50 transition-colors relative" :class="{'border-primary bg-primary/5': selectedFile}">
+                        <div class="space-y-2 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600 justify-center">
+                                <label for="file-upload" class="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary">
+                                    <span>Pilih Dokumen</span>
+                                    <input id="file-upload" name="attachment" type="file" class="sr-only" accept=".jpg,.jpeg,.png,.pdf" @change="selectedFile = $event.target.files[0] ? $event.target.files[0].name : null">
+                                </label>
+                                <p class="pl-1">atau seret ke sini</p>
+                            </div>
+                            <p class="text-xs text-gray-500">PNG, JPG, PDF maks. 5MB</p>
+                            <p x-show="selectedFile" x-text="'Terpilih: ' + selectedFile" class="text-sm text-primary font-bold mt-3 bg-white px-3 py-1 rounded-lg inline-block border border-primary/20 shadow-sm" style="display: none;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 flex gap-4 border-t border-gray-100 pt-8">
+                <a href="{{ route('leaves.index') }}" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3.5 rounded-xl transition-all text-center flex items-center justify-center">Batal</a>
+                <button type="submit" class="w-2/3 bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    Kirim Pengajuan
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection

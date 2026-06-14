@@ -54,9 +54,9 @@ class SendWhatsAppAttendanceNotification implements ShouldQueue
         $message = "🔔 *NOTIFIKASI PRESENSI $schoolName*\n\n";
         $message .= "Halo Ayah/Bunda,\n";
         $message .= "Alhamdulillah, Ananda *$name* telah melakukan presensi pada:\n\n";
-        $message .= "📅 *Hari/Tgl:* $date\n";
+        $message .= "*Hari/Tgl:* $date\n";
         $message .= "⏰ *Waktu:* $time WIB\n";
-        $message .= "📍 *Status:* " . strtoupper($status) . "\n\n";
+        $message .= "*Status:* " . strtoupper($status) . "\n\n";
         $message .= "Semoga Ananda senantiasa semangat dalam menuntut ilmu. Aamiin.\n\n";
         $message .= "--- _Powered by Aksara | Tateta_ ---";
 

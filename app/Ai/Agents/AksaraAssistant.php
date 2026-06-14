@@ -103,7 +103,7 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
             "\n" .
             "4. **FORMAT JAWABAN - STRUKTUR & VISUAL**:\n" .
             "   • Gunakan **Tabel Markdown** untuk data terstruktur\n" .
-            "   • Emoji yang tepat: 👤=siswa, 👨‍🏫=guru, 🗓️=jadwal, 📊=nilai, 📋=presensi, 🚨=warning\n" .
+
             "   • Langsung ke data, HINDARI basa-basi panjang\n" .
             "   • Jika ada multiple entries: gunakan tabel, jangan list\n" .
             "\n" .
@@ -121,7 +121,7 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
             "🎯 ROLE-BASED BEHAVIOR:\n" .
             $this->getRoleBasedContext($userRole, $userName) .
             "\n" .
-            "📊 RESPONSE QUALITY:\n" .
+            " RESPONSE QUALITY:\n" .
             "- Akurasi: 100% (data dari tools = TRUTH, tidak ada spekulasi)\n" .
             "- Kecepatan: Direct & concise, no fluff\n" .
             "- Relevance: Hanya jawab yang ditanya, jangan extra\n" .
@@ -137,7 +137,7 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
     {
         return match (true) {
             str_contains(strtolower($role), 'admin') => 
-                "👤 Role: ADMINISTRATOR (AKSES PENUH)\n" .
+                "Role: ADMINISTRATOR (AKSES PENUH)\n" .
                 "• Bisa lihat: SEMUA data (siswa, guru, kelas, nilai, presensi, rapor, ekstrakurikuler)\n" .
                 "• Tools tersedia: Semua tools (GetAbsentStudents, GetGraduatedStudents, GetStudentAnalytics, dll)\n" .
                 "• Contoh pertanyaan yang LANGSUNG DIJAWAB dengan data:\n" .
@@ -148,7 +148,7 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
                 "• Response: Teknis, data-heavy, ringkas",
 
             str_contains(strtolower($role), 'guru') || str_contains(strtolower($role), 'teacher') =>
-                "👨‍🏫 Role: GURU (AKSES KELAS PERWALIAN)\n" .
+                " Role: GURU (AKSES KELAS PERWALIAN)\n" .
                 "• Bisa lihat: Data siswa kelas perwalian SAJA (presensi, nilai, info siswa)\n" .
                 "• Tools: GetAbsentStudents (kelas sendiri), GetStudentAnalytics (kelas sendiri), GetClassroomInfo, GetTodaySchedule\n" .
                 "• Contoh pertanyaan:\n" .
@@ -197,7 +197,7 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
                 "• Response: Santai, ramah, bahasa anak muda",
 
             default =>
-                "👤 Role: GUEST (NO ACCESS)\n" .
+                "Role: GUEST (NO ACCESS)\n" .
                 "• Tidak boleh lihat data siswa/guru\n" .
                 "• Hanya bisa tanya info umum sekolah\n" .
                 "• Response: Ramah, tawarkan login"
@@ -210,7 +210,7 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
     public function tools(): iterable
     {
         return [
-            // 📊 CORE ACADEMIC TOOLS
+            //  CORE ACADEMIC TOOLS
             new GetStudentDetails($this->user),
             new GetAcademicData($this->user),
             new GetScheduleData($this->user),
