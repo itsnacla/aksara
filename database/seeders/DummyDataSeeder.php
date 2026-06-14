@@ -307,6 +307,7 @@ class DummyDataSeeder extends Seeder
         $endDate = now();
 
         $attendances = [];
+        $leaves = [];
 
         for ($date = clone $startDate; $date->lte($endDate); $date->addDay()) {
             if ($date->isWeekend()) {
@@ -336,12 +337,32 @@ class DummyDataSeeder extends Seeder
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
+
+                    if ($status === 'sakit' || $status === 'izin') {
+                        $leaves[] = [
+                            'student_id' => $student->id,
+                            'parent_id' => $student->parent_id,
+                            'study_group_id' => $sg->id,
+                            'type' => $status,
+                            'start_date' => $date->format('Y-m-d'),
+                            'end_date' => $date->format('Y-m-d'),
+                            'reason' => 'Siswa ' . $status . ' (dibuat otomatis oleh seeder)',
+                            'status' => 'approved',
+                            'approved_by' => 1, // Assume user ID 1 is an admin/teacher
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
                 }
             }
         }
 
         foreach (array_chunk($attendances, 500) as $chunk) {
             \App\Models\Attendance::insert($chunk);
+        }
+
+        foreach (array_chunk($leaves, 500) as $chunk) {
+            \App\Models\StudentLeave::insert($chunk);
         }
     }
 }

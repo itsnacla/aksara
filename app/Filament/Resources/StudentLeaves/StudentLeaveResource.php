@@ -77,10 +77,17 @@ class StudentLeaveResource extends Resource
                             ->required(fn (string $context) => $context === 'create')
                             ->disabled(fn (string $context) => $context !== 'create')
                             ->columnSpanFull(),
+                        \Filament\Forms\Components\ViewField::make('attachment_preview')
+                            ->label('Bukti Lampiran')
+                            ->view('filament.components.image-preview')
+                            ->visible(fn (string $context) => $context !== 'create')
+                            ->columnSpanFull(),
                         FileUpload::make('attachment')
                             ->label('Lampiran')
                             ->image()
-                            ->disabled(fn (string $context) => $context !== 'create')
+                            ->disk('public')
+                            ->directory('leaves')
+                            ->visible(fn (string $context) => $context === 'create')
                             ->columnSpanFull(),
                     ])->columns(2),
                 
@@ -104,8 +111,7 @@ class StudentLeaveResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
+        $columns = [
                 TextColumn::make('student.user.name')
                     ->label('Siswa')
                     ->searchable()
@@ -113,6 +119,10 @@ class StudentLeaveResource extends Resource
                 TextColumn::make('studyGroup.nama_rombel')
                     ->label('Rombel')
                     ->sortable(),
+                Tables\Columns\ImageColumn::make('attachment')
+                    ->label('Bukti')
+                    ->circular()
+                    ->defaultImageUrl(url('/images/placeholder.png')),
                 TextColumn::make('type')
                     ->label('Tipe')
                     ->badge()
@@ -136,8 +146,9 @@ class StudentLeaveResource extends Resource
                         'approved' => 'success',
                         'rejected' => 'danger',
                     }),
-            ])
-             ->filters([
+        ];
+
+        $filters = [
                 Tables\Filters\SelectFilter::make('academic_year')
                     ->label('Tahun Ajaran')
                     ->options(fn () => \App\Models\AcademicYear::query()
@@ -185,8 +196,9 @@ class StudentLeaveResource extends Resource
                                 fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
                             );
                     })
-            ])
-            ->actions([
+        ];
+
+        $actions = [
                 Action::make('approve')
                     ->label('Setujui')
                     ->icon('heroicon-m-check-circle')
@@ -262,13 +274,19 @@ class StudentLeaveResource extends Resource
                             \App\Services\WAService::sendMessageAsync($record->parent->no_whatsapp, $message);
                         }
                     }),
-                ViewAction::make(),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+        ];
+
+        $bulkActions = [
+            BulkActionGroup::make([
+                DeleteBulkAction::make(),
+            ]),
+        ];
+
+        return $table
+            ->columns($columns)
+            ->filters($filters)
+            ->actions($actions)
+            ->bulkActions($bulkActions);
     }
 
     /**
