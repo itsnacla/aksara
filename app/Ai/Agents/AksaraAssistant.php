@@ -18,6 +18,12 @@ use App\Ai\Tools\GetTodaySchedule;
 use App\Ai\Tools\SearchStudentByFilter;
 use App\Ai\Tools\AnalyzeDropoutRisk;
 use App\Ai\Tools\ClusterStudents;
+use App\Ai\Tools\GetSchoolSettings;
+use App\Ai\Tools\GetTeacherDirectory;
+use App\Ai\Tools\GetP5Data;
+use App\Ai\Tools\GetSubjectsData;
+use App\Ai\Tools\GetStudentLeaves;
+use App\Ai\Tools\GetCocurricularData;
 use App\Models\User;
 use Laravel\Ai\Attributes\MaxSteps;
 use Laravel\Ai\Attributes\Model;
@@ -83,8 +89,13 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
             "3. **TOOL MATCHING & CHAINING (Tanpa ID / Pencarian Langsung)**:\n" .
             "   • Jika ditanya nama (misal: 'Prediksi Budi'), otomatis gunakan tool dengan argumen nama tersebut. Tool sudah dirancang mencari dari nama langsung.\n" .
             "   • 'Siapa yang bolos?' → GetAbsentStudents\n" .
+            "   • 'Siapa yang sakit/izin/cuti?' → GetStudentLeaves\n" .
             "   • 'Jadwal hari ini?' → GetTodaySchedule\n" .
             "   • 'Siswa mana yang lulus?' → GetGraduatedStudents\n" .
+            "   • 'Siapa guru Matematika?' atau 'Siapa wali kelas?' → GetTeacherDirectory\n" .
+            "   • 'Apa visi misi sekolah?' atau 'Apa NPSN?' → GetSchoolSettings\n" .
+            "   • 'Tema P5 kelas X?' atau 'Kelompok P5 saya?' → GetP5Data\n" .
+            "   • 'Berapa KKM Fisika?' → GetSubjectsData\n" .
             "   • 'Top performer? Low performer?' → GetStudentAnalytics\n" .
             "   • 'Prediksi risiko dropout Budi' → AnalyzeDropoutRisk\n" .
             "   • 'Clustering kelas X IPA' → ClusterStudents\n" .
@@ -145,6 +156,9 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
                 "  - 'Top performer kelas saya?' → GetStudentAnalytics (type=top_performers)\n" .
                 "  - 'Jadwal hari ini?' → GetTodaySchedule\n" .
                 "  - 'Daftar siswa kelas saya' → GetClassroomInfo\n" .
+                "  - 'Siapa saja yang izin/sakit kelas saya?' → GetStudentLeaves\n" .
+                "  - 'Daftar kelompok P5' → GetP5Data\n" .
+                "  - 'Cari kontak guru' → GetTeacherDirectory\n" .
                 "• Response: Profesional, supportif, fokus pembelajaran",
 
             str_contains(strtolower($role), 'staff') =>
@@ -165,6 +179,8 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
                 "  - 'Berapa nilai anak saya?' → GetAcademicData\n" .
                 "  - 'Jadwal hari ini untuk anak saya?' → GetTodaySchedule\n" .
                 "  - 'Download rapor' → GetReportLink\n" .
+                "  - 'Status pengajuan izin anak saya?' → GetStudentLeaves\n" .
+                "  - 'Apa kelompok P5 anak saya?' → GetP5Data\n" .
                 "• Response: Ramah, mudah dipahami, data anak-focused",
 
             str_contains(strtolower($role), 'siswa') || str_contains(strtolower($role), 'student') =>
@@ -175,6 +191,9 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
                 "  - 'Jadwal aku hari ini apa aja?' → GetTodaySchedule\n" .
                 "  - 'Nilai saya berapa?' → GetAcademicData\n" .
                 "  - 'Download rapor' → GetReportLink\n" .
+                "  - 'Apa kelompok P5 saya?' → GetP5Data\n" .
+                "  - 'Apakah izin sakit saya di-approve?' → GetStudentLeaves\n" .
+                "  - 'Siapa nama wali kelas/kepala sekolah?' → GetTeacherDirectory\n" .
                 "• Response: Santai, ramah, bahasa anak muda",
 
             default =>
@@ -206,9 +225,17 @@ class AksaraAssistant implements Agent, Conversational, HasTools, HasMiddleware
             // 🔍 EXTENDED DATA TOOLS
             new GetClassroomInfo($this->user),
             new GetExtracurricularData($this->user),
+            new GetCocurricularData($this->user),
             new GetExamSchedule($this->user),
             new GetLearningObjectives($this->user),
             new SearchStudentByFilter($this->user),
+            new GetSubjectsData($this->user),
+            new GetStudentLeaves($this->user),
+            
+            // 🏫 MASTER DATA & SCHOOL KNOWLEDGE
+            new GetSchoolSettings($this->user),          // "Visi Misi, NPSN"
+            new GetTeacherDirectory($this->user),        // "Cari guru/wali kelas"
+            new GetP5Data($this->user),                  // "Data kelompok P5 Kurikulum Merdeka"
             
             // 🤖 DATA SCIENCE & PREDICTIVE TOOLS
             new AnalyzeDropoutRisk($this->user),         // "Prediksi risiko dropout"
