@@ -8,12 +8,16 @@ use Illuminate\Support\Facades\Log;
 
 class RegionService
 {
+    private static bool $isOffline = false;
+
     private static function fetchFromService(string $level, string $parent = '0'): array
     {
         $parent = trim((string)$parent);
         $cacheKey = "tateta_geo_v1_{$level}_{$parent}";
         
         return Cache::remember($cacheKey, 86400, function () use ($level, $parent) {
+            if (self::$isOffline) return [];
+
             $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
             
             try {
@@ -26,7 +30,7 @@ class RegionService
                 };
                 
                 if ($endpoint) {
-                    $response = Http::timeout(5)
+                    $response = Http::timeout(2)
                         ->withToken(env('TATETA_GEO_TOKEN'))
                         ->get("{$baseUrl}{$endpoint}");
                     if ($response->successful()) {
@@ -43,6 +47,7 @@ class RegionService
                     }
                 }
             } catch (\Exception $e) {
+                self::$isOffline = true;
                 Log::error("TatetaGeo is offline/unreachable: " . $e->getMessage());
             }
 
