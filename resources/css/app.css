@@ -23,6 +23,14 @@
 }
 
 @layer base {
+    /* Support for Filament Dark Mode */
+    .dark {
+        --color-surface: #18181b; /* Zinc-900 for background */
+        --color-surface-container-low: #27272a; /* Zinc-800 for sections */
+        --color-surface-container-lowest: #3f3f46; /* Zinc-700 for cards */
+        --color-on-surface: #fafafa; /* Zinc-50 for text */
+    }
+
     body {
         @apply !bg-[var(--color-surface)] !text-[var(--color-on-surface)] antialiased;
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -57,11 +65,11 @@
 
     /* Input Fields - Soft touch */
     .fi-input-wrp {
-        @apply !bg-[#f3f4f5] !border-none !rounded-lg !ring-0 !shadow-none;
+        @apply !bg-[var(--color-surface-container-low)] !border-none !rounded-lg !ring-0 !shadow-none;
     }
     
     .fi-input-wrp:focus-within {
-        @apply !ring-2 !ring-[#005da7]/40;
+        @apply !ring-2 !ring-[var(--color-primary)]/40;
     }
 
     /* Table Zebra Striping (No lines) */
