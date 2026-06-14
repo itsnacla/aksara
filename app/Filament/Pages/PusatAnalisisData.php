@@ -13,9 +13,13 @@ class PusatAnalisisData extends Page
 
     protected string $view = 'filament.pages.pusat-analisis-data';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('View:PusatAnalisisData') ?? false;
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
-        $roleName = auth()->user()?->roles?->first()?->name ?? 'siswa';
-        return in_array(strtolower($roleName), ['super_admin', 'admin', 'guru']);
+        return static::canAccess();
     }
 }

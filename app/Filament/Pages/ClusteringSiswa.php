@@ -19,6 +19,11 @@ class ClusteringSiswa extends Page implements HasForms
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
     protected string $view = 'filament.pages.clustering-siswa';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('View:ClusteringSiswa') ?? false;
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
@@ -45,8 +50,9 @@ class ClusteringSiswa extends Page implements HasForms
                         });
                         
                         $user = auth()->user();
-                        $roleName = strtolower($user->roles->first()?->name ?? '');
-                        if (str_contains($roleName, 'guru') && $user->teacher) {
+                        $isWaliKelas = $user->hasRole('guru') && $user->teacher
+                            && !$user->teacher->is_kepalasekolah && !$user->hasRole('super_admin');
+                        if ($isWaliKelas) {
                             $query->whereIn('id', $user->teacher->studyGroups()->pluck('id')->toArray());
                         }
 

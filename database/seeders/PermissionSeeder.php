@@ -429,6 +429,9 @@ class PermissionSeeder extends Seeder
             'View:LoginAs',
             'View:PerkembanganNilaiChart',
             'View:PerkembanganNilaiTable',
+            'View:PusatAnalisisData',
+            'View:ClusteringSiswa',
+            'View:PrediksiDropout',
         ];
 
         foreach ($permissions as $permission) {
@@ -784,6 +787,9 @@ class PermissionSeeder extends Seeder
             'View:DataProgressTableWidget',
             'View:EarlyWarningSystem',
             'View:StudentClustering',
+            'View:PusatAnalisisData',
+            'View:ClusteringSiswa',
+            'View:PrediksiDropout',
         ]);
 
         $role = Role::firstOrCreate([
@@ -860,7 +866,11 @@ class PermissionSeeder extends Seeder
             'View:DataProgressTableWidget',
             'View:EarlyWarningSystem',
             'View:StudentClustering',
+            'View:PusatAnalisisData',
+            'View:ClusteringSiswa',
+            'View:PrediksiDropout',
         ]);
+
 
         $role = Role::firstOrCreate([
             'name' => 'siswa',

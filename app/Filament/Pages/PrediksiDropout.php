@@ -20,6 +20,11 @@ class PrediksiDropout extends Page implements HasForms
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
     protected string $view = 'filament.pages.prediksi-dropout';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('View:PrediksiDropout') ?? false;
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
@@ -46,8 +51,9 @@ class PrediksiDropout extends Page implements HasForms
                         });
                         
                         $user = auth()->user();
-                        $roleName = strtolower($user->roles->first()?->name ?? '');
-                        if (str_contains($roleName, 'guru') && $user->teacher) {
+                        $isWaliKelas = $user->hasRole('guru') && $user->teacher
+                            && !$user->teacher->is_kepalasekolah && !$user->hasRole('super_admin');
+                        if ($isWaliKelas) {
                             $query->whereIn('id', $user->teacher->studyGroups()->pluck('id')->toArray());
                         }
 
