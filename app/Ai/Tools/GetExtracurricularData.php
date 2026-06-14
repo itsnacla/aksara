@@ -36,73 +36,53 @@ class GetExtracurricularData implements Tool
         $viewType = $request['view_type'] ?? 'all'; // 'all', 'my_extracurricular', 'student_grades'
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
 
-        // Get extracurricular list
-        if ($viewType === 'all' && (str_contains($roleName, 'admin') || str_contains($roleName, 'staff'))) {
+        $result = [];
+
+        // 1. Get student's enrolled extracurriculars if requested or if they are a student
+        if ($viewType === 'student_grades' || $viewType === 'my_extracurricular' || str_contains($roleName, 'siswa')) {
+            if (str_contains($roleName, 'siswa')) {
+                $studentId = $this->user->student?->id;
+            }
+
+            if ($studentId) {
+                $grades = ExtracurricularGrade::query()
+                    ->with(['student.user', 'extracurricular'])
+                    ->where('student_id', $studentId)
+                    ->get()
+                    ->map(function ($g) {
+                        /** @var ExtracurricularGrade $g */
+                        return [
+                            'ekstrakurikuler' => $g->extracurricular?->nama_ekstrakurikuler,
+                            'prestasi' => $g->prestasi,
+                            'nilai_rata_rata' => $g->nilai_rata_rata,
+                            'status' => $g->status ?? 'active',
+                        ];
+                    });
+                $result['student_extracurriculars'] = $grades;
+            }
+        }
+
+        // 2. Get list of all available extracurriculars if requested, OR if the student doesn't have any enrolled
+        if ($viewType === 'all' || (str_contains($roleName, 'siswa') && empty($result['student_extracurriculars']))) {
             $extracurriculars = Extracurricular::query()
-                ->with(['teacher.user', 'students.user'])
+                ->with(['teacher.user'])
                 ->get()
                 ->map(function ($e) {
+                    /** @var Extracurricular $e */
                     return [
                         'id' => $e->id,
                         'nama_ekstrakurikuler' => $e->nama_ekstrakurikuler,
                         'deskripsi' => $e->deskripsi,
                         'pembina' => $e->teacher?->user?->name,
-                        'jumlah_siswa' => $e->students->count(),
                         'kategori' => $e->kategori ?? 'N/A',
                     ];
                 });
 
-            return json_encode([
-                'extracurriculars' => $extracurriculars,
-                'total' => $extracurriculars->count(),
-            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            $result['available_extracurriculars'] = $extracurriculars;
+            $result['total_available'] = $extracurriculars->count();
         }
 
-        // Get student extracurricular grades
-        if ($viewType === 'student_grades' || str_contains($roleName, 'siswa')) {
-            if (str_contains($roleName, 'siswa')) {
-                $student = $this->user->student;
-                if (!$student) {
-                    return 'Data siswa tidak ditemukan.';
-                }
-                $studentId = $student->id;
-            } elseif (!$studentId && (str_contains($roleName, 'guru') || str_contains($roleName, 'admin'))) {
-                return 'Mohon tentukan student_id untuk melihat nilai ekstrakurikuler.';
-            }
-
-            $grades = ExtracurricularGrade::query()
-                ->with(['student.user', 'extracurricular'])
-                ->where('student_id', $studentId)
-                ->get()
-                ->map(function ($g) {
-                    return [
-                        'ekstrakurikuler' => $g->extracurricular?->nama_ekstrakurikuler,
-                        'prestasi' => $g->prestasi,
-                        'nilai_rata_rata' => $g->nilai_rata_rata,
-                        'status' => $g->status ?? 'active',
-                    ];
-                });
-
-            return json_encode([
-                'student_extracurriculars' => $grades,
-                'total' => $grades->count(),
-            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        }
-
-        // Default: List semua ekstrakurikuler
-        $extracurriculars = Extracurricular::query()
-            ->with(['teacher.user', 'students'])
-            ->get()
-            ->map(function ($e) {
-                return [
-                    'id' => $e->id,
-                    'nama' => $e->nama_ekstrakurikuler,
-                    'pembina' => $e->teacher?->user?->name,
-                    'anggota' => $e->students->count(),
-                ];
-            });
-
-        return json_encode($extracurriculars, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        return json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
     /**
