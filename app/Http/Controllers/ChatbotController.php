@@ -243,12 +243,12 @@ class ChatbotController extends Controller
         $name = $user->name ?? 'Pengguna';
 
         return match ($role) {
-            'admin' => "Halo, {$name}! 👋 Saya **Aksara AI**, asisten administrasi sekolah Anda. Saya bisa membantu dengan manajemen data siswa, guru, kelas, laporan, dan pengaturan sistem. Ada yang bisa saya bantu?",
-            'guru' => "Selamat datang, Pak/Bu {$name}! 👋 Saya **Aksara AI**. Saya bisa membantu dengan jadwal mengajar, input nilai, data presensi siswa, dan manajemen kelas Anda. Silakan bertanya!",
-            'staff' => "Halo, {$name}! 👋 Saya **Aksara AI**, asisten administrasi. Saya siap membantu dengan pengelolaan data sekolah, surat-menyurat, dan tugas administrasi lainnya.",
-            'orang_tua' => "Halo, Bapak/Ibu {$name}! 👋 Saya **Aksara AI**. Saya bisa membantu Anda memantau perkembangan akademik anak, presensi, nilai, dan informasi sekolah lainnya.",
-            'siswa' => "Halo, {$name}! 👋 Saya **Aksara AI**, asisten virtual sekolah. Saya bisa membantu kamu dengan jadwal, nilai, presensi, dan informasi sekolah lainnya. Mau tanya apa?",
-            default => "Halo! 👋 Saya **Aksara AI**, asisten virtual Aksara System. Ada yang bisa saya bantu?",
+            'admin' => "Halo, {$name}! Saya Aksara AI, asisten administrasi sekolah Anda. Saya bisa membantu dengan manajemen data siswa, guru, kelas, laporan, dan pengaturan sistem. Ada yang bisa saya bantu?",
+            'guru' => "Selamat datang, Pak/Bu {$name}! Saya Aksara AI. Saya bisa membantu dengan jadwal mengajar, input nilai, data presensi siswa, dan manajemen kelas Anda. Silakan bertanya!",
+            'staff' => "Halo, {$name}! Saya Aksara AI, asisten administrasi. Saya siap membantu dengan pengelolaan data sekolah, surat-menyurat, dan tugas administrasi lainnya.",
+            'orang_tua' => "Halo, Bapak/Ibu {$name}! Saya Aksara AI. Saya bisa membantu Anda memantau perkembangan akademik anak, presensi, nilai, dan informasi sekolah lainnya.",
+            'siswa' => "Halo, {$name}! Saya Aksara AI, asisten virtual sekolah. Saya bisa membantu kamu dengan jadwal, nilai, presensi, dan informasi sekolah lainnya. Mau tanya apa?",
+            default => "Halo! Saya Aksara AI, asisten virtual Aksara System. Ada yang bisa saya bantu?",
         };
     }
 
@@ -256,37 +256,37 @@ class ChatbotController extends Controller
     {
         return match ($role) {
             'admin' => [
-                ['label' => '👥 Data Siswa', 'message' => 'Bagaimana cara mengelola data siswa?'],
-                ['label' => '👨‍🏫 Data Guru', 'message' => 'Bagaimana cara mengelola data guru?'],
-                ['label' => '🚨 Prediksi Risiko', 'message' => 'Tolong prediksi risiko dropout untuk Budi'],
-                ['label' => '🧠 Clustering Siswa', 'message' => 'Lakukan clustering karakteristik belajar untuk kelas X IPA 1'],
+                ['label' => 'Kelola Siswa', 'message' => 'Bagaimana cara mengelola data siswa?'],
+                ['label' => 'Kelola Guru', 'message' => 'Bagaimana cara mengelola data guru?'],
+                ['label' => 'Analisis Risiko Dropout', 'message' => 'Tolong analisis risiko dropout untuk siswa bernama Budi'],
+                ['label' => 'Pengelompokan Siswa', 'message' => 'Lakukan pengelompokan (clustering) karakteristik belajar untuk kelas X IPA 1'],
             ],
             'guru' => [
-                ['label' => '📅 Jadwal Mengajar', 'message' => 'Bagaimana cara melihat jadwal mengajar saya?'],
-                ['label' => '📋 Presensi Kelas', 'message' => 'Bagaimana cara melihat presensi kelas saya?'],
-                ['label' => '🚨 Prediksi Risiko', 'message' => 'Tolong analisis risiko dropout untuk siswa perwalian saya'],
-                ['label' => '🧠 Clustering Siswa', 'message' => 'Lakukan clustering belajar untuk kelas perwalian saya'],
+                ['label' => 'Cek Jadwal', 'message' => 'Bagaimana cara melihat jadwal mengajar saya?'],
+                ['label' => 'Cek Presensi', 'message' => 'Bagaimana cara melihat presensi kelas saya?'],
+                ['label' => 'Analisis Risiko Siswa', 'message' => 'Tolong analisis risiko dropout untuk siswa perwalian saya'],
+                ['label' => 'Pengelompokan Siswa', 'message' => 'Lakukan pengelompokan karakteristik belajar untuk kelas perwalian saya'],
             ],
             'staff' => [
-                ['label' => '📄 Surat', 'message' => 'Bagaimana cara mengelola surat-menyurat?'],
-                ['label' => '👥 Data Master', 'message' => 'Bagaimana cara mengelola data master?'],
-                ['label' => '📊 Rekap', 'message' => 'Bagaimana cara membuat rekap data?'],
-                ['label' => '🔔 Pengumuman', 'message' => 'Bagaimana cara membuat pengumuman?'],
+                ['label' => 'Manajemen Surat', 'message' => 'Bagaimana cara mengelola surat-menyurat?'],
+                ['label' => 'Data Master', 'message' => 'Bagaimana cara mengelola data master sekolah?'],
+                ['label' => 'Rekapitulasi Data', 'message' => 'Bagaimana cara membuat rekapitulasi data?'],
+                ['label' => 'Buat Pengumuman', 'message' => 'Bagaimana cara membuat pengumuman?'],
             ],
             'orang_tua' => [
-                ['label' => '📊 Nilai Anak', 'message' => 'Bagaimana cara melihat nilai anak saya?'],
-                ['label' => '📋 Presensi Anak', 'message' => 'Bagaimana cara melihat presensi anak saya?'],
-                ['label' => '📄 Rapor', 'message' => 'Bagaimana cara mengunduh rapor anak saya?'],
-                ['label' => '📅 Jadwal', 'message' => 'Bagaimana jadwal pelajaran anak saya?'],
+                ['label' => 'Lihat Nilai Anak', 'message' => 'Tolong tampilkan nilai anak saya'],
+                ['label' => 'Cek Kehadiran', 'message' => 'Tolong tampilkan data presensi anak saya'],
+                ['label' => 'Unduh Rapor Digital', 'message' => 'Bagaimana cara mengunduh rapor anak saya?'],
+                ['label' => 'Cek Jadwal Anak', 'message' => 'Bagaimana jadwal pelajaran anak saya hari ini?'],
             ],
             'siswa' => [
-                ['label' => '📅 Jadwal', 'message' => 'Bagaimana cara melihat jadwal saya?'],
-                ['label' => '📊 Nilai', 'message' => 'Bagaimana cara melihat nilai saya?'],
-                ['label' => '📋 Presensi', 'message' => 'Bagaimana cara melihat presensi saya?'],
-                ['label' => '📄 Rapor', 'message' => 'Bagaimana cara mengunduh rapor saya?'],
+                ['label' => 'Lihat Jadwal Saya', 'message' => 'Bagaimana cara melihat jadwal pelajaran saya?'],
+                ['label' => 'Lihat Nilai Saya', 'message' => 'Bagaimana cara melihat nilai ujian dan tugas saya?'],
+                ['label' => 'Cek Kehadiran Saya', 'message' => 'Bagaimana cara melihat data presensi saya?'],
+                ['label' => 'Unduh Rapor Digital', 'message' => 'Bagaimana cara mengunduh rapor digital saya?'],
             ],
             default => [
-                ['label' => '❓ Bantuan', 'message' => 'Apa saja yang bisa kamu bantu?'],
+                ['label' => 'Bantuan Fitur', 'message' => 'Apa saja yang bisa kamu bantu dalam aplikasi ini?'],
             ],
         };
     }
@@ -341,7 +341,7 @@ class ChatbotController extends Controller
             default => "Berikan jawaban yang ramah dan informatif.",
         };
 
-        return $base . $roleContext . " Jika kamu memerlukan data spesifik untuk menjawab pertanyaan (seperti nilai, jadwal, atau daftar siswa), gunakan tool yang tersedia. JANGAN menebak data jika tidak ada.";
+        return $base . $roleContext . " Aturan Penting: 1. Kamu HARUS mampu menjawab APAPUN terkait aplikasi ini asalkan sesuai dengan wewenang Role pengguna. 2. Jika kamu memerlukan data spesifik untuk menjawab pertanyaan (seperti nilai, jadwal, atau kehadiran), gunakan tool yang tersedia. 3. JANGAN MENEBAK DATA jika tidak ada. 4. Sesuaikan respon dengan Role, contoh: jika orang tua menanyakan nilai/rapor yang belum 'published' (is_published = false), beri tahu bahwa nilai tersebut belum dipublikasikan oleh guru/admin, jadi belum bisa diakses. 5. Jawablah langsung pada intinya.";
     }
 
     /**
@@ -729,10 +729,10 @@ class ChatbotController extends Controller
         };
 
         $commonResponses = [
-            'halo' => 'Halo! 👋 Ada yang bisa saya bantu?',
-            'hai' => 'Hai! 👋 Silakan tanyakan apa saja tentang Aksara System!',
-            'terima kasih' => 'Sama-sama! Senang bisa membantu. 😊',
-            'bantuan' => 'Saya bisa membantu dengan pertanyaan seputar Aksara System. Coba tanyakan tentang fitur yang ingin Anda gunakan!',
+            'halo' => 'Halo! Ada yang bisa saya bantu terkait Aksara System?',
+            'hai' => 'Hai! Silakan tanyakan apa saja tentang Aksara System!',
+            'terima kasih' => 'Sama-sama! Senang bisa membantu.',
+            'bantuan' => 'Saya bisa membantu menjawab apa saja terkait aplikasi Aksara System ini sesuai dengan role Anda. Coba tanyakan spesifik yang Anda butuhkan!',
         ];
 
         foreach ($roleResponses as $keyword => $reply) {
@@ -744,11 +744,11 @@ class ChatbotController extends Controller
         }
 
         return match ($role) {
-            'admin' => 'Sebagai admin, Anda bisa mengelola semua data sekolah melalui panel admin di /admin.',
-            'guru' => 'Untuk bantuan tentang jadwal, nilai, atau presensi, silakan tanyakan secara spesifik.',
-            'staff' => 'Untuk bantuan administrasi, silakan tanyakan tentang pengelolaan data yang Anda butuhkan.',
-            'orang_tua' => 'Saya bisa membantu dengan informasi nilai, presensi, rapor, dan jadwal anak Anda.',
-            'siswa' => 'Saya bisa membantu dengan info jadwal, nilai, presensi, dan rapor. Coba tanyakan lebih spesifik ya! 😊',
+            'admin' => 'Sebagai admin, Anda memiliki akses penuh. Tanyakan apa saja mengenai laporan, data sekolah, atau penggunaan sistem.',
+            'guru' => 'Sebagai guru, silakan tanyakan spesifik seputar manajemen kelas, penginputan nilai, atau jadwal Anda.',
+            'staff' => 'Untuk bantuan administrasi dan pengelolaan data master sekolah, tanyakan hal yang spesifik.',
+            'orang_tua' => 'Saya dapat melayani pertanyaan Anda seputar perkembangan akademik anak Anda, absensi, rapor yang sudah dipublish, maupun jadwal.',
+            'siswa' => 'Saya siap menjawab segala rasa penasaranmu tentang jadwal, absensi, atau fitur lain di Aksara System!',
             default => 'Silakan tanyakan tentang fitur Aksara System yang ingin Anda gunakan.',
         };
     }

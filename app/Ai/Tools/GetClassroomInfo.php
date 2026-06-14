@@ -46,9 +46,9 @@ class GetClassroomInfo implements Tool
             }
             
             if ($studyGroupId) {
-                $query->where('wali_kelas_id', $teacher->id)->where('id', $studyGroupId);
+                $query->where('walikelas_id', $teacher->id)->where('id', $studyGroupId);
             } else {
-                $query->where('wali_kelas_id', $teacher->id);
+                $query->where('walikelas_id', $teacher->id);
             }
         } elseif (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;

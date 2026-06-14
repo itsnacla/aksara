@@ -343,6 +343,15 @@ function initChatbot() {
             e.preventDefault();
             const message = input.value.trim();
             if (!message) return;
+            
+            // Hapus chips jika pengguna mengetik pesan manual
+            const chips = document.querySelector(".chatbot-chips");
+            if (chips) {
+                chips.style.opacity = "0";
+                chips.style.transition = "all 0.3s";
+                setTimeout(() => chips.remove(), 300);
+            }
+
             addMessage(message, true);
             input.value = "";
             input.disabled = true;
@@ -371,12 +380,11 @@ function initChatbot() {
                     const data = await response.json();
                     if (data.conversation_id) {
                         currentConversationId = data.conversation_id;
-                        setupEcho(data.conversation_id);
+                        // setupEcho(data.conversation_id); // Optional: keep for multi-tab if needed
                     }
-                    // Only add message if it's not already handled by Echo or if Echo is not active
-                    if (!window.Echo || !data.conversation_id) {
-                        addMessage(data.reply);
-                    }
+                    
+                    // Selalu tambahkan pesan dari HTTP response agar dijamin muncul!
+                    addMessage(data.reply);
                 } else {
                     addMessage(
                         "Maaf, terjadi kesalahan. Silakan coba lagi. 🙏",

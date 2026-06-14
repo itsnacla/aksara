@@ -35,8 +35,11 @@ class GetAbsentStudents implements Tool
         $studyGroupId = $request['study_group_id'] ?? null;
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
 
-        // Parse period to date range
         $now = now();
+        $month = $request['month'] ?? $now->month;
+        $year = $request['year'] ?? $now->year;
+
+        // Parse period to date range
         $dateRange = match ($period) {
             'today' => [
                 $now->copy()->startOfDay(),
@@ -47,8 +50,8 @@ class GetAbsentStudents implements Tool
                 $now->copy()->endOfWeek(),
             ],
             'month' => [
-                $now->copy()->startOfMonth(),
-                $now->copy()->endOfMonth(),
+                \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth(),
+                \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth(),
             ],
             default => [
                 $now->copy()->startOfDay(),
@@ -58,8 +61,8 @@ class GetAbsentStudents implements Tool
 
         $query = Attendance::query()
             ->with(['student.user', 'studyGroup'])
-            ->where('status', 'A') // Alfa/Absent
-            ->whereBetween('created_at', $dateRange);
+            ->where('status', 'alpha') // alpha = bolos
+            ->whereBetween('tanggal', $dateRange);
 
         // Role-based filtering
         if (str_contains($roleName, 'guru')) {
@@ -89,8 +92,8 @@ class GetAbsentStudents implements Tool
             $studentData = $absenceList->map(fn($a) => [
                 'nama' => $a->student?->user?->name,
                 'nisn' => $a->student?->nisn,
-                'tanggal' => $a->created_at->format('d-m-Y'),
-                'jam' => $a->created_at->format('H:i'),
+                'tanggal' => \Carbon\Carbon::parse($a->tanggal)->format('d-m-Y'),
+                'status' => $a->status,
             ])->toArray();
 
             $result[] = [
@@ -113,7 +116,9 @@ class GetAbsentStudents implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'period' => $schema->string()->description('Period: "today", "week", atau "month"'),
+            'period' => $schema->string()->description('Pilih salah satu: "today", "week", atau "month". Jika spesifik bulan/tahun, gunakan "month".'),
+            'month' => $schema->integer()->description('Opsional. Angka bulan (1-12). Contoh: untuk April, isi 4.'),
+            'year' => $schema->integer()->description('Opsional. Angka tahun. Contoh: 2026.'),
             'study_group_id' => $schema->integer()->description('ID rombel/kelas (opsional, untuk admin/staff)'),
         ];
     }

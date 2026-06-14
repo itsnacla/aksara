@@ -308,7 +308,7 @@ class PortalController extends Controller
      */
     private function getParentDashboardData($user): array
     {
-        $childIds = $user->parent?->students()->pluck('id') ?? [];
+        $childIds = $user->parent?->students()->pluck('id')->toArray() ?? [];
         $activeYear = AcademicYear::where('is_active', true)->first();
         
         $cacheKey = "parent_dashboard_" . implode('_', $childIds) . "_" . ($activeYear ? $activeYear->id : '0');

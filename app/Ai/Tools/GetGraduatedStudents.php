@@ -42,18 +42,17 @@ class GetGraduatedStudents implements Tool
 
         $query = Student::query()
             ->with(['user', 'studyGroups.level', 'parent.user', 'studyGroups.academicYear'])
-            ->where('status', 'lulus') // or 'graduated'
-            ->whereNotNull('tanggal_lulus'); // Assume there's a graduation date field
+            ->where('status', 'lulus');
 
         if ($year) {
-            $query->whereYear('tanggal_lulus', $year);
+            $query->whereYear('updated_at', $year); // Using updated_at as proxy for graduation year
         }
 
         if ($levelId) {
             $query->whereHas('studyGroups', fn($q) => $q->where('level_id', $levelId));
         }
 
-        $graduates = $query->orderByDesc('tanggal_lulus')->limit($limit)->get();
+        $graduates = $query->orderByDesc('updated_at')->limit($limit)->get();
 
         if ($graduates->isEmpty()) {
             return '📚 Tidak ada siswa yang lulus dengan kriteria pencarian tersebut.';
@@ -70,8 +69,8 @@ class GetGraduatedStudents implements Tool
                 'nisn' => $student->nisn,
                 'kelas_terakhir' => $lastStudyGroup?->nama_rombel,
                 'level' => $lastStudyGroup?->level?->nama_tingkatan,
-                'tahun_lulus' => optional($student->tanggal_lulus)->format('Y') ?? 'N/A',
-                'tanggal_lulus' => optional($student->tanggal_lulus)->format('d-m-Y') ?? 'N/A',
+                'tahun_lulus' => optional($student->updated_at)->format('Y') ?? 'N/A',
+                'tanggal_lulus' => optional($student->updated_at)->format('d-m-Y') ?? 'N/A',
                 'status_final' => 'Lulus',
                 'orang_tua' => $student->parent?->user?->name,
             ];
