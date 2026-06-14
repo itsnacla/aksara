@@ -200,7 +200,7 @@ class PortalController extends Controller
         ];
     }
 
-    private function getStudentAttendancePercentage(int $studentId, array $stats): int
+    private function getStudentAttendancePercentage(?int $studentId, array $stats): int
     {
         $totalAttendances = Attendance::where('student_id', $studentId)
             ->whereMonth('tanggal', now()->month)
@@ -209,14 +209,14 @@ class PortalController extends Controller
         return $totalAttendances > 0 ? (int) round(($totalHadir / $totalAttendances) * 100) : 0;
     }
 
-    private function getStudentGrades(int $studentId, $activeYear)
+    private function getStudentGrades(?int $studentId, $activeYear)
     {
         return Grade::where('student_id', $studentId)
             ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
             ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
     }
 
-    private function getStudentAttendanceStats(int $studentId): array
+    private function getStudentAttendanceStats(?int $studentId): array
     {
         return Attendance::where('student_id', $studentId)
             ->whereMonth('tanggal', now()->month)
@@ -226,7 +226,7 @@ class PortalController extends Controller
             ->toArray();
     }
 
-    private function getStudentRecentNotifications(int $studentId)
+    private function getStudentRecentNotifications(?int $studentId)
     {
         return Notification::where('student_id', $studentId)
             ->latest()
@@ -234,7 +234,7 @@ class PortalController extends Controller
             ->get();
     }
 
-    private function getStudentPublishedRapors(int $studentId)
+    private function getStudentPublishedRapors(?int $studentId)
     {
         return StudentRapor::with(['academicYear'])
             ->where('student_id', $studentId)
@@ -243,7 +243,7 @@ class PortalController extends Controller
             ->get();
     }
 
-    private function getStudentRecentGrades(int $studentId)
+    private function getStudentRecentGrades(?int $studentId)
     {
         return Grade::where('student_id', $studentId)
             ->with(['subject'])
@@ -261,7 +261,7 @@ class PortalController extends Controller
         return $gradeValues->count() > 0 ? round($gradeValues->avg(), 1) : 0;
     }
 
-    private function getStudentAttendanceTrend(int $studentId): array
+    private function getStudentAttendanceTrend(?int $studentId): array
     {
         return \Illuminate\Support\Facades\Cache::remember("attendance_trend_{$studentId}", 3600, function () use ($studentId) {
             $trend = [];

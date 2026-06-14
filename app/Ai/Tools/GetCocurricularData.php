@@ -30,7 +30,7 @@ class GetCocurricularData implements Tool
             return 'Error: User context missing.';
         }
 
-        $fase = $request['fase'] ?? null;
+        $fase = isset($request['fase']) ? (string) $request['fase'] : null;
 
         $query = Cocurricular::query();
 

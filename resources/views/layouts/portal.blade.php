@@ -351,6 +351,7 @@
             const profileModal = document.getElementById('profileModal');
             const closeProfileBtn = document.getElementById('closeProfileBtn');
             const closeProfileBtn2 = document.getElementById('closeProfileBtn2');
+            const openProfileBtn2 = document.getElementById('openProfileBtn2');
 
             // Toggle Dropdown
             userDropdownBtn.addEventListener('click', (e) => {
@@ -373,6 +374,14 @@
                 profileModal.classList.remove('opacity-0', 'pointer-events-none');
                 profileModal.firstElementChild.classList.remove('scale-95');
             });
+            
+            if (openProfileBtn2) {
+                openProfileBtn2.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    profileModal.classList.remove('opacity-0', 'pointer-events-none');
+                    profileModal.firstElementChild.classList.remove('scale-95');
+                });
+            }
 
             const closeProfile = () => {
                 profileModal.classList.add('opacity-0', 'pointer-events-none');
