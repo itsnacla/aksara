@@ -58,33 +58,8 @@ class GetGraduatedStudents implements Tool
             return '📚 Tidak ada siswa yang lulus dengan kriteria pencarian tersebut.';
         }
 
-        $result = $graduates->map(function ($student) {
-            $lastStudyGroup = $student->studyGroups()
-                ->orderByDesc('academic_year_id')
-                ->first();
-
-            return [
-                'id' => $student->id,
-                'nama' => $student->user->name,
-                'nisn' => $student->nisn,
-                'kelas_terakhir' => $lastStudyGroup?->nama_rombel,
-                'level' => $lastStudyGroup?->level?->nama_tingkatan,
-                'tahun_lulus' => optional($student->updated_at)->format('Y') ?? 'N/A',
-                'tanggal_lulus' => optional($student->updated_at)->format('d-m-Y') ?? 'N/A',
-                'status_final' => 'Lulus',
-                'orang_tua' => $student->parent?->user?->name,
-            ];
-        })->toArray();
-
-        // Calculate statistics
-        $byYear = collect($result)->groupBy('tahun_lulus');
-        $stats = [];
-        foreach ($byYear as $year => $grads) {
-            $stats[] = [
-                'tahun' => $year,
-                'jumlah' => count($grads),
-            ];
-        }
+        $result = $this->formatGraduates($graduates);
+        $stats = $this->calculateStatistics($result);
 
         return json_encode([
             'total_graduated' => count($result),
@@ -103,5 +78,42 @@ class GetGraduatedStudents implements Tool
             'level_id' => $schema->integer()->description('Filter by level/tingkat (1=SD, 2=SMP, 3=SMA)'),
             'limit' => $schema->integer()->description('Jumlah hasil maksimal (default: 50)'),
         ];
+    }
+
+    private function formatGraduates($graduates): array
+    {
+        $result = [];
+        foreach ($graduates as $student) {
+            /** @var Student $student */
+            $lastStudyGroup = $student->studyGroups()
+                ->orderByDesc('academic_year_id')
+                ->first();
+
+            $result[] = [
+                'id' => $student->id,
+                'nama' => $student->user->name,
+                'nisn' => $student->nisn,
+                'kelas_terakhir' => $lastStudyGroup?->nama_rombel,
+                'level' => $lastStudyGroup?->level?->nama_tingkatan,
+                'tahun_lulus' => optional($student->updated_at)->format('Y') ?? 'N/A',
+                'tanggal_lulus' => optional($student->updated_at)->format('d-m-Y') ?? 'N/A',
+                'status_final' => 'Lulus',
+                'orang_tua' => $student->parent?->user?->name,
+            ];
+        }
+        return $result;
+    }
+
+    private function calculateStatistics(array $result): array
+    {
+        $byYear = collect($result)->groupBy('tahun_lulus');
+        $stats = [];
+        foreach ($byYear as $year => $grads) {
+            $stats[] = [
+                'tahun' => $year,
+                'jumlah' => count($grads),
+            ];
+        }
+        return $stats;
     }
 }

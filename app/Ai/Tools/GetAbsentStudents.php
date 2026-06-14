@@ -71,7 +71,7 @@ class GetAbsentStudents implements Tool
                 return 'Data guru tidak ditemukan.';
             }
             // Guru hanya bisa lihat absent di kelas perwalian-nya
-            $query->whereHas('studyGroup', fn($q) => $q->where('wali_kelas_id', $teacher->id));
+            $query->whereHas('studyGroup', fn($q) => $q->where('walikelas_id', $teacher->id));
         } elseif ($studyGroupId && (str_contains($roleName, 'admin') || str_contains($roleName, 'staff'))) {
             $query->where('study_group_id', $studyGroupId);
         } elseif (!str_contains($roleName, 'admin') && !str_contains($roleName, 'staff') && !str_contains($roleName, 'guru')) {
@@ -85,23 +85,7 @@ class GetAbsentStudents implements Tool
         }
 
         // Group by class for better readability
-        $groupedByClass = $absents->groupBy(fn($a) => $a->studyGroup?->nama_rombel ?? 'Unknown');
-
-        $result = [];
-        foreach ($groupedByClass as $className => $absenceList) {
-            $studentData = $absenceList->map(fn($a) => [
-                'nama' => $a->student?->user?->name,
-                'nisn' => $a->student?->nisn,
-                'tanggal' => \Carbon\Carbon::parse($a->tanggal)->format('d-m-Y'),
-                'status' => $a->status,
-            ])->toArray();
-
-            $result[] = [
-                'kelas' => $className,
-                'jumlah_bolos' => count($studentData),
-                'siswa' => $studentData,
-            ];
-        }
+        $result = $this->formatAbsentStudents($absents);
 
         return json_encode([
             'period' => $period,
@@ -121,5 +105,34 @@ class GetAbsentStudents implements Tool
             'year' => $schema->integer()->description('Opsional. Angka tahun. Contoh: 2026.'),
             'study_group_id' => $schema->integer()->description('ID rombel/kelas (opsional, untuk admin/staff)'),
         ];
+    }
+
+    private function formatAbsentStudents(\Illuminate\Support\Collection $absents): array
+    {
+        $groupedByClass = $absents->groupBy(function ($a) {
+            /** @var Attendance $a */
+            return $a->studyGroup?->nama_rombel ?? 'Unknown';
+        });
+
+        $result = [];
+        foreach ($groupedByClass as $className => $absenceList) {
+            $studentData = $absenceList->map(function ($a) {
+                /** @var Attendance $a */
+                return [
+                    'nama' => $a->student?->user?->name,
+                    'nisn' => $a->student?->nisn,
+                    'tanggal' => \Carbon\Carbon::parse($a->tanggal)->format('d-m-Y'),
+                    'status' => $a->status,
+                ];
+            })->toArray();
+
+            $result[] = [
+                'kelas' => $className,
+                'jumlah_bolos' => count($studentData),
+                'siswa' => $studentData,
+            ];
+        }
+
+        return $result;
     }
 }
