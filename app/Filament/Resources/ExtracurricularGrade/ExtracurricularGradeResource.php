@@ -158,6 +158,17 @@ class ExtracurricularGradeResource extends Resource
                         }
                     }),
 
+                SelectFilter::make('study_group_id')
+                    ->label('Rombel')
+                    ->options(fn() => \App\Models\StudyGroup::pluck('nama_rombel', 'id'))
+                    ->query(function ($query, array $data) {
+                        if (!empty($data['value'])) {
+                            $query->whereHas('student.studyGroups', function ($q) use ($data) {
+                                $q->where('study_groups.id', $data['value']);
+                            });
+                        }
+                    }),
+
                 SelectFilter::make('predikat')
                     ->label('Predikat')
                     ->options(ExtracurricularGrade::$predikatOptions),

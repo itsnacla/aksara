@@ -64,19 +64,26 @@ class DataProgressStatsWidget extends BaseWidget
 
         return $query->withCount([
             'students',
-            'schedules' => function ($q) {
-                $q->whereHas('subject', function ($sq) {
-                    $sq->where('is_graded', true);
-                });
-            }
+            'schedules'
         ])->get();
     }
 
     private function getGradeProgressStat($activeYear, $studyGroups): Stat
     {
         $expectedGrades = 0;
+        
+        $gradedSubjectsPerGroup = \App\Models\Schedule::select('study_group_id')
+            ->selectRaw('COUNT(DISTINCT subject_id) as subjects_count')
+            ->whereIn('study_group_id', $studyGroups->pluck('id'))
+            ->whereHas('subject', function ($sq) {
+                $sq->where('is_graded', true);
+            })
+            ->groupBy('study_group_id')
+            ->pluck('subjects_count', 'study_group_id');
+
         foreach ($studyGroups as $sg) {
-            $expectedGrades += ($sg->students_count * $sg->schedules_count);
+            $gradedSubjectsCount = $gradedSubjectsPerGroup[$sg->id] ?? 0;
+            $expectedGrades += ($sg->students_count * $gradedSubjectsCount);
         }
         $currentGrades = Grade::where('academic_year_id', $activeYear->id)
             ->whereIn('study_group_id', $studyGroups->pluck('id'))

@@ -11,10 +11,8 @@ use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudentGrade;
 use App\Models\StudentRapor;
-use App\Models\StudyGroup;
 use App\Models\Subject;
 use App\Models\Teacher;
-use App\Models\TimeSlot;
 use Illuminate\Database\Seeder;
 
 class GradesAndReportsSeeder extends Seeder
@@ -37,8 +35,7 @@ class GradesAndReportsSeeder extends Seeder
 
         // Seed prerequisite data
         $this->seedLearningObjectives();
-        $this->seedSchedules();
-        
+
         // Seed grading data
         $this->seedSubjectGrades();
         $this->seedLearningObjectiveGrades();
@@ -92,71 +89,6 @@ class GradesAndReportsSeeder extends Seeder
 
         $objectiveCount = LearningObjective::where('academic_year_id', $this->academicYear->id)->count();
         $this->command->line("✓ Created {$objectiveCount} learning objectives");
-    }
-
-    /**
-     * Seed Schedule (Jadwal Mengajar) untuk setiap mata pelajaran di rombel
-     */
-    protected function seedSchedules(): void
-    {
-        $this->command->info('📅 Seeding Schedules (Jadwal Mengajar)...');
-
-        $studyGroups = StudyGroup::where('academic_year_id', $this->academicYear->id)->get();
-        $subjects = Subject::all();
-        $teachers = Teacher::where('is_walikelas', false)->where('status', 'aktif')->get();
-        $timeSlots = TimeSlot::where('is_istirahat', false)->orderBy('urutan')->get();
-
-        if ($timeSlots->isEmpty() || $teachers->isEmpty()) {
-            $this->command->warn('⚠ No time slots or teachers found, skipping schedules');
-            return;
-        }
-
-        $dayOfWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-        $dayIndex = 0;
-        $slotIndex = 0;
-
-        foreach ($studyGroups as $studyGroup) {
-            $walikelas = Teacher::find($studyGroup->walikelas_id);
-            $isActiveWalikelas = $walikelas && $walikelas->status === 'aktif';
-
-            foreach ($subjects as $subject) {
-                $existingSchedule = Schedule::where([
-                    'study_group_id' => $studyGroup->id,
-                    'subject_id' => $subject->id,
-                ])->first();
-
-                if (!$existingSchedule) {
-                    $teacherId = null;
-
-                    if ($subject->is_umum && $isActiveWalikelas) {
-                        $teacherId = $studyGroup->walikelas_id;
-                    } else if ($teachers->isNotEmpty()) {
-                        $teacherId = $teachers->random()->id;
-                    }
-
-                    if ($teacherId) {
-                        $timeSlot = $timeSlots[$slotIndex % $timeSlots->count()];
-
-                        Schedule::create([
-                            'study_group_id' => $studyGroup->id,
-                            'subject_id' => $subject->id,
-                            'teacher_id' => $teacherId,
-                            'hari' => $dayOfWeek[$dayIndex % 5],
-                            'start_time_slot_id' => $timeSlot->id,
-                            'end_time_slot_id' => $timeSlot->id,
-                        ]);
-
-                        $slotIndex++;
-                        if ($slotIndex % $timeSlots->count() === 0) {
-                            $dayIndex++;
-                        }
-                    }
-                }
-            }
-        }
-
-        $scheduleCount = Schedule::count();
-        $this->command->line("✓ Created {$scheduleCount} schedules");
     }
 
     /**

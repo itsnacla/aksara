@@ -22,6 +22,15 @@ class P5Theme extends Model
         'is_active' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            if (!$model->academic_year_id) {
+                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            }
+        });
+    }
+
     public function projects(): HasMany
     {
         return $this->hasMany(P5Project::class);
