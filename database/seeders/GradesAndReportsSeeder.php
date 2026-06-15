@@ -379,7 +379,7 @@ class GradesAndReportsSeeder extends Seeder
                     'catatan_wali_kelas' => $this->generateRandomRaporNotes(),
                     'is_naik' => $isNaik,
                     'kenaikan_kelas_to' => $kenaiKanKeTo,
-                    'is_published' => false,
+                    'is_published' => rand(1, 100) > 30, // 70% rapor sudah dipublikasikan
                 ]);
             }
         }

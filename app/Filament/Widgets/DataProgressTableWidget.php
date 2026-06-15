@@ -116,6 +116,35 @@ class DataProgressTableWidget extends BaseWidget
                     ->badge()
                     ->color(fn (string $state): string => str_contains($state, '(100%)') ? 'success' : (str_contains($state, '(0%)') ? 'danger' : 'warning')),
 
+                Tables\Columns\TextColumn::make('progress_ekskul')
+                    ->label('Progress Ekskul')
+                    ->getStateUsing(function (StudyGroup $record) use ($activeYear) {
+                        if (!$activeYear) return '0 / 0 (0%)';
+                        
+                        $studentIds = $record->students()->pluck('students.id');
+                        
+                        $expected = \Illuminate\Support\Facades\DB::table('extracurricular_student')
+                            ->whereIn('student_id', $studentIds)
+                            ->count();
+                            
+                        $current = \App\Models\ExtracurricularGrade::where('academic_year_id', $activeYear->id)
+                            ->whereIn('student_id', $studentIds)
+                            ->whereExists(function($q) {
+                                $q->selectRaw('1')
+                                  ->from('extracurricular_student')
+                                  ->whereColumn('extracurricular_student.student_id', 'extracurricular_grades.student_id')
+                                  ->whereColumn('extracurricular_student.extracurricular_id', 'extracurricular_grades.extracurricular_id');
+                            })
+                            ->count();
+                            
+                        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+                        if ($percent > 100) $percent = 100;
+                        
+                        return "{$current} / {$expected} ({$percent}%)";
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => str_contains($state, '(100%)') ? 'success' : (str_contains($state, '(0%)') ? 'danger' : 'warning')),
+
                 Tables\Columns\TextColumn::make('progress_catatan_wali')
                     ->label('Catatan Wali')
                     ->getStateUsing(function (StudyGroup $record) use ($activeYear) {
