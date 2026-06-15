@@ -35,7 +35,11 @@ class DataProgressStatsWidget extends BaseWidget
 
         return [
             $this->getGradeProgressStat($activeYear, $studyGroups),
+            $this->getExtracurricularProgressStat($activeYear, $studyGroups),
             $this->getRaporProgressStat($activeYear, $studyGroups),
+            $this->getCatatanWaliProgressStat($activeYear, $studyGroups),
+            $this->getPublikasiRaporProgressStat($activeYear, $studyGroups),
+            $this->getAttendanceProgressStat($studyGroups),
             $this->getStudentDataStat($studyGroups),
             $this->getStaffDataStat(),
             $this->getScheduleStat($studyGroups),
@@ -139,5 +143,97 @@ class DataProgressStatsWidget extends BaseWidget
             ->description('Dari total ' . $studyGroups->count() . ' rombel aktif')
             ->descriptionIcon($rombelNoSchedule > 0 ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
             ->color($rombelNoSchedule > 0 ? 'danger' : 'success');
+    }
+
+    private function getExtracurricularProgressStat($activeYear, $studyGroups): Stat
+    {
+        $studentIds = Student::whereHas('studyGroups', function($q) use ($studyGroups) {
+            $q->whereIn('study_groups.id', $studyGroups->pluck('id'));
+        })->pluck('id');
+
+        $expected = \Illuminate\Support\Facades\DB::table('extracurricular_student')
+            ->whereIn('student_id', $studentIds)
+            ->count();
+            
+        $current = \App\Models\ExtracurricularGrade::where('academic_year_id', $activeYear->id)
+            ->whereIn('student_id', $studentIds)
+            ->whereExists(function($q) {
+                $q->selectRaw('1')
+                  ->from('extracurricular_student')
+                  ->whereColumn('extracurricular_student.student_id', 'extracurricular_grades.student_id')
+                  ->whereColumn('extracurricular_student.extracurricular_id', 'extracurricular_grades.extracurricular_id');
+            })
+            ->count();
+        
+        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+        if ($percent > 100) $percent = 100;
+
+        return Stat::make('Progress Nilai Ekstrakurikuler', number_format($current) . ' / ' . number_format($expected))
+            ->description($percent . '% selesai dinilai.')
+            ->descriptionIcon($percent >= 100 ? 'heroicon-m-check-circle' : 'heroicon-m-arrow-trending-up')
+            ->color($percent >= 100 ? 'success' : 'warning')
+            ->chart([0, $percent, $percent]);
+    }
+
+    private function getAttendanceProgressStat($studyGroups): Stat
+    {
+        $studentIds = Student::whereHas('studyGroups', function($q) use ($studyGroups) {
+            $q->whereIn('study_groups.id', $studyGroups->pluck('id'));
+        })->pluck('id');
+        
+        $expected = $studentIds->count();
+        $current = \App\Models\Attendance::whereIn('student_id', $studentIds)
+            ->where('tanggal', now()->toDateString())
+            ->count();
+            
+        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+        if ($percent > 100) $percent = 100;
+
+        return Stat::make('Progress Presensi Hari Ini', number_format($current) . ' / ' . number_format($expected))
+            ->description($percent . '% siswa sudah diabsen.')
+            ->descriptionIcon($percent >= 100 ? 'heroicon-m-check-circle' : 'heroicon-m-clock')
+            ->color($percent >= 100 ? 'success' : 'warning')
+            ->chart([0, $percent, $percent]);
+    }
+
+    private function getCatatanWaliProgressStat($activeYear, $studyGroups): Stat
+    {
+        $expected = $studyGroups->sum('students_count');
+        $current = StudentRapor::where('academic_year_id', $activeYear->id)
+            ->whereHas('student.studyGroups', function($q) use ($studyGroups) {
+                $q->whereIn('study_groups.id', $studyGroups->pluck('id'));
+            })
+            ->whereNotNull('catatan_wali_kelas')
+            ->where('catatan_wali_kelas', '!=', '')
+            ->count();
+            
+        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+        if ($percent > 100) $percent = 100;
+
+        return Stat::make('Progress Catatan Wali Kelas', number_format($current) . ' / ' . number_format($expected))
+            ->description($percent . '% catatan wali kelas diisi.')
+            ->descriptionIcon($percent >= 100 ? 'heroicon-m-check-circle' : 'heroicon-m-pencil-square')
+            ->color($percent >= 100 ? 'success' : 'warning')
+            ->chart([0, $percent, $percent]);
+    }
+
+    private function getPublikasiRaporProgressStat($activeYear, $studyGroups): Stat
+    {
+        $expected = $studyGroups->sum('students_count');
+        $current = StudentRapor::where('academic_year_id', $activeYear->id)
+            ->whereHas('student.studyGroups', function($q) use ($studyGroups) {
+                $q->whereIn('study_groups.id', $studyGroups->pluck('id'));
+            })
+            ->where('is_published', true)
+            ->count();
+            
+        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+        if ($percent > 100) $percent = 100;
+
+        return Stat::make('Progress Publikasi Rapor', number_format($current) . ' / ' . number_format($expected))
+            ->description($percent . '% rapor siap dilihat siswa.')
+            ->descriptionIcon($percent >= 100 ? 'heroicon-m-check-circle' : 'heroicon-m-globe-alt')
+            ->color($percent >= 100 ? 'success' : 'warning')
+            ->chart([0, $percent, $percent]);
     }
 }

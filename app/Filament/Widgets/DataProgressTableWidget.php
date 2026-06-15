@@ -97,6 +97,67 @@ class DataProgressTableWidget extends BaseWidget
                     })
                     ->badge()
                     ->color(fn (string $state): string => str_contains($state, '(100%)') ? 'success' : (str_contains($state, '(0%)') ? 'danger' : 'primary')),
+
+                Tables\Columns\TextColumn::make('progress_presensi')
+                    ->label('Progress Presensi (Hari Ini)')
+                    ->getStateUsing(function (StudyGroup $record) {
+                        $studentIds = $record->students()->pluck('students.id');
+                        $expected = $studentIds->count();
+                        
+                        $current = \App\Models\Attendance::whereIn('student_id', $studentIds)
+                            ->where('tanggal', now()->toDateString())
+                            ->count();
+                            
+                        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+                        if ($percent > 100) $percent = 100;
+                        
+                        return "{$current} / {$expected} ({$percent}%)";
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => str_contains($state, '(100%)') ? 'success' : (str_contains($state, '(0%)') ? 'danger' : 'warning')),
+
+                Tables\Columns\TextColumn::make('progress_catatan_wali')
+                    ->label('Catatan Wali')
+                    ->getStateUsing(function (StudyGroup $record) use ($activeYear) {
+                        if (!$activeYear) return '0 / 0 (0%)';
+                        
+                        $studentIds = $record->students()->pluck('students.id');
+                        $expected = $studentIds->count();
+                        
+                        $current = StudentRapor::where('academic_year_id', $activeYear->id)
+                            ->whereIn('student_id', $studentIds)
+                            ->whereNotNull('catatan_wali_kelas')
+                            ->where('catatan_wali_kelas', '!=', '')
+                            ->count();
+                            
+                        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+                        if ($percent > 100) $percent = 100;
+                        
+                        return "{$current} / {$expected} ({$percent}%)";
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => str_contains($state, '(100%)') ? 'success' : (str_contains($state, '(0%)') ? 'danger' : 'warning')),
+
+                Tables\Columns\TextColumn::make('progress_publikasi')
+                    ->label('Publikasi Rapor')
+                    ->getStateUsing(function (StudyGroup $record) use ($activeYear) {
+                        if (!$activeYear) return '0 / 0 (0%)';
+                        
+                        $studentIds = $record->students()->pluck('students.id');
+                        $expected = $studentIds->count();
+                        
+                        $current = StudentRapor::where('academic_year_id', $activeYear->id)
+                            ->whereIn('student_id', $studentIds)
+                            ->where('is_published', true)
+                            ->count();
+                            
+                        $percent = $expected > 0 ? round(($current / $expected) * 100, 1) : 0;
+                        if ($percent > 100) $percent = 100;
+                        
+                        return "{$current} / {$expected} ({$percent}%)";
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => str_contains($state, '(100%)') ? 'success' : (str_contains($state, '(0%)') ? 'danger' : 'primary')),
             ])
             ->defaultSort('nama_rombel', 'asc')
             ->paginated([10, 25, 50, 'all']);

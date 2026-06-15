@@ -161,57 +161,50 @@ class PortalController extends Controller
 
     private function buildStudentDashboardArray($user, $activeYear): array
     {
+        $studentId = $user->student?->id;
+        $stats = $this->getStudentAttendanceStats($studentId);
+        $grades = $this->getStudentGrades($studentId, $activeYear);
+
+        return array_merge(
+            $this->buildStudentDashboardPart1($user, $activeYear, $stats, $grades),
+            $this->buildStudentDashboardPart2($user, $activeYear)
+        );
+    }
+
+    private function buildStudentDashboardPart1($user, $activeYear, $stats, $grades): array
+    {
+        $student = $user->student;
+        $studentId = $student?->id;
+        
+        return [
+            'student' => $student,
+            'studyGroup' => $student?->currentStudyGroup(),
+            'attendanceStats' => array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats),
+            'attendanceTrend' => $this->getStudentAttendanceTrend($studentId),
+            'attendancePercentage' => $this->getStudentAttendancePercentage($studentId, $stats),
+            'gradeAverage' => $this->calculateGradeAverage($grades),
+            'totalSubjects' => $grades->unique('subject_id')->count(),
+            'recentGrades' => $this->getStudentRecentGrades($studentId),
+        ];
+    }
+
+    private function buildStudentDashboardPart2($user, $activeYear): array
+    {
         $student = $user->student;
         $studentId = $student?->id;
         $studyGroup = $student?->currentStudyGroup();
 
-        $stats = $this->getStudentAttendanceStats($studentId);
-        $attendanceTrend = $this->getStudentAttendanceTrend($studentId);
-        
-        $attendancePercentage = $this->getStudentAttendancePercentage($studentId, $stats);
-        $grades = $this->getStudentGrades($studentId, $activeYear);
-        $gradeAverage = $this->calculateGradeAverage($grades);
-
-        $todaySchedules = $this->getStudentTodaySchedules($studyGroup);
-        $recentNotifications = $this->getStudentRecentNotifications($studentId);
-        $publishedRapors = $this->getStudentPublishedRapors($studentId);
-        $recentGrades = $this->getStudentRecentGrades($studentId);
-            
-        $extracurriculars = $student 
-            ? $student->extracurriculars()->with(['coordinator.teacher'])->orderBy('kategori', 'asc')->orderBy('nama_ekskul', 'asc')->get() 
-            : collect();
-        $attendanceToday = $student?->attendances()->where('tanggal', now()->toDateString())->first();
-        $totalSubjects = $grades->unique('subject_id')->count();
-        $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
-
-        $recentLeaves = StudentLeave::where('student_id', $studentId)
-            ->latest()
-            ->take(3)
-            ->get();
-
-        $p5Projects = $studyGroup && $activeYear
-            ? \App\Models\P5Project::whereHas('levels', function($q) use ($studyGroup) {
-                  $q->where('levels.id', $studyGroup->level_id);
-              })->where('academic_year_id', $activeYear->id)->with('theme')->get()
-            : collect();
-
         return [
-            'student' => $student,
-            'studyGroup' => $studyGroup,
-            'attendance' => $attendanceToday,
-            'attendanceStats' => $attendanceStatsMerged,
-            'recentGrades' => $recentGrades,
-            'extracurriculars' => $extracurriculars,
-            'todaySchedules' => $todaySchedules,
-            'attendanceTrend' => $attendanceTrend,
-            'gradeAverage' => $gradeAverage,
-            'totalSubjects' => $totalSubjects,
-            'attendancePercentage' => $attendancePercentage,
-            'recentNotifications' => $recentNotifications,
+            'todaySchedules' => $this->getStudentTodaySchedules($studyGroup),
+            'recentNotifications' => $this->getStudentRecentNotifications($studentId),
+            'publishedRapors' => $this->getStudentPublishedRapors($studentId),
+            'extracurriculars' => $student ? $student->extracurriculars()->with(['coordinator.teacher'])->orderBy('kategori', 'asc')->orderBy('nama_ekskul', 'asc')->get() : collect(),
+            'attendance' => $student?->attendances()->where('tanggal', now()->toDateString())->first(),
+            'recentLeaves' => StudentLeave::where('student_id', $studentId)->with(['student.user'])->latest()->take(3)->get(),
+            'p5Projects' => $student && $activeYear ? \App\Models\P5Group::whereHas('students', function ($q) use ($student) {
+                $q->where('p5_group_student.student_id', $student->id);
+            })->where('academic_year_id', $activeYear->id)->with('theme')->get() : collect(),
             'academicYear' => $activeYear,
-            'publishedRapors' => $publishedRapors,
-            'recentLeaves' => $recentLeaves,
-            'p5Projects' => $p5Projects,
         ];
     }
 
@@ -348,53 +341,45 @@ class PortalController extends Controller
         return $result;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function buildParentDashboardArray($user, $childIds, $activeYear): array
     {
+        $data = new \stdClass();
+        $data->parent = $user->parent;
+        
         $stats = $this->getParentAttendanceStats($childIds);
-        $attendanceTrend = $this->getParentAttendanceTrend($childIds);
-
-        $attendancePercentage = $this->getParentAttendancePercentage($childIds, $stats);
+        $data->attendanceStats = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
+        $data->attendanceTrend = $this->getParentAttendanceTrend($childIds);
+        $data->attendancePercentage = $this->getParentAttendancePercentage($childIds, $stats);
+        
         $grades = $this->getParentGrades($childIds, $activeYear);
-        $gradeAverage = $this->calculateGradeAverage($grades);
+        $data->gradeAverage = $this->calculateGradeAverage($grades);
+        $data->totalSubjects = $grades->unique('subject_id')->count();
+        $data->recentGrades = $this->getParentRecentGrades($childIds);
 
-        $recentNotifications = $this->getParentRecentNotifications($childIds);
-        $publishedRapors = $this->getParentPublishedRapors($childIds);
+        $data->recentNotifications = $this->getParentRecentNotifications($childIds);
+        $data->publishedRapors = $this->getParentPublishedRapors($childIds);
 
-        $childrenData = $user->parent?->students()->with(['user', 'attendances' => function($q) {
+        $data->children = $data->parent?->students()->with(['user', 'attendances' => function($q) {
             $q->where('tanggal', now()->toDateString());
         }])->get() ?? collect();
 
-        $recentGrades = $this->getParentRecentGrades($childIds);
-
-        $extracurriculars = Extracurricular::whereHas('students', function ($q) use ($childIds) {
+        $data->extracurriculars = Extracurricular::whereHas('students', function ($q) use ($childIds) {
             $q->whereIn('extracurricular_student.student_id', $childIds);
         })->with(['coordinator.teacher'])->orderBy('kategori', 'asc')->orderBy('nama_ekskul', 'asc')->get();
-        $totalSubjects = $grades->unique('subject_id')->count();
-        $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
 
-        $recentLeaves = StudentLeave::whereIn('student_id', $childIds)
+        $data->recentLeaves = StudentLeave::whereIn('student_id', $childIds)
             ->with(['student.user'])
             ->latest()
             ->take(3)
             ->get();
 
-        $p5Projects = collect(); // Parents might not see this directly in dashboard yet
+        $data->p5Projects = collect(); // Parents might not see this directly in dashboard yet
+        $data->academicYear = $activeYear;
 
-        return [
-            'parent' => $user->parent,
-            'children' => $childrenData,
-            'attendanceStats' => $attendanceStatsMerged,
-            'recentGrades' => $recentGrades,
-            'extracurriculars' => $extracurriculars,
-            'attendanceTrend' => $attendanceTrend,
-            'gradeAverage' => $gradeAverage,
-            'totalSubjects' => $totalSubjects,
-            'attendancePercentage' => $attendancePercentage,
-            'recentNotifications' => $recentNotifications,
-            'academicYear' => $activeYear,
-            'publishedRapors' => $publishedRapors,
-            'recentLeaves' => $recentLeaves,
-        ];
+        return (array) $data;
     }
 
     private function getParentAttendancePercentage(array $childIds, array $stats): int
