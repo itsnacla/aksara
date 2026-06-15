@@ -84,6 +84,18 @@ Route::middleware(['auth'])->group(function () {
                 ['Siti Aminah', 'Administrasi Keuangan', 'aktif', '08555666777'],
                 ['Hendra Gunawan', 'Kepala Tata Usaha', 'aktif', '081233334444']
             ];
+        } elseif ($type === 'learning-objective') {
+            $columns = ['kode_tp', 'deskripsi', 'mata_pelajaran', 'tingkat_kelas'];
+            $examples = [
+                ['TP01', 'Siswa mampu memahami konsep bilangan bulat', 'Matematika', 'Kelas 1'],
+                ['TP02', 'Siswa dapat menjelaskan fungsi organ tubuh', 'Ilmu Pengetahuan Alam', 'Kelas 5']
+            ];
+        } elseif ($type === 'grade') {
+            $columns = ['nisn', 'nama_siswa', 'nilai_tugas', 'nilai_uts', 'nilai_uas'];
+            $examples = [
+                ['0051234567', 'Ahmad Fauzi', '85', '90', '88'],
+                ['0057654321', 'Budi Santoso', '78', '82', '80']
+            ];
         } else {
             abort(404, 'Template tidak ditemukan.');
         }

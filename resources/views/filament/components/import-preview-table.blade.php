@@ -168,9 +168,11 @@
         <div>
             <span style="font-weight: 700;">Hasil Parsing Sukses!</span> Terdeteksi <span style="font-weight: 800; text-decoration: underline;">{{ $validCount ?? 0 }}</span> baris data siap diproses.
         </div>
-        <div class="import-badge-success">
-            Sandi Default: password
-        </div>
+        @if(!in_array($type, ['learning-objective', 'grade']))
+            <div class="import-badge-success">
+                Sandi Default: password
+            </div>
+        @endif
     </div>
 
     <div class="import-table-container">
@@ -199,6 +201,17 @@
                         <th>Status</th>
                         <th>Username (Auto)</th>
                         <th>Email (Auto)</th>
+                    @elseif($type === 'learning-objective')
+                        <th>Kode TP</th>
+                        <th>Deskripsi</th>
+                        <th>Mata Pelajaran</th>
+                        <th>Tingkat Kelas</th>
+                    @elseif($type === 'grade')
+                        <th>NISN</th>
+                        <th>Nama Siswa</th>
+                        <th>Nilai Tugas</th>
+                        <th>Nilai UTS</th>
+                        <th>Nilai UAS</th>
                     @endif
                 </tr>
             </thead>
@@ -254,6 +267,17 @@
                             </td>
                             <td style="font-family: monospace; opacity: 0.8;">{{ $p['username'] ?? '-' }}</td>
                             <td style="font-family: monospace; opacity: 0.8;">{{ $p['email'] ?? '-' }}</td>
+                        @elseif($type === 'learning-objective')
+                            <td style="font-family: monospace;">{{ $p['kode_tp'] ?? '-' }}</td>
+                            <td>{{ $p['deskripsi'] ?? '-' }}</td>
+                            <td>{{ $p['mata_pelajaran'] ?? '-' }}</td>
+                            <td>{{ $p['tingkat_kelas'] ?? '-' }}</td>
+                        @elseif($type === 'grade')
+                            <td style="font-family: monospace;">{{ $p['nisn'] ?? '-' }}</td>
+                            <td style="font-weight: 500;">{{ $p['nama_siswa'] ?? '-' }}</td>
+                            <td>{{ $p['nilai_tugas'] ?? '-' }}</td>
+                            <td>{{ $p['nilai_uts'] ?? '-' }}</td>
+                            <td>{{ $p['nilai_uas'] ?? '-' }}</td>
                         @endif
                     </tr>
                 @endforeach
@@ -267,7 +291,14 @@
         @endif
     </div>
 
-    <div class="import-footer-note">
-        * Keterangan: Kolom kosong/esensial akan diisi otomatis. Baris berstatus "Sudah Terdaftar" akan diabaikan secara aman oleh sistem.
-    </div>
+    <p class="import-hint-text">
+        <span style="color: #ef4444; font-weight: bold;">* Keterangan:</span> 
+        @if($type === 'learning-objective')
+            Kode TP yang duplikat untuk mapel dan kelas yang sama akan otomatis diperbarui.
+        @elseif($type === 'grade')
+            NISN yang <b>TIDAK</b> terdaftar di Rombel yang Anda pilih akan <b>diabaikan secara aman</b> oleh sistem untuk mencegah salah input nilai.
+        @else
+            Kolom kosong/esensial akan diisi otomatis. Baris berstatus "Sudah Terdaftar" akan diabaikan secara aman oleh sistem.
+        @endif
+    </p>
 </div>
