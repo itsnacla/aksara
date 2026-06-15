@@ -55,7 +55,7 @@ class GradesAndReportsSeeder extends Seeder
     {
         $this->command->info('🎯 Seeding Learning Objectives...');
 
-        $subjects = Subject::all();
+        $subjects = Subject::where('is_graded', true)->get();
         $levels = \App\Models\Level::all();
 
         $exampleObjectives = [
@@ -187,7 +187,7 @@ class GradesAndReportsSeeder extends Seeder
 
             // Ambil jadwal yang sesuai dengan rombel siswa
             $studentSchedules = $schedules->filter(function ($schedule) use ($studentStudyGroups) {
-                return in_array($schedule->study_group_id, $studentStudyGroups);
+                return in_array($schedule->study_group_id, $studentStudyGroups) && $schedule->subject && $schedule->subject->is_graded;
             })->unique('subject_id');
 
             foreach ($studentSchedules as $schedule) {
@@ -228,7 +228,12 @@ class GradesAndReportsSeeder extends Seeder
         $this->command->info('📋 Seeding Learning Objective Grades (Capaian Pembelajaran)...');
 
         $students = Student::all();
-        $learningObjectives = LearningObjective::with('subject')->where('academic_year_id', $this->academicYear->id)->get();
+        $learningObjectives = LearningObjective::with('subject')
+            ->whereHas('subject', function($q) {
+                $q->where('is_graded', true);
+            })
+            ->where('academic_year_id', $this->academicYear->id)
+            ->get();
 
         if ($learningObjectives->isEmpty()) {
             $this->command->warn('⚠ No learning objectives found, skipping student grades');
