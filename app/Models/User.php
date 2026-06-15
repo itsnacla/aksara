@@ -82,9 +82,19 @@ class User extends Authenticatable implements FilamentUser
 
     public function getNamaLengkapAttribute()
     {
-        if ($this->teacher) {
-            return $this->teacher->nama_lengkap;
+        try {
+            if ($this->relationLoaded('teacher') && $this->teacher) {
+                return $this->teacher->nama_lengkap;
+            } elseif (!$this->relationLoaded('teacher')) {
+                // If preventLazyLoading is active, this will catch the exception
+                if ($this->teacher) {
+                    return $this->teacher->nama_lengkap;
+                }
+            }
+        } catch (\Illuminate\Database\LazyLoadingViolationException $e) {
+            // fallback to name if lazy loading is prevented
         }
+        
         return $this->name;
     }
 }

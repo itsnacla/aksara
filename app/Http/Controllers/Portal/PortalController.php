@@ -177,7 +177,9 @@ class PortalController extends Controller
         $publishedRapors = $this->getStudentPublishedRapors($studentId);
         $recentGrades = $this->getStudentRecentGrades($studentId);
             
-        $extracurriculars = $this->getExtracurricularsList();
+        $extracurriculars = $student 
+            ? $student->extracurriculars()->with(['coordinator.teacher'])->orderBy('kategori', 'asc')->orderBy('nama_ekskul', 'asc')->get() 
+            : collect();
         $attendanceToday = $student?->attendances()->where('tanggal', now()->toDateString())->first();
         $totalSubjects = $grades->unique('subject_id')->count();
         $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
@@ -186,6 +188,12 @@ class PortalController extends Controller
             ->latest()
             ->take(3)
             ->get();
+
+        $p5Projects = $studyGroup && $activeYear
+            ? \App\Models\P5Project::whereHas('levels', function($q) use ($studyGroup) {
+                  $q->where('levels.id', $studyGroup->level_id);
+              })->where('academic_year_id', $activeYear->id)->with('theme')->get()
+            : collect();
 
         return [
             'student' => $student,
@@ -203,6 +211,7 @@ class PortalController extends Controller
             'academicYear' => $activeYear,
             'publishedRapors' => $publishedRapors,
             'recentLeaves' => $recentLeaves,
+            'p5Projects' => $p5Projects,
         ];
     }
 
@@ -219,6 +228,13 @@ class PortalController extends Controller
     {
         return Grade::where('student_id', $studentId)
             ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                      ->from('student_rapors')
+                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                      ->where('student_rapors.is_published', true);
+            })
             ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
     }
 
@@ -252,6 +268,13 @@ class PortalController extends Controller
     private function getStudentRecentGrades(?int $studentId)
     {
         return Grade::where('student_id', $studentId)
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                      ->from('student_rapors')
+                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                      ->where('student_rapors.is_published', true);
+            })
             ->with(['subject'])
             ->latest()
             ->take(5)
@@ -343,7 +366,9 @@ class PortalController extends Controller
 
         $recentGrades = $this->getParentRecentGrades($childIds);
 
-        $extracurriculars = $this->getExtracurricularsList();
+        $extracurriculars = Extracurricular::whereHas('students', function ($q) use ($childIds) {
+            $q->whereIn('extracurricular_student.student_id', $childIds);
+        })->with(['coordinator.teacher'])->orderBy('kategori', 'asc')->orderBy('nama_ekskul', 'asc')->get();
         $totalSubjects = $grades->unique('subject_id')->count();
         $attendanceStatsMerged = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
 
@@ -352,6 +377,8 @@ class PortalController extends Controller
             ->latest()
             ->take(3)
             ->get();
+
+        $p5Projects = collect(); // Parents might not see this directly in dashboard yet
 
         return [
             'parent' => $user->parent,
@@ -383,6 +410,13 @@ class PortalController extends Controller
     {
         return Grade::whereIn('student_id', $childIds)
             ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                      ->from('student_rapors')
+                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                      ->where('student_rapors.is_published', true);
+            })
             ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
     }
 
@@ -417,6 +451,13 @@ class PortalController extends Controller
     private function getParentRecentGrades(array $childIds)
     {
         return Grade::whereIn('student_id', $childIds)
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                      ->from('student_rapors')
+                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                      ->where('student_rapors.is_published', true);
+            })
             ->with(['student.user', 'subject'])
             ->latest()
             ->take(5)
@@ -426,7 +467,7 @@ class PortalController extends Controller
     private function getExtracurricularsList()
     {
         return \Illuminate\Support\Facades\Cache::remember('extracurriculars_list', 3600, function() {
-            return Extracurricular::with('coordinator')
+            return Extracurricular::with(['coordinator.teacher'])
                 ->orderBy('kategori', 'asc')
                 ->orderBy('nama_ekskul', 'asc')
                 ->get();
