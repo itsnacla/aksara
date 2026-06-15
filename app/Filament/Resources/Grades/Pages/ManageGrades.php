@@ -13,7 +13,18 @@ class ManageGrades extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('import_csv')
+            $this->getImportCsvAction(),
+            $this->getBatchInputAction(),
+            CreateAction::make()
+                ->modalWidth('7xl')
+                ->closeModalByClickingAway(false),
+        ];
+    }
+
+
+    protected function getImportCsvAction(): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('import_csv')
                 ->label('Import Nilai')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('primary')
@@ -279,8 +290,12 @@ class ManageGrades extends ManageRecords
                         ->title("Sukses Mengimpor Nilai untuk {$importedCount} Siswa")
                         ->success()
                         ->send();
-                }),
-            \Filament\Actions\Action::make('batch_input')
+                });
+    }
+
+    protected function getBatchInputAction(): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('batch_input')
                 ->label('Batch Input Nilai')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
@@ -372,9 +387,7 @@ class ManageGrades extends ManageRecords
                     
                     \Filament\Schemas\Components\Section::make()
                         ->schema([
-                            \Filament\Forms\Components\Placeholder::make('tp_warning')
-                                ->hiddenLabel()
-                                ->content(new \Illuminate\Support\HtmlString(
+                            \Filament\Schemas\Components\Html::make(new \Illuminate\Support\HtmlString(
                                     '<div class="rounded-lg border border-danger-300 bg-danger-50 dark:bg-danger-950/30 dark:border-danger-800 p-4">' .
                                     '<div class="flex items-start gap-3">' .
                                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20" style="flex-shrink:0;color:#dc2626;margin-top:2px;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>' .
@@ -558,11 +571,7 @@ class ManageGrades extends ManageRecords
                         ->title('Berhasil menyimpan nilai batch')
                         ->success()
                         ->send();
-                }),
-            CreateAction::make()
-                ->modalWidth('7xl')
-                ->closeModalByClickingAway(false),
-        ];
+                });
     }
 
     public static function loadStudentsForGrading($get, $set): void

@@ -171,7 +171,10 @@ class ListSchedules extends ListRecords
 
         $toProcess = [];
         foreach ($subjects as $subject) {
-            $teacherId = $subject->is_umum 
+            $walikelas = \App\Models\Teacher::find($studyGroup->walikelas_id);
+            $isActiveWalikelas = $walikelas && $walikelas->status === 'aktif';
+            
+            $teacherId = $subject->is_umum && $isActiveWalikelas
                 ? $studyGroup->walikelas_id 
                 : \App\Models\Teacher::whereHas('subjects', fn($q) => $q->where('subjects.id', $subject->id))
                     ->where('status', 'aktif')->first()?->id;

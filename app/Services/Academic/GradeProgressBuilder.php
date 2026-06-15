@@ -24,9 +24,7 @@ class GradeProgressBuilder
             ->get();
 
         // 2. Identify the chronological semesters for these students
-        // We will group by academic_year_id to order them.
         $academicYearIds = $grades->pluck('academic_year_id')->unique();
-        // Fallback to study group's academic year if no grades
         if ($academicYearIds->isEmpty()) {
             $academicYearIds->push($studyGroup->academic_year_id);
         }
@@ -36,11 +34,31 @@ class GradeProgressBuilder
             ->orderBy('semester')
             ->get();
 
-        // Map academic years to Smt 1, 2, 3...
-        // We group them by tahun_ajaran to ensure Ganjil is before Genap
+        $semesterMapData = $this->buildSemesterMap($academicYears);
+        $semesterMap = $semesterMapData['map'];
+        $semesterColumns = $semesterMapData['columns'];
+
+        // 3. Get Subjects
+        $subjectIds = $grades->pluck('subject_id')->unique();
+        $subjects = Subject::whereIn('id', $subjectIds)->orderBy('is_umum', 'desc')->orderBy('nama_mapel')->get();
+
+        // 4. Build Table and Chart Data
+        $data = $this->buildTableAndChartData($subjects, $grades, $semesterMap, $semesterColumns);
+
+        return [
+            'columns' => $semesterColumns,
+            'table' => $data['table'],
+            'chart' => $data['chart'],
+            'is_all' => is_null($student)
+        ];
+    }
+
+    private function buildSemesterMap(\Illuminate\Database\Eloquent\Collection $academicYears): array
+    {
         $semesterMap = [];
         $smtIndex = 1;
         $groupedYears = $academicYears->groupBy('tahun_ajaran');
+        
         foreach ($groupedYears as $ta => $years) {
             $ganjil = $years->firstWhere(fn($y) => strtolower($y->semester) === 'ganjil');
             $genap = $years->firstWhere(fn($y) => strtolower($y->semester) === 'genap');
@@ -48,7 +66,7 @@ class GradeProgressBuilder
             if ($ganjil) {
                 $semesterMap[$ganjil->id] = 'Smt. ' . $smtIndex++;
             } else {
-                $smtIndex++; // Skip index if missing to keep ganjil=odd, genap=even pattern
+                $smtIndex++;
             }
             
             if ($genap) {
@@ -58,35 +76,29 @@ class GradeProgressBuilder
             }
         }
         
-        // Ensure we always have at least Smt 1 to Smt 6 columns
         $maxSmt = max(6, $smtIndex - 1);
         $semesterColumns = [];
         for ($i = 1; $i <= $maxSmt; $i++) {
             $semesterColumns[] = 'Smt. ' . $i;
         }
 
-        // 3. Get Subjects
-        $subjectIds = $grades->pluck('subject_id')->unique();
-        $subjects = Subject::whereIn('id', $subjectIds)->orderBy('is_umum', 'desc')->orderBy('nama_mapel')->get();
+        return ['map' => $semesterMap, 'columns' => $semesterColumns];
+    }
 
-        // 4. Build Table and Chart Data
+    private function buildTableAndChartData(
+        \Illuminate\Database\Eloquent\Collection $subjects, 
+        \Illuminate\Database\Eloquent\Collection $grades, 
+        array $semesterMap, 
+        array $semesterColumns
+    ): array {
         $tableData = [];
         $chartCategories = [];
         $chartSeries = [];
         
-        // Initialize chart series for each semester
         foreach ($semesterColumns as $col) {
-            $chartSeries[$col] = [
-                'name' => $col,
-                'type' => 'bar',
-                'data' => []
-            ];
+            $chartSeries[$col] = ['name' => $col, 'type' => 'bar', 'data' => []];
         }
-        $chartSeries['Rata-Rata'] = [
-            'name' => 'Rata-Rata',
-            'type' => 'line',
-            'data' => []
-        ];
+        $chartSeries['Rata-Rata'] = ['name' => 'Rata-Rata', 'type' => 'line', 'data' => []];
 
         foreach ($subjects as $subject) {
             $chartCategories[] = $subject->kode_mapel ?: $subject->nama_mapel;
@@ -102,7 +114,6 @@ class GradeProgressBuilder
             $subjectCount = 0;
 
             foreach ($semesterColumns as $col) {
-                // Find academic year id for this semester column
                 $ayId = array_search($col, $semesterMap);
                 
                 if ($ayId) {
@@ -112,7 +123,6 @@ class GradeProgressBuilder
                         $row['semesters'][$col] = $avg;
                         $subjectTotal += $avg;
                         $subjectCount++;
-                        
                         $chartSeries[$col]['data'][] = $avg;
                     } else {
                         $row['semesters'][$col] = '-';
@@ -136,13 +146,11 @@ class GradeProgressBuilder
         }
 
         return [
-            'columns' => $semesterColumns,
             'table' => $tableData,
             'chart' => [
                 'categories' => $chartCategories,
                 'series' => array_values($chartSeries)
-            ],
-            'is_all' => is_null($student)
+            ]
         ];
     }
 

@@ -25,8 +25,8 @@ class MasterDataSeeder extends Seeder
         $this->seedExtracurriculars();
         $this->seedChatbotSettings();
         // $this->seedLearningObjectives($levelModels); // Commented out - TP data cleaned
-        // $this->seedP5ThemesAndProjects(); // Commented out - requires academic_year_id
-        // $this->seedCocurriculars(); // Commented out - requires academic_year_id
+        $this->seedP5ThemesAndProjects();
+        $this->seedCocurriculars();
     }
 
     private function seedChatbotSettings(): void
@@ -177,10 +177,7 @@ class MasterDataSeeder extends Seeder
         ];
 
         foreach ($ekskuls as $e) {
-            $coordinatorUserId = \App\Models\User::where('name', $e['coordinator_name'])->value('id');
             unset($e['coordinator_name']);
-            $e['coordinator_user_id'] = $coordinatorUserId;
-
             Extracurricular::updateOrCreate(['nama_ekskul' => $e['nama_ekskul']], $e);
         }
     }
@@ -333,7 +330,7 @@ class MasterDataSeeder extends Seeder
             );
 
             foreach ($projects as $projectName) {
-                \App\Models\P5Project::updateOrCreate(
+                $project = \App\Models\P5Project::updateOrCreate(
                     [
                         'p5_theme_id' => $theme->id,
                         'name' => $projectName,
@@ -349,6 +346,12 @@ class MasterDataSeeder extends Seeder
                         ]
                     ]
                 );
+                
+                // Attach levels for fase A (Level 1 and 2)
+                $levelIds = Level::where('fase', 'A')->pluck('id');
+                if($levelIds->isNotEmpty()) {
+                    $project->levels()->syncWithoutDetaching($levelIds);
+                }
             }
         }
     }

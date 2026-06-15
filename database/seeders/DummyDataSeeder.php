@@ -14,6 +14,11 @@ use App\Models\Classroom;
 use App\Models\Subject;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Extracurricular;
+use App\Models\Attendance;
+use App\Models\StudentLeave;
+use App\Models\P5Project;
+use App\Models\P5Group;
 
 class DummyDataSeeder extends Seeder
 {
@@ -34,6 +39,9 @@ class DummyDataSeeder extends Seeder
         $this->seedStaff();
         $this->seedRombelAndStudents();
         $this->seedAttendance();
+        $this->assignExtracurricularCoordinators();
+        $this->seedP5GroupsAndCocurriculars();
+
     }
 
     protected function seedWaliKelas()
@@ -300,6 +308,61 @@ class DummyDataSeeder extends Seeder
 
 
 
+    protected function assignExtracurricularCoordinators()
+    {
+        $ekskuls = [
+              'Pramuka' => 'Imam Fahrudin',
+              'Tari' => 'Angger Wigunaning Aji',
+              'Hadrah' => 'Moh. Itqonur Risal',
+              'Renang' => 'Beni Putra',
+        ];
+        
+        foreach ($ekskuls as $ekskulName => $coordinatorName) {
+            $user = User::where('name', $coordinatorName)->first();
+            if ($user) {
+                Extracurricular::where('nama_ekskul', $ekskulName)->update([
+                    'coordinator_user_id' => $user->id
+                ]);
+            }
+        }
+    }
+
+
+    protected function seedP5GroupsAndCocurriculars()
+    {
+        $academicYear = AcademicYear::where('is_active', true)->first();
+        if (!$academicYear) return;
+
+        // Get P5 Projects
+        $projects = P5Project::where('academic_year_id', $academicYear->id)->get();
+        if ($projects->isEmpty()) return;
+
+        // Get Study Groups for Fase A (Level 1 and 2)
+        $levelIds = Level::where('fase', 'A')->pluck('id');
+        $studyGroups = StudyGroup::whereIn('level_id', $levelIds)
+            ->where('academic_year_id', $academicYear->id)
+            ->with('students')
+            ->get();
+
+        foreach ($studyGroups as $sg) {
+            foreach ($projects as $project) {
+                $group = P5Group::create([
+                    'p5_project_id' => $project->id,
+                    'study_group_id' => $sg->id,
+                    'level_id' => $sg->level_id,
+                    'teacher_id' => $sg->walikelas_id, // Walikelas as coordinator
+                    'academic_year_id' => $academicYear->id,
+                    'name' => "Kelompok P5 {$project->name} - {$sg->nama_rombel}",
+                ]);
+
+                // Attach all students in the study group to this P5 Group
+                if ($sg->students->isNotEmpty()) {
+                    $group->students()->sync($sg->students->pluck('id'));
+                }
+            }
+        }
+    }
+
     protected function seedAttendance(): void
     {
         $studyGroups = StudyGroup::with('students')->get();
@@ -358,11 +421,11 @@ class DummyDataSeeder extends Seeder
         }
 
         foreach (array_chunk($attendances, 500) as $chunk) {
-            \App\Models\Attendance::insert($chunk);
+            Attendance::insert($chunk);
         }
 
         foreach (array_chunk($leaves, 500) as $chunk) {
-            \App\Models\StudentLeave::insert($chunk);
+            StudentLeave::insert($chunk);
         }
     }
 }
