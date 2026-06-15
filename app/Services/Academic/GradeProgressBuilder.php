@@ -89,11 +89,11 @@ class GradeProgressBuilder
         ];
 
         foreach ($subjects as $subject) {
-            $chartCategories[] = $subject->singkatan ?: $subject->nama_mapel;
+            $chartCategories[] = $subject->kode_mapel ?: $subject->nama_mapel;
             
             $row = [
                 'nama_mapel' => $subject->nama_mapel,
-                'singkatan' => $subject->singkatan ?: $subject->nama_mapel,
+                'singkatan' => $subject->kode_mapel ?: $subject->nama_mapel,
                 'semesters' => [],
                 'rata_rata' => '-'
             ];

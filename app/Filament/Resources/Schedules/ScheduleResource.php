@@ -27,11 +27,11 @@ class ScheduleResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Penilaian';
+    protected static ?string $navigationLabel = 'Semua Jadwal';
 
-    protected static ?string $modelLabel = 'Penilaian';
+    protected static ?string $modelLabel = 'Jadwal';
 
-    protected static ?string $pluralModelLabel = 'Penilaian';
+    protected static ?string $pluralModelLabel = 'Jadwal';
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
