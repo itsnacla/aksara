@@ -38,22 +38,29 @@
             </x-filament::card>
         @else
             @php
-                $riskColor = $aiResult['status_color'] ?? 'bg-gray-500';
-                $textRiskColor = str_replace('bg-', 'text-', $riskColor);
-                if (!str_contains($textRiskColor, 'text-')) $textRiskColor = 'text-gray-600';
+                $level = strtolower($aiResult['risk_level'] ?? '');
+                if (str_contains($level, 'rendah')) {
+                    $riskColorStyle = 'background-color: #10b981;'; // success
+                } elseif (str_contains($level, 'menengah') || str_contains($level, 'sedang')) {
+                    $riskColorStyle = 'background-color: #f59e0b;'; // warning
+                } elseif (str_contains($level, 'tinggi')) {
+                    $riskColorStyle = 'background-color: #ef4444;'; // danger
+                } else {
+                    $riskColorStyle = 'background-color: #6b7280;'; // default
+                }
                 $score = (int) ($aiResult['risk_score'] ?? 0);
             @endphp
             <div class="mt-8 space-y-6">
                 
                 <!-- Main Status Banner -->
-                <div class="rounded-xl p-6 {{ $riskColor }} text-white shadow-lg flex flex-col md:flex-row items-center justify-between">
+                <div class="rounded-xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between" style="{{ $riskColorStyle }}">
                     <div>
-                        <p class="text-white/80 font-medium mb-1">Hasil Prediksi Risiko untuk {{ $aiResult['student_name'] ?? 'Siswa' }}</p>
+                        <p class="text-white/90 font-medium mb-1">Hasil Prediksi Risiko untuk {{ $aiResult['student_name'] ?? 'Siswa' }}</p>
                         <h2 class="text-4xl font-extrabold uppercase tracking-wide">TINGKAT {{ $aiResult['risk_level'] ?? 'N/A' }}</h2>
                     </div>
                     <div class="mt-4 md:mt-0 text-right">
-                        <p class="text-white/80 text-sm mb-1">Risk Score</p>
-                        <div class="text-5xl font-black">{{ $score }}<span class="text-2xl text-white/70">%</span></div>
+                        <p class="text-white/90 text-sm mb-1 font-semibold">Risk Score</p>
+                        <div class="text-5xl font-black">{{ $score }}<span class="text-2xl text-white/80">%</span></div>
                     </div>
                 </div>
 
