@@ -98,6 +98,23 @@ class Student extends Model
     {
         static::created(function ($student) {
             event(new \App\Events\StatsUpdated('student'));
+            
+            // Automatically enroll in all "wajib" extracurriculars
+            if ($student->status === 'aktif') {
+                $wajibEkskuls = \App\Models\Extracurricular::where('kategori', 'wajib')->pluck('id');
+                if ($wajibEkskuls->isNotEmpty()) {
+                    $student->extracurriculars()->syncWithoutDetaching($wajibEkskuls);
+                }
+            }
+        });
+
+        static::updated(function ($student) {
+            if ($student->isDirty('status') && $student->status === 'aktif') {
+                $wajibEkskuls = \App\Models\Extracurricular::where('kategori', 'wajib')->pluck('id');
+                if ($wajibEkskuls->isNotEmpty()) {
+                    $student->extracurriculars()->syncWithoutDetaching($wajibEkskuls);
+                }
+            }
         });
     }
 

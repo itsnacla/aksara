@@ -34,7 +34,7 @@ class ExtracurricularResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->with('coordinator');
+        return parent::getEloquentQuery()->with(['coordinator', 'coordinator.teacher']);
     }
 
     public static function form(Schema $schema): Schema

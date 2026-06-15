@@ -22,6 +22,19 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class Extracurricular extends Model
 {
+    protected static function booted()
+    {
+        static::saved(function ($model) {
+            // When an extracurricular is saved and it is "wajib", ensure all active students are enrolled.
+            if ($model->kategori === 'wajib') {
+                $studentIds = \App\Models\Student::where('status', 'aktif')->pluck('id');
+                if ($studentIds->isNotEmpty()) {
+                    $model->students()->syncWithoutDetaching($studentIds);
+                }
+            }
+        });
+    }
+
     public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'extracurricular_student')->withTimestamps();

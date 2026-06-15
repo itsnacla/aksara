@@ -302,6 +302,16 @@ class DummyDataSeeder extends Seeder
             'previous_school' => 'TK Dharma Wanita ' . rand(1, 5),
         ]);
 
+        // Randomly assign 1 or 2 "pilihan" extracurriculars
+        $pilihanEkskuls = Extracurricular::where('kategori', 'pilihan')->pluck('id');
+        if ($pilihanEkskuls->isNotEmpty()) {
+            $numPilihan = rand(0, 2);
+            if ($numPilihan > 0) {
+                $randomIds = $pilihanEkskuls->random(min($numPilihan, $pilihanEkskuls->count()));
+                $student->extracurriculars()->syncWithoutDetaching($randomIds);
+            }
+        }
+
         // Connect to Rombels
         $student->studyGroups()->sync($rombelIds);
     }
