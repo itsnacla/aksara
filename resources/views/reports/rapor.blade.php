@@ -15,8 +15,8 @@
             .no-print { display: none !important; }
             .print-container { 
                 box-shadow: none !important; 
-                padding: 0 !important; 
-                margin: 0 !important; 
+                margin: 0 auto !important; 
+                width: 100% !important;
                 max-width: 100% !important;
                 height: 100vh !important;
                 min-height: 100vh !important;
@@ -60,7 +60,7 @@
             font-weight: bold;
         }
         .group-header {
-            background-color: #f0f9ff !important; /* Biru langit muda banget (Tailwind bg-sky-50) */
+            background-color: transparent !important;
         }
         .page-break {
             border-top: 2px dashed #9ca3af;
@@ -180,16 +180,16 @@
         @endif
 
         <!-- PAGE 1 OF STUDENT REPORT -->
-        <div class="max-w-4xl mx-auto bg-white p-10 shadow-lg print-container mb-6 page-block">
+        <div class="max-w-4xl print:max-w-full print:w-full print:px-6 print:py-0 mx-auto bg-white p-10 shadow-lg print-container mb-6 page-block">
 
         <!-- Detail Siswa & Sekolah -->
-        <div class="grid grid-cols-2 gap-x-8 gap-y-0.5 text-xs mb-2">
-            <div>
+        <div class="flex justify-between items-start text-xs mb-0">
+            <div class="w-3/5">
                 <table class="w-full">
                     <tr class="align-top">
                         <td class="py-0.5 w-24 text-gray-700">Nama Murid</td>
                         <td class="w-3 text-center py-0.5">:</td>
-                        <td class="py-0.5 font-bold uppercase">{{ $student->user->name }}</td>
+                        <td class="py-0.5 uppercase">{{ $student->user->name }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">NIS/NISN</td>
@@ -199,7 +199,7 @@
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Sekolah</td>
                         <td class="text-center py-0.5">:</td>
-                        <td class="py-0.5 font-semibold">{{ $school->name ?? 'SDN JOMIN TIMUR I' }}</td>
+                        <td class="py-0.5">{{ $school->name ?? 'SDN JOMIN TIMUR I' }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Alamat</td>
@@ -208,17 +208,17 @@
                     </tr>
                 </table>
             </div>
-            <div>
-                <table class="w-full">
+            <div class="w-2/5 flex justify-end">
+                <table class="w-auto">
                     <tr class="align-top">
                         <td class="py-0.5 w-28 text-gray-700">Kelas</td>
                         <td class="w-3 text-center py-0.5">:</td>
-                        <td class="py-0.5 font-bold">{{ $rombel ? $rombel->nama_rombel : '-' }}</td>
+                        <td class="py-0.5">{{ $rombel ? $rombel->nama_rombel : '-' }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Fase</td>
                         <td class="text-center py-0.5">:</td>
-                        <td class="py-0.5 font-semibold">{{ $fase }}</td>
+                        <td class="py-0.5">{{ $fase }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Semester</td>
@@ -235,10 +235,10 @@
         </div>
 
         <!-- Garis Bawah -->
-        <hr class="border-t-2 border-black my-2">
+        <hr class="border-t border-black mb-3 mt-0">
 
         <!-- Judul Laporan Hasil Belajar -->
-        <h2 class="text-sm font-bold text-center uppercase tracking-wider mb-2">LAPORAN HASIL BELAJAR</h2>
+        <h2 class="text-sm font-bold text-center uppercase tracking-wider mb-4">LAPORAN HASIL BELAJAR</h2>
 
         <!-- Tabel A: Capaian Hasil Belajar -->
         <div class="mb-4">
@@ -248,22 +248,22 @@
                         <th class="w-12">No</th>
                         <th class="w-48">Mata Pelajaran</th>
                         <th class="w-24">Nilai Akhir</th>
-                        <th>Capaian Kompetensi (Deskripsi)</th>
+                        <th>Capaian Kompetensi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($groupedSubjects as $groupName => $subjects)
                         @php $globalIndex = 1; @endphp
                         <tr class="group-header">
-                            <td colspan="4" class="font-bold px-3 py-1 text-xs uppercase tracking-wider text-gray-700">
+                            <td colspan="4" class="font-bold px-3 py-1 text-xs tracking-wider text-gray-700">
                                 {{ $groupName }}
                             </td>
                         </tr>
                         @foreach($subjects as $sub)
                             <tr>
-                                <td class="text-center font-semibold">{{ $globalIndex++ }}</td>
-                                <td class="font-semibold">{{ $sub['nama'] }}</td>
-                                <td class="text-center font-bold text-lg {{ ($sub['nilai'] && $sub['nilai'] >= 70) ? 'text-emerald-700' : (($sub['nilai']) ? 'text-rose-600' : 'text-gray-400') }}">
+                                <td class="text-center">{{ $globalIndex++ }}</td>
+                                <td>{{ $sub['nama'] }}</td>
+                                <td class="text-center">
                                     {{ $sub['nilai'] ?? '-' }}
                                 </td>
                                 <td class="text-justify leading-normal text-xs">
@@ -285,7 +285,7 @@
             <table class="w-full text-xs table-custom border-collapse">
                 <thead>
                     <tr class="bg-gray-50 font-bold">
-                        <th class="py-0.5 text-center px-4 uppercase tracking-wide text-xs">Kokurikuler</th>
+                        <th class="py-0.5 text-center px-4 tracking-wide text-xs">Kokurikuler</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -295,12 +295,12 @@
                                 $cocurricularName = $p5Project ? $p5Project->name : 'Lingkungan Sekitar';
                             @endphp
                             <p>
-                                Pada semester ini, ananda menunjukkan capaian yang baik dalam penguatan profil lulusan, yang ditunjukkan melalui kegiatan kokurikuler <strong>{{ $cocurricularName }}</strong>.
+                                Pada semester ini, ananda menunjukkan capaian yang baik dalam penguatan profil lulusan, yang ditunjukkan melalui kegiatan kokurikuler {{ $cocurricularName }}.
                             </p>
                             @if(!empty($graduateProfiles))
                                 @foreach($graduateProfiles as $dimensi => $subdimensis)
                                     <p>
-                                        Pada dimensi <strong>{{ $dimensi }}</strong>, ananda cakap dalam subdimensi <strong>{{ implode(', ', $subdimensis) }}</strong>.
+                                        Pada dimensi {{ $dimensi }}, ananda cakap dalam subdimensi {{ implode(', ', $subdimensis) }}.
                                     </p>
                                 @endforeach
                             @else
@@ -327,7 +327,7 @@
         <div class="print-footer w-full">
             <!-- Garis Atas -->
             <hr class="border-t border-black my-2">
-            <div class="flex justify-between text-black px-2" style="font-size: 10pt !important; font-style: italic !important; font-weight: bold !important;">
+            <div class="flex justify-between text-black px-2" style="font-size: 8pt !important; font-style: italic !important; font-weight: bold !important;">
                 <div>
                     {{ $rombel ? $rombel->nama_rombel : '-' }} | {{ strtoupper($student->user->name) }} | {{ $student->nis ?? $student->nisn }}
                 </div>
@@ -343,16 +343,16 @@
         <div class="page-break"></div>
 
         <!-- PAGE 2 OF STUDENT REPORT -->
-        <div class="max-w-4xl mx-auto bg-white p-10 shadow-lg print-container page-block">
+        <div class="max-w-4xl print:max-w-full print:w-full print:px-6 print:py-0 mx-auto bg-white p-10 shadow-lg print-container page-block">
 
         <!-- Detail Siswa & Sekolah (Page 2 Header) -->
-        <div class="grid grid-cols-2 gap-x-8 gap-y-0.5 text-xs mb-2">
-            <div>
+        <div class="flex justify-between items-start text-xs mb-0">
+            <div class="w-3/5">
                 <table class="w-full">
                     <tr class="align-top">
                         <td class="py-0.5 w-24 text-gray-700">Nama Murid</td>
                         <td class="w-3 text-center py-0.5">:</td>
-                        <td class="py-0.5 font-bold uppercase">{{ $student->user->name }}</td>
+                        <td class="py-0.5 uppercase">{{ $student->user->name }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">NIS/NISN</td>
@@ -362,7 +362,7 @@
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Sekolah</td>
                         <td class="text-center py-0.5">:</td>
-                        <td class="py-0.5 font-semibold">{{ $school->name ?? 'SDN JOMIN TIMUR I' }}</td>
+                        <td class="py-0.5">{{ $school->name ?? 'SDN JOMIN TIMUR I' }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Alamat</td>
@@ -371,17 +371,17 @@
                     </tr>
                 </table>
             </div>
-            <div>
-                <table class="w-full">
+            <div class="w-2/5 flex justify-end">
+                <table class="w-auto">
                     <tr class="align-top">
                         <td class="py-0.5 w-28 text-gray-700">Kelas</td>
                         <td class="w-3 text-center py-0.5">:</td>
-                        <td class="py-0.5 font-bold">{{ $rombel ? $rombel->nama_rombel : '-' }}</td>
+                        <td class="py-0.5">{{ $rombel ? $rombel->nama_rombel : '-' }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Fase</td>
                         <td class="text-center py-0.5">:</td>
-                        <td class="py-0.5 font-semibold">{{ $fase }}</td>
+                        <td class="py-0.5">{{ $fase }}</td>
                     </tr>
                     <tr class="align-top">
                         <td class="py-0.5 text-gray-700">Semester</td>
@@ -398,7 +398,7 @@
         </div>
 
         <!-- Garis Bawah -->
-        <hr class="border-t-2 border-black my-2">
+        <hr class="border-t border-black mb-4 mt-0">
 
         <!-- Tabel C: Ekstrakurikuler -->
         <div class="mb-6">
@@ -408,15 +408,15 @@
                         <th class="w-12">No</th>
                         <th class="w-64">Kegiatan Ekstrakurikuler</th>
                         <th class="w-24">Predikat</th>
-                        <th>Keterangan / Deskripsi</th>
+                        <th>Keterangan</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($ekskuls as $index => $ekskul)
                         <tr>
                             <td class="text-center">{{ $loop->iteration }}</td>
-                            <td class="font-semibold">{{ $ekskul['nama'] }}</td>
-                            <td class="text-center font-bold text-emerald-700">{{ $ekskul['nilai'] }}</td>
+                            <td>{{ $ekskul['nama'] }}</td>
+                            <td class="text-center">{{ $ekskul['nilai'] }}</td>
                             <td class="text-xs leading-normal">{{ $ekskul['deskripsi'] }}</td>
                         </tr>
                     @empty
@@ -441,21 +441,21 @@
                         <table class="w-full text-sm table-custom border-collapse" style="table-layout: fixed;">
                             <thead>
                                 <tr class="bg-gray-50 font-bold" style="height: 32px;">
-                                    <th colspan="2" class="py-1.5 text-center px-4 uppercase tracking-wide text-xs">Ketidakhadiran</th>
+                                    <th colspan="2" class="py-1.5 text-center px-4 tracking-wide text-xs">Ketidakhadiran</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr style="height: 30px;">
-                                    <td class="font-semibold" style="width: 70%; height: 30px; padding: 4px 8px; vertical-align: middle;">Sakit (S)</td>
-                                    <td class="text-center font-bold" style="width: 30%; height: 30px; padding: 4px 8px; vertical-align: middle;">{{ $sakit }} hari</td>
+                                    <td style="width: 70%; height: 30px; padding: 4px 8px; vertical-align: middle;">Sakit (S)</td>
+                                    <td class="text-center" style="width: 30%; height: 30px; padding: 4px 8px; vertical-align: middle;">{{ $sakit }} hari</td>
                                 </tr>
                                 <tr style="height: 30px;">
-                                    <td class="font-semibold" style="height: 30px; padding: 4px 8px; vertical-align: middle;">Izin (I)</td>
-                                    <td class="text-center font-bold" style="height: 30px; padding: 4px 8px; vertical-align: middle;">{{ $izin }} hari</td>
+                                    <td style="height: 30px; padding: 4px 8px; vertical-align: middle;">Izin (I)</td>
+                                    <td class="text-center" style="height: 30px; padding: 4px 8px; vertical-align: middle;">{{ $izin }} hari</td>
                                 </tr>
                                 <tr style="height: 30px;">
-                                    <td class="font-semibold" style="height: 30px; padding: 4px 8px; vertical-align: middle;">Tanpa Keterangan (A)</td>
-                                    <td class="text-center font-bold text-rose-600" style="height: 30px; padding: 4px 8px; vertical-align: middle;">{{ $alpha }} hari</td>
+                                    <td style="height: 30px; padding: 4px 8px; vertical-align: middle;">Tanpa Keterangan (A)</td>
+                                    <td class="text-center" style="height: 30px; padding: 4px 8px; vertical-align: middle;">{{ $alpha }} hari</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -465,7 +465,7 @@
                         <table class="w-full text-sm table-custom border-collapse" style="table-layout: fixed;">
                             <thead>
                                 <tr class="bg-gray-50 font-bold" style="height: 32px;">
-                                    <th class="py-1.5 text-center px-4 uppercase tracking-wide text-xs">Catatan Wali Kelas</th>
+                                    <th class="py-1.5 text-center px-4 tracking-wide text-xs">Catatan Wali Kelas</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -612,7 +612,7 @@
         <div class="print-footer w-full">
             <!-- Garis Atas -->
             <hr class="border-t border-black my-2">
-            <div class="flex justify-between text-black px-2" style="font-size: 10pt !important; font-style: italic !important; font-weight: bold !important;">
+            <div class="flex justify-between text-black px-2" style="font-size: 8pt !important; font-style: italic !important; font-weight: bold !important;">
                 <div>
                     {{ $rombel ? $rombel->nama_rombel : '-' }} | {{ strtoupper($student->user->name) }} | {{ $student->nis ?? $student->nisn }}
                 </div>
