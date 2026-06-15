@@ -58,7 +58,14 @@ class DataProgressStatsWidget extends BaseWidget
             }
         }
 
-        return $query->withCount(['students', 'schedules'])->get();
+        return $query->withCount([
+            'students',
+            'schedules' => function ($q) {
+                $q->whereHas('subject', function ($sq) {
+                    $sq->where('is_graded', true);
+                });
+            }
+        ])->get();
     }
 
     private function getGradeProgressStat($activeYear, $studyGroups): Stat

@@ -59,7 +59,11 @@ class DataProgressTableWidget extends BaseWidget
                         if (!$activeYear) return '0 / 0 (0%)';
                         
                         $studentCount = $record->students()->count();
-                        $scheduleCount = $record->schedules()->count();
+                        $scheduleCount = $record->schedules()
+                            ->whereHas('subject', function ($sq) {
+                                $sq->where('is_graded', true);
+                            })
+                            ->count();
                         $expected = $studentCount * $scheduleCount;
                         
                         $current = Grade::where('academic_year_id', $activeYear->id)
