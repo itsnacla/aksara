@@ -29,6 +29,11 @@ class ExtracurricularsTable
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => ucwords($state)),
+                TextColumn::make('hari_pelaksanaan')
+                    ->label('Hari Pelaksanaan')
+                    ->badge()
+                    ->separator(',')
+                    ->placeholder('Belum ditentukan'),
                 TextColumn::make('students_count')
                     ->label('Anggota')
                     ->counts('students')

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $nilai_minimum
  * @property int|null $coordinator_user_id
  * @property string|null $deskripsi
+ * @property array|null $hari_pelaksanaan
  */
 #[Fillable([
     'nama_ekskul',
@@ -19,9 +20,17 @@ use Illuminate\Database\Eloquent\Model;
     'nilai_minimum',
     'coordinator_user_id',
     'deskripsi',
+    'hari_pelaksanaan',
 ])]
 class Extracurricular extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'hari_pelaksanaan' => 'array',
+        ];
+    }
+
     protected static function booted()
     {
         static::saved(function ($model) {

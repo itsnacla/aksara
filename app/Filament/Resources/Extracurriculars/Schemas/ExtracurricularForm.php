@@ -29,6 +29,19 @@ class ExtracurricularForm
                     ])
                     ->default('pilihan')
                     ->required(),
+                Select::make('hari_pelaksanaan')
+                    ->label('Hari Pelaksanaan')
+                    ->multiple()
+                    ->options([
+                        'Senin' => 'Senin',
+                        'Selasa' => 'Selasa',
+                        'Rabu' => 'Rabu',
+                        'Kamis' => 'Kamis',
+                        'Jumat' => 'Jumat',
+                        'Sabtu' => 'Sabtu',
+                        'Minggu' => 'Minggu',
+                    ])
+                    ->placeholder('Pilih hari pelaksanaan (opsional)'),
                 TextInput::make('nilai_minimum')
                     ->label('Nilai Minimum (Standar)')
                     ->placeholder('Contoh: B atau 75')
