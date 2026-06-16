@@ -32,12 +32,11 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
-            ->passwordReset()
+            ->login(\App\Filament\Pages\Auth\CustomLogin::class)
+            ->passwordReset(\App\Filament\Pages\Auth\CustomRequestPasswordReset::class, \App\Filament\Pages\Auth\CustomResetPassword::class)
             ->profile()
-            ->brandName('AKSARA')
-            ->brandLogo(asset('images/logo-nobg.png'))
-            ->brandLogoHeight('3rem')
+            ->brandName(fn () => \Illuminate\Support\Facades\Schema::hasTable('school_settings') ? (\App\Models\SchoolSetting::first()->name ?? 'AKSARA') : 'AKSARA')
+            ->brandLogo(fn () => view('filament.logo'))
             ->plugins([
                 FilamentShieldPlugin::make(),
             ])

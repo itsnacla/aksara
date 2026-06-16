@@ -4,7 +4,11 @@
     <header class="bg-white border-b border-gray-200 px-6 py-3">
         <div class="max-w-[1400px] mx-auto flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <img src="{{ asset('images/logo-nobg.png') }}" alt="Logo" class="h-10 w-10 object-contain">
+                @if($school && $school->logo)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($school->logo) }}" alt="Logo" class="h-10 w-10 object-contain">
+                @else
+                    <img src="{{ asset('images/logo-nobg.png') }}" alt="Logo" class="h-10 w-10 object-contain">
+                @endif
                 <div>
                     <h1 class="text-sm font-bold text-gray-950 uppercase tracking-tight">{{ $school->name }}</h1>
                     <p class="text-[10px] font-medium text-gray-500 uppercase tracking-widest">{{ $school->motto ?? 'Sistem Presensi Digital' }}</p>
