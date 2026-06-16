@@ -52,8 +52,8 @@ class ListSchedules extends ListRecords
                                 ->options(\App\Models\StudyGroup::all()->pluck('nama_rombel', 'id'))
                                 ->placeholder('Pilih Rombel...')
                                 ->searchable()
-                                ->visible(fn ($getter) => $getter->string('print_mode') === 'single')
-                                ->required(fn ($getter) => $getter->string('print_mode') === 'single'),
+                                ->visible(fn ($get) => $get('print_mode') === 'single')
+                                ->required(fn ($get) => $get('print_mode') === 'single'),
                         ]),
                     Grid::make(3)
                         ->schema([

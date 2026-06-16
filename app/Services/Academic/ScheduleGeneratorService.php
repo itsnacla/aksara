@@ -136,7 +136,7 @@ class ScheduleGeneratorService
                 continue;
             }
 
-            $isBusy = $this->isSlotBusy($config->day, $config->mandatory_time_slot_id, $rombelId, $item['teacher_id']);
+            $isBusy = $this->isSlotBusy($config->day, $config->mandatory_time_slot_id, $rombelId, $item['teacher_id'], $item['model']->id);
 
             if (! $isBusy) {
                 Schedule::create([
@@ -180,7 +180,7 @@ class ScheduleGeneratorService
                     if ($slot->is_istirahat || $slot->urutan > $maxUrutan) {
                         continue;
                     }
-                    if ($this->isSlotBusy($day, $slot->id, $rombelId)) {
+                    if ($this->isSlotBusy($day, $slot->id, $rombelId, null, $item['model']->id)) {
                         continue;
                     }
 
@@ -198,7 +198,7 @@ class ScheduleGeneratorService
                         if ($nextSlot->is_istirahat) {
                             continue;
                         }
-                        if ($this->isSlotBusy($day, $nextSlot->id, $rombelId, $item['teacher_id'])) {
+                        if ($this->isSlotBusy($day, $nextSlot->id, $rombelId, $item['teacher_id'], $item['model']->id)) {
                             break;
                         }
 
@@ -236,8 +236,12 @@ class ScheduleGeneratorService
                     if ($slot->is_istirahat || $slot->urutan > $maxUrutan) {
                         continue;
                     }
+                    // We don't have $item yet here, so just pass null for subjectId
+                    // But wait, the first loop slot check doesn't know which subject.
+                    // It's okay, we will re-check it inside the loop when we have $item.
                     if ($this->isSlotBusy($day, $slot->id, $rombelId)) {
-                        continue;
+                        // We still do a quick check, but it might block religions if another religion is there.
+                        // So we should remove this early check and let the inner loop handle it!
                     }
 
                     usort($subjectsToProcess, fn ($a, $b) => $b['remaining'] <=> $a['remaining']);
@@ -277,7 +281,7 @@ class ScheduleGeneratorService
                                 if ($nextSlot->is_istirahat) {
                                     continue;
                                 }
-                                if ($this->isSlotBusy($day, $nextSlot->id, $rombelId, $item['teacher_id'])) {
+                                if ($this->isSlotBusy($day, $nextSlot->id, $rombelId, $item['teacher_id'], $item['model']->id)) {
                                     break;
                                 }
 
@@ -305,23 +309,42 @@ class ScheduleGeneratorService
         }
     }
 
-    protected function isSlotBusy(string $day, int $slotId, int $rombelId, ?int $teacherId = null): bool
+    protected function isSlotBusy(string $day, int $slotId, int $rombelId, ?int $teacherId = null, ?int $subjectId = null): bool
     {
         $slot = TimeSlot::find($slotId);
         if (! $slot) {
             return false;
         }
 
-        $busyRombel = Schedule::where('hari', $day)
+        $busySchedules = Schedule::with('subject')->where('hari', $day)
             ->where(function ($q) use ($slot) {
                 $q->whereHas('startTimeSlot', fn ($sq) => $sq->where('urutan', '<=', $slot->urutan))
                   ->whereHas('endTimeSlot', fn ($sq) => $sq->where('urutan', '>=', $slot->urutan));
             })
             ->where('study_group_id', $rombelId)
-            ->exists();
+            ->get();
 
-        if ($busyRombel) {
-            return true;
+        if ($busySchedules->isNotEmpty()) {
+            $canOverlap = false;
+
+            // Jika subject yang mau dijadwalkan adalah Pendidikan Agama
+            if ($subjectId) {
+                $subject = Subject::find($subjectId);
+                if ($subject && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
+                    // Pastikan jadwal yang bentrok juga adalah Pendidikan Agama
+                    $allBusyAreReligions = $busySchedules->every(function ($sch) {
+                        return str_contains(strtolower($sch->subject->nama_mapel), 'pendidikan agama');
+                    });
+                    
+                    if ($allBusyAreReligions) {
+                        $canOverlap = true;
+                    }
+                }
+            }
+
+            if (! $canOverlap) {
+                return true;
+            }
         }
 
         if ($teacherId) {

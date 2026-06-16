@@ -314,14 +314,12 @@ class ManageGrades extends ManageRecords
                                         $isWaliKelas = $user->teacher->is_walikelas;
                                         
                                         if ($isWaliKelas) {
-                                            // Wali kelas can see: is_umum subjects OR subjects from schedules OR subjects from teacher relationship
                                             $query->where(function ($q) use ($teacherId) {
                                                 $q->where('is_umum', true)
                                                   ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
                                                   ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
                                             });
                                         } else {
-                                            // Guru mapel can see: subjects from schedules OR subjects from teacher relationship
                                             $query->where(function ($q) use ($teacherId) {
                                                 $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
                                                   ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
@@ -334,17 +332,14 @@ class ManageGrades extends ManageRecords
                                 ->live(),
                             \Filament\Forms\Components\Select::make('study_group_id')
                                 ->label('Pilih Rombel')
-                                ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                ->options(function (\Filament\Forms\Get $get) {
                                     $subjectId = $get('subject_id');
                                     if (!$subjectId) return [];
                                     
                                     $user = auth()->user();
-                                    
-                                    // Get active academic year ID (automatic)
                                     $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
                                     if (!$activeYearId) return [];
                                     
-                                    // Base query: ALWAYS filter by active academic year
                                     $query = \App\Models\StudyGroup::query()
                                         ->where('academic_year_id', $activeYearId);
                                     
@@ -353,36 +348,30 @@ class ManageGrades extends ManageRecords
                                         $isWaliKelas = $user->teacher->is_walikelas;
                                         
                                         if ($isWaliKelas) {
-                                            // Ambil subject untuk cek apakah is_umum
                                             $subject = \App\Models\Subject::find($subjectId);
                                             
                                             if ($subject && $subject->is_umum) {
-                                                // Untuk mapel is_umum, wali kelas bisa lihat kelas yang mereka kelola
                                                 $query->where('walikelas_id', $teacherId);
                                             } else {
-                                                // Untuk mapel non-is_umum, hanya lihat kelas dari jadwal mereka
                                                 $query->whereHas('schedules', fn ($q) => $q->where('teacher_id', $teacherId)->where('subject_id', $subjectId));
                                             }
                                         } else {
-                                            // Guru mapel: cek apakah punya schedules untuk subject ini
                                             $hasSchedules = \App\Models\Schedule::where('teacher_id', $teacherId)
                                                 ->where('subject_id', $subjectId)
                                                 ->exists();
                                             
                                             if ($hasSchedules) {
-                                                // Jika punya schedules, hanya lihat kelas dari jadwal mereka
                                                 $query->whereHas('schedules', fn ($q) => $q->where('teacher_id', $teacherId)->where('subject_id', $subjectId));
                                             }
-                                            // Jika tidak punya schedules, tampilkan semua rombel di tahun ajaran aktif (sudah di-filter di base query)
                                         }
                                     }
-                                    // Untuk super_admin/staff: tampilkan semua rombel di tahun ajaran aktif (sudah di-filter di base query)
                                     
                                     return $query->pluck('nama_rombel', 'id');
                                 })
                                 ->required()
+                                ->default(request()->query('study_group_id'))
                                 ->live()
-                                ->afterStateUpdated(fn (\Filament\Schemas\Components\Utilities\Get $get, \Filament\Schemas\Components\Utilities\Set $set) => self::loadStudentsForGrading($get, $set)),
+                                ->afterStateUpdated(fn (\Filament\Forms\Get $get, \Filament\Forms\Set $set) => self::loadStudentsForGrading($get, $set)),
                         ])->columns(2),
                     
                     \Filament\Schemas\Components\Section::make()
@@ -397,7 +386,7 @@ class ManageGrades extends ManageRecords
                                     '</div></div></div>'
                                 )),
                         ])
-                        ->visible(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                        ->visible(function (\Filament\Forms\Get $get) {
                             $subjectId = $get('subject_id');
                             $studyGroupId = $get('study_group_id');
                             if (!$subjectId || !$studyGroupId) return false;
@@ -417,7 +406,6 @@ class ManageGrades extends ManageRecords
                                     \Filament\Forms\Components\Hidden::make('student_id'),
                                     \Filament\Schemas\Components\Grid::make(12)
                                         ->schema([
-                                            // Left side: Student Name and Grades (4 columns of 12)
                                             \Filament\Schemas\Components\Grid::make(1)
                                                 ->schema([
                                                     \Filament\Forms\Components\TextInput::make('student_name')
@@ -445,12 +433,11 @@ class ManageGrades extends ManageRecords
                                                 ])
                                                 ->columnSpan(4),
 
-                                            // Right side: TP Checklists (8 columns of 12)
                                             \Filament\Schemas\Components\Grid::make(2)
                                                 ->schema([
                                                     \Filament\Forms\Components\CheckboxList::make('optimal_tp_ids')
                                                         ->label('TP Tercapai Optimal')
-                                                        ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                                        ->options(function (\Filament\Forms\Get $get) {
                                                             $subjectId = $get('../../subject_id');
                                                             $studyGroupId = $get('../../study_group_id');
                                                             if (!$subjectId || !$studyGroupId) {
@@ -477,7 +464,7 @@ class ManageGrades extends ManageRecords
 
                                                     \Filament\Forms\Components\CheckboxList::make('improved_tp_ids')
                                                         ->label('TP Perlu Peningkatan')
-                                                        ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                                        ->options(function (\Filament\Forms\Get $get) {
                                                             $subjectId = $get('../../subject_id');
                                                             $studyGroupId = $get('../../study_group_id');
                                                             if (!$subjectId || !$studyGroupId) {
@@ -509,7 +496,7 @@ class ManageGrades extends ManageRecords
                                 ->deletable(false)
                                 ->reorderable(false),
                         ])
-                        ->visible(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                        ->visible(function (\Filament\Forms\Get $get) {
                             $subjectId = $get('subject_id');
                             $studyGroupId = $get('study_group_id');
                             if (!$subjectId || !$studyGroupId) return false;
@@ -595,6 +582,10 @@ class ManageGrades extends ManageRecords
             ->where('academic_year_id', $academicYearId)
             ->get()
             ->keyBy('student_id');
+
+        if (request()->query('missing_only')) {
+            $students = $students->filter(fn ($student) => !isset($existing[$student->id]))->values();
+        }
 
         $items = $students->map(fn ($student) => [
             'student_id' => $student->id,

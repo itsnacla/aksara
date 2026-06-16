@@ -85,9 +85,9 @@ class DummyDataSeeder extends Seeder
     protected function seedGuruMapel()
     {
         $data = [
-            ['gd' => '', 'name' => 'Beni Putra', 'gb' => 'S.Pd', 'username' => 'beni', 'subjects' => ['Pendidikan Jasmani, Olahraga dan Kesehatan']],
+            ['gd' => '', 'name' => 'Beni Putra', 'gb' => 'S.Pd', 'username' => 'beni', 'subjects' => ['Pendidikan Jasmani, Olahraga, dan Kesehatan']],
             ['gd' => '', 'name' => 'Angger Wigunaning Aji', 'gb' => 'S.Pd', 'username' => 'angger', 'subjects' => ['Bahasa Inggris', 'Bahasa Using', 'Bahasa Jawa']],
-            ['gd' => '', 'name' => 'Moh. Itqonur Risal', 'gb' => 'S.Pd', 'username' => 'risal', 'subjects' => ['Pendidikan Agama']],
+            ['gd' => '', 'name' => 'Moh. Itqonur Risal', 'gb' => 'S.Pd', 'username' => 'risal', 'subjects' => ['Pendidikan Agama Islam dan Budi Pekerti']],
         ];
 
         foreach ($data as $item) {

@@ -132,12 +132,17 @@ class MasterDataSeeder extends Seeder
             ['nama_mapel' => 'Bahasa Jawa', 'is_umum' => false, 'total_jp' => 2, 'scheduling_priority' => 2, 'group' => 'B'],
             ['nama_mapel' => 'Bahasa Using', 'is_umum' => false, 'total_jp' => 2, 'scheduling_priority' => 2, 'group' => 'B'],
             ['nama_mapel' => 'Bahasa Inggris', 'is_umum' => false, 'total_jp' => 2, 'scheduling_priority' => 2, 'group' => 'A'],
-            ['nama_mapel' => 'Pendidikan Pancasila', 'is_umum' => true, 'total_jp' => 6, 'group' => 'A'],
-            ['nama_mapel' => 'Pendidikan Agama', 'is_umum' => false, 'total_jp' => 4, 'scheduling_priority' => 3, 'group' => 'A'],
-            ['nama_mapel' => 'Pendidikan Jasmani, Olahraga dan Kesehatan', 'is_umum' => false, 'total_jp' => 4, 'is_one_day_finish' => true, 'scheduling_priority' => 3, 'group' => 'B'],
-            ['nama_mapel' => 'Ilmu Pengetahuan Alam dan Sosial', 'is_umum' => true, 'total_jp' => 6, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Pancasila dan Kewarganegaraan', 'is_umum' => true, 'total_jp' => 6, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Agama Islam dan Budi Pekerti', 'is_umum' => false, 'total_jp' => 4, 'scheduling_priority' => 3, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Agama Kristen dan Budi Pekerti', 'is_umum' => false, 'total_jp' => 4, 'scheduling_priority' => 3, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Agama Katolik dan Budi Pekerti', 'is_umum' => false, 'total_jp' => 4, 'scheduling_priority' => 3, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Agama Hindu dan Budi Pekerti', 'is_umum' => false, 'total_jp' => 4, 'scheduling_priority' => 3, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Agama Buddha dan Budi Pekerti', 'is_umum' => false, 'total_jp' => 4, 'scheduling_priority' => 3, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Agama Konghucu dan Budi Pekerti', 'is_umum' => false, 'total_jp' => 4, 'scheduling_priority' => 3, 'group' => 'A'],
+            ['nama_mapel' => 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 'is_umum' => false, 'total_jp' => 4, 'is_one_day_finish' => true, 'scheduling_priority' => 3, 'group' => 'B'],
+            ['nama_mapel' => 'Ilmu Pengetahuan Alam dan Sosial (IPAS)', 'is_umum' => true, 'total_jp' => 6, 'group' => 'A'],
             ['nama_mapel' => 'Matematika', 'is_umum' => true, 'total_jp' => 6, 'group' => 'A'],
-            ['nama_mapel' => 'Seni Budaya dan Prakarya', 'is_umum' => true, 'total_jp' => 4, 'group' => 'B'],
+            ['nama_mapel' => 'Seni Budaya', 'is_umum' => true, 'total_jp' => 4, 'group' => 'B'],
             ['nama_mapel' => 'Upacara', 'is_umum' => true, 'total_jp' => 1, 'scheduling_priority' => 3, 'group' => null, 'is_graded' => false],
         ];
  
@@ -157,7 +162,7 @@ class MasterDataSeeder extends Seeder
             
             $ids = collect($levelModels)
                 ->filter(function($model, $sort) use ($s) {
-                    if ($s['nama_mapel'] === 'Ilmu Pengetahuan Alam dan Sosial' && in_array($sort, [1, 2])) return false;
+                    if ($s['nama_mapel'] === 'Ilmu Pengetahuan Alam dan Sosial (IPAS)' && in_array($sort, [1, 2])) return false;
                     if ($s['nama_mapel'] === 'Bahasa Using' && in_array($sort, [1, 2, 3])) return false;
                     return true;
                 })
@@ -184,73 +189,108 @@ class MasterDataSeeder extends Seeder
 
     private function seedSubjectReportMappings(array $levelModels): void
     {
-        $level6 = $levelModels[6] ?? null;
-        if (!$level6) {
-            return;
-        }
-
+        // Mendefinisikan mapel beserta tingkatan (level_id) mana saja yang menggunakan mapel tersebut
         $mappings = [
             [
-                'subject_name' => 'Pendidikan Agama',
-                'nama_lokal' => 'Pendidikan Agama Islam dan Budi Pekerti',
+                'subject_name' => 'Pendidikan Agama Islam dan Budi Pekerti',
                 'no_urut' => 1,
+                'levels' => [1, 2, 3, 4, 5, 6],
             ],
             [
-                'subject_name' => 'Pendidikan Pancasila',
-                'nama_lokal' => 'Pendidikan Pancasila dan Kewarganegaraan',
+                'subject_name' => 'Pendidikan Agama Kristen dan Budi Pekerti',
+                'no_urut' => 1,
+                'levels' => [1, 2, 3, 4, 5, 6],
+            ],
+            [
+                'subject_name' => 'Pendidikan Agama Katolik dan Budi Pekerti',
+                'no_urut' => 1,
+                'levels' => [1, 2, 3, 4, 5, 6],
+            ],
+            [
+                'subject_name' => 'Pendidikan Agama Hindu dan Budi Pekerti',
+                'no_urut' => 1,
+                'levels' => [1, 2, 3, 4, 5, 6],
+            ],
+            [
+                'subject_name' => 'Pendidikan Agama Buddha dan Budi Pekerti',
+                'no_urut' => 1,
+                'levels' => [1, 2, 3, 4, 5, 6],
+            ],
+            [
+                'subject_name' => 'Pendidikan Agama Konghucu dan Budi Pekerti',
+                'no_urut' => 1,
+                'levels' => [1, 2, 3, 4, 5, 6],
+            ],
+            [
+                'subject_name' => 'Pendidikan Pancasila dan Kewarganegaraan',
                 'no_urut' => 2,
+                'levels' => [1, 2, 3, 4, 5, 6],
             ],
             [
                 'subject_name' => 'Bahasa Indonesia',
-                'nama_lokal' => 'Bahasa Indonesia',
                 'no_urut' => 3,
+                'levels' => [1, 2, 3, 4, 5, 6],
             ],
             [
                 'subject_name' => 'Matematika',
-                'nama_lokal' => 'Matematika',
                 'no_urut' => 4,
+                'levels' => [1, 2, 3, 4, 5, 6],
             ],
             [
-                'subject_name' => 'Ilmu Pengetahuan Alam dan Sosial',
-                'nama_lokal' => 'Ilmu Pengetahuan Alam dan Sosial (IPAS)',
+                'subject_name' => 'Ilmu Pengetahuan Alam dan Sosial (IPAS)',
                 'no_urut' => 5,
+                'levels' => [3, 4, 5, 6], // IPAS mulai Fase B (Kelas 3)
             ],
             [
-                'subject_name' => 'Seni Budaya dan Prakarya',
-                'nama_lokal' => 'Seni Budaya',
+                'subject_name' => 'Seni Budaya',
                 'no_urut' => 6,
+                'levels' => [1, 2, 3, 4, 5, 6],
             ],
             [
-                'subject_name' => 'Pendidikan Jasmani, Olahraga dan Kesehatan',
-                'nama_lokal' => 'Pendidikan Jasmani, Olahraga, dan Kesehatan',
+                'subject_name' => 'Pendidikan Jasmani, Olahraga, dan Kesehatan',
                 'no_urut' => 7,
+                'levels' => [1, 2, 3, 4, 5, 6],
             ],
             [
                 'subject_name' => 'Bahasa Jawa',
-                'nama_lokal' => 'Bahasa Sunda',
                 'no_urut' => 8,
+                'levels' => [1, 2, 3, 4, 5, 6],
             ],
             [
                 'subject_name' => 'Bahasa Inggris',
-                'nama_lokal' => 'Bahasa Inggris',
                 'no_urut' => 9,
+                'levels' => [1, 2, 3, 4, 5, 6],
+            ],
+            [
+                'subject_name' => 'Bahasa Using',
+                'no_urut' => 10,
+                'levels' => [4, 5, 6],
             ],
         ];
 
         foreach ($mappings as $m) {
             $subject = Subject::where('nama_mapel', $m['subject_name'])->first();
             if ($subject) {
-                \App\Models\SubjectReportMapping::updateOrCreate(
-                    [
-                        'kurikulum' => 'Kurikulum SD Merdeka',
-                        'level_id' => $level6->id,
-                        'subject_id' => $subject->id,
-                    ],
-                    [
-                        'nama_lokal' => $m['nama_lokal'],
-                        'no_urut' => $m['no_urut'],
-                    ]
-                );
+                // Konversi urutan kelas menjadi ID kelas (level)
+                $levelIds = [];
+                foreach ($m['levels'] as $levelSortId) {
+                    if (isset($levelModels[$levelSortId])) {
+                        $levelIds[] = $levelModels[$levelSortId]->id;
+                    }
+                }
+
+                if (!empty($levelIds)) {
+                    \App\Models\SubjectReportMapping::updateOrCreate(
+                        [
+                            'kurikulum' => 'Kurikulum SD Merdeka',
+                            'subject_id' => $subject->id,
+                        ],
+                        [
+                            'level_ids' => $levelIds,
+                            'no_urut' => $m['no_urut'],
+                        ]
+                    );
+                }
             }
         }
     }
@@ -358,20 +398,23 @@ class MasterDataSeeder extends Seeder
 
     private function seedCocurriculars(): void
     {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $tahunAjaran = $activeYear ? $activeYear->tahun_ajaran : '2025/2026';
+
         $projects = [
             [
                 'tema' => 'Kesehatan Sekolah',
                 'nama_projek' => 'Kampanye Cuci Tangan dan Perilaku Hidup Bersih',
                 'fase' => 'A',
                 'deskripsi' => 'Kampanye kesehatan dan sosialisasi pentingnya mencuci tangan bagi murid-murid Fase A.',
-                'tahun_ajaran' => '2025/2026',
+                'tahun_ajaran' => $tahunAjaran,
             ],
             [
                 'tema' => 'Literasi Digital',
                 'nama_projek' => 'Pengenalan Internet Sehat dan Aman',
                 'fase' => 'B',
                 'deskripsi' => 'Projek edukasi literasi digital dan keselamatan berinternet untuk murid Fase B.',
-                'tahun_ajaran' => '2025/2026',
+                'tahun_ajaran' => $tahunAjaran,
             ]
         ];
 

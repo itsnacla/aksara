@@ -63,7 +63,8 @@ class DataProgressTableWidget extends BaseWidget
                             ->whereHas('subject', function ($sq) {
                                 $sq->where('is_graded', true);
                             })
-                            ->count();
+                            ->distinct('subject_id')
+                            ->count('subject_id');
                         $expected = $studentCount * $scheduleCount;
                         
                         $current = Grade::where('academic_year_id', $activeYear->id)
@@ -235,11 +236,32 @@ class DataProgressTableWidget extends BaseWidget
             ->where('study_group_id', $record->id)
             ->count();
         if ($expectedGrades > 0 && $currentGrades < $expectedGrades) {
+            $studentGradesCount = Grade::where('academic_year_id', $activeYear->id)
+                ->where('study_group_id', $record->id)
+                ->selectRaw('student_id, count(*) as count')
+                ->groupBy('student_id')
+                ->pluck('count', 'student_id')
+                ->toArray();
+                
+            $missingIds = [];
+            foreach ($studentIds as $sId) {
+                if (($studentGradesCount[$sId] ?? 0) < $gradedSubjectsCount) {
+                    $missingIds[] = $sId;
+                }
+            }
+            
+            $missingNames = '';
+            if (count($missingIds) > 0) {
+                $missingNames = \App\Models\Student::whereIn('id', $missingIds)->with('user')->get()->pluck('user.name')->take(5)->implode(', ');
+                if (count($missingIds) > 5) $missingNames .= ' (+' . (count($missingIds) - 5) . ' siswa lainnya)';
+            }
+
             $percent = round(($currentGrades / $expectedGrades) * 100, 1);
             return [
                 'title' => 'Input Nilai',
                 'text' => "{$currentGrades} / {$expectedGrades} ({$percent}%)",
-                'url' => \App\Filament\Resources\Grades\GradeResource::getUrl('index', ['tableFilters' => ['study_group_id' => ['value' => $record->id]]]),
+                'missing' => 'Belum dinilai: ' . $missingNames,
+                'url' => \App\Filament\Resources\Grades\GradeResource::getUrl('index', ['action' => 'batch_input', 'study_group_id' => $record->id, 'missing_only' => 1]),
             ];
         }
         return null;
@@ -250,13 +272,19 @@ class DataProgressTableWidget extends BaseWidget
         $expectedRapor = $studentIds->count();
         $currentRapor = StudentRapor::where('academic_year_id', $activeYear->id)
             ->whereIn('student_id', $studentIds)
-            ->count();
-        if ($expectedRapor > 0 && $currentRapor < $expectedRapor) {
-            $percent = round(($currentRapor / $expectedRapor) * 100, 1);
+            ->pluck('student_id')->toArray();
+            
+        if ($expectedRapor > 0 && count($currentRapor) < $expectedRapor) {
+            $missingIds = array_diff($studentIds->toArray(), $currentRapor);
+            $missingNames = \App\Models\Student::whereIn('id', $missingIds)->with('user')->get()->pluck('user.name')->take(5)->implode(', ');
+            if (count($missingIds) > 5) $missingNames .= ' (+' . (count($missingIds) - 5) . ' lainnya)';
+
+            $percent = round((count($currentRapor) / $expectedRapor) * 100, 1);
             return [
                 'title' => 'Cetak Rapor',
-                'text' => "{$currentRapor} / {$expectedRapor} ({$percent}%)",
-                'url' => \App\Filament\Resources\Rapor\RaporResource::getUrl('index', ['tableFilters' => ['rombel_filter' => ['study_group_id' => $record->id, 'academic_year_id' => $activeYear->id]]]),
+                'text' => count($currentRapor) . " / {$expectedRapor} ({$percent}%)",
+                'missing' => 'Belum dicetak: ' . $missingNames,
+                'url' => \App\Filament\Resources\Rapor\RaporResource::getUrl('index', ['tableFilters' => ['rombel_filter' => ['study_group_id' => $record->id, 'academic_year_id' => $activeYear->id], 'status_rapor' => ['value' => 'belum_cetak']]]),
             ];
         }
         return null;
@@ -267,13 +295,19 @@ class DataProgressTableWidget extends BaseWidget
         $expectedPresensi = $studentIds->count();
         $currentPresensi = \App\Models\Attendance::whereIn('student_id', $studentIds)
             ->where('tanggal', now()->toDateString())
-            ->count();
-        if ($expectedPresensi > 0 && $currentPresensi < $expectedPresensi) {
-            $percent = round(($currentPresensi / $expectedPresensi) * 100, 1);
+            ->pluck('student_id')->toArray();
+            
+        if ($expectedPresensi > 0 && count($currentPresensi) < $expectedPresensi) {
+            $missingIds = array_diff($studentIds->toArray(), $currentPresensi);
+            $missingNames = \App\Models\Student::whereIn('id', $missingIds)->with('user')->get()->pluck('user.name')->take(5)->implode(', ');
+            if (count($missingIds) > 5) $missingNames .= ' (+' . (count($missingIds) - 5) . ' lainnya)';
+
+            $percent = round((count($currentPresensi) / $expectedPresensi) * 100, 1);
             return [
                 'title' => 'Presensi Hari Ini',
-                'text' => "{$currentPresensi} / {$expectedPresensi} ({$percent}%)",
-                'url' => \App\Filament\Resources\Attendances\AttendanceResource::getUrl('index', ['tableFilters' => ['rombel_filter' => ['study_group_id' => $record->id, 'academic_year_id' => $activeYear->id]]]),
+                'text' => count($currentPresensi) . " / {$expectedPresensi} ({$percent}%)",
+                'missing' => 'Belum diabsen: ' . $missingNames,
+                'url' => \App\Filament\Resources\Attendances\AttendanceResource::getUrl('index', ['action' => 'batch_input', 'study_group_id' => $record->id, 'tanggal' => now()->toDateString(), 'missing_only' => 1]),
             ];
         }
         return null;
@@ -283,7 +317,10 @@ class DataProgressTableWidget extends BaseWidget
     {
         $expectedEkskul = \Illuminate\Support\Facades\DB::table('extracurricular_student')
             ->whereIn('student_id', $studentIds)
-            ->count();
+            ->get();
+            
+        $expectedCount = $expectedEkskul->count();
+        
         $currentEkskul = \App\Models\ExtracurricularGrade::where('academic_year_id', $activeYear->id)
             ->whereIn('student_id', $studentIds)
             ->whereExists(function($q) {
@@ -292,13 +329,53 @@ class DataProgressTableWidget extends BaseWidget
                   ->whereColumn('extracurricular_student.student_id', 'extracurricular_grades.student_id')
                   ->whereColumn('extracurricular_student.extracurricular_id', 'extracurricular_grades.extracurricular_id');
             })
-            ->count();
-        if ($expectedEkskul > 0 && $currentEkskul < $expectedEkskul) {
-            $percent = round(($currentEkskul / $expectedEkskul) * 100, 1);
+            ->get();
+            
+        $currentCount = $currentEkskul->count();
+
+        if ($expectedCount > 0 && $currentCount < $expectedCount) {
+            // Find missing
+            $missingDetails = [];
+            foreach ($expectedEkskul as $exp) {
+                $hasGrade = $currentEkskul->where('student_id', $exp->student_id)->where('extracurricular_id', $exp->extracurricular_id)->first();
+                if (!$hasGrade) {
+                    $missingDetails[] = [
+                        'student_id' => $exp->student_id,
+                        'extracurricular_id' => $exp->extracurricular_id,
+                    ];
+                }
+            }
+            
+            $missingNames = '';
+            if (count($missingDetails) > 0) {
+                $missingStudentIds = collect($missingDetails)->pluck('student_id')->unique();
+                $ekskulIds = collect($missingDetails)->pluck('extracurricular_id')->unique();
+                
+                $studentsMap = \App\Models\Student::whereIn('id', $missingStudentIds)->with('user')->get()->keyBy('id');
+                $ekskulsMap = \App\Models\Extracurricular::whereIn('id', $ekskulIds)->pluck('nama_ekskul', 'id');
+                
+                $formattedMissing = [];
+                $count = 0;
+                foreach ($missingDetails as $detail) {
+                    if ($count >= 5) break;
+                    $studentName = $studentsMap[$detail['student_id']]->user->name ?? 'Unknown';
+                    $ekskulName = $ekskulsMap[$detail['extracurricular_id']] ?? 'Unknown';
+                    $formattedMissing[] = "{$studentName} ({$ekskulName})";
+                    $count++;
+                }
+                
+                $missingNames = implode(', ', $formattedMissing);
+                if (count($missingDetails) > 5) {
+                    $missingNames .= ' (+' . (count($missingDetails) - 5) . ' lainnya)';
+                }
+            }
+
+            $percent = round(($currentCount / $expectedCount) * 100, 1);
             return [
                 'title' => 'Nilai Ekstrakurikuler',
-                'text' => "{$currentEkskul} / {$expectedEkskul} ({$percent}%)",
-                'url' => \App\Filament\Resources\ExtracurricularGrade\ExtracurricularGradeResource::getUrl('index', ['tableFilters' => ['study_group_id' => ['value' => $record->id]]]),
+                'text' => "{$currentCount} / {$expectedCount} ({$percent}%)",
+                'missing' => 'Belum dinilai: ' . $missingNames,
+                'url' => \App\Filament\Resources\ExtracurricularGrade\ExtracurricularGradeResource::getUrl('batch-input', ['rombel_id' => $record->id, 'missing_only' => 1]),
             ];
         }
         return null;
@@ -311,13 +388,19 @@ class DataProgressTableWidget extends BaseWidget
             ->whereIn('student_id', $studentIds)
             ->whereNotNull('catatan_wali_kelas')
             ->where('catatan_wali_kelas', '!=', '')
-            ->count();
-        if ($expectedCatatan > 0 && $currentCatatan < $expectedCatatan) {
-            $percent = round(($currentCatatan / $expectedCatatan) * 100, 1);
+            ->pluck('student_id')->toArray();
+            
+        if ($expectedCatatan > 0 && count($currentCatatan) < $expectedCatatan) {
+            $missingIds = array_diff($studentIds->toArray(), $currentCatatan);
+            $missingNames = \App\Models\Student::whereIn('id', $missingIds)->with('user')->get()->pluck('user.name')->take(5)->implode(', ');
+            if (count($missingIds) > 5) $missingNames .= ' (+' . (count($missingIds) - 5) . ' lainnya)';
+
+            $percent = round((count($currentCatatan) / $expectedCatatan) * 100, 1);
             return [
                 'title' => 'Catatan Wali Kelas',
-                'text' => "{$currentCatatan} / {$expectedCatatan} ({$percent}%)",
-                'url' => \App\Filament\Resources\Rapor\RaporResource::getUrl('index', ['tableFilters' => ['rombel_filter' => ['study_group_id' => $record->id, 'academic_year_id' => $activeYear->id]]]),
+                'text' => count($currentCatatan) . " / {$expectedCatatan} ({$percent}%)",
+                'missing' => 'Belum ada catatan: ' . $missingNames,
+                'url' => \App\Filament\Resources\Rapor\RaporResource::getUrl('index', ['tableFilters' => ['rombel_filter' => ['study_group_id' => $record->id, 'academic_year_id' => $activeYear->id], 'status_rapor' => ['value' => 'belum_catatan']]]),
             ];
         }
         return null;
@@ -329,13 +412,19 @@ class DataProgressTableWidget extends BaseWidget
         $currentPublikasi = StudentRapor::where('academic_year_id', $activeYear->id)
             ->whereIn('student_id', $studentIds)
             ->where('is_published', true)
-            ->count();
-        if ($expectedPublikasi > 0 && $currentPublikasi < $expectedPublikasi) {
-            $percent = round(($currentPublikasi / $expectedPublikasi) * 100, 1);
+            ->pluck('student_id')->toArray();
+            
+        if ($expectedPublikasi > 0 && count($currentPublikasi) < $expectedPublikasi) {
+            $missingIds = array_diff($studentIds->toArray(), $currentPublikasi);
+            $missingNames = \App\Models\Student::whereIn('id', $missingIds)->with('user')->get()->pluck('user.name')->take(5)->implode(', ');
+            if (count($missingIds) > 5) $missingNames .= ' (+' . (count($missingIds) - 5) . ' lainnya)';
+
+            $percent = round((count($currentPublikasi) / $expectedPublikasi) * 100, 1);
             return [
                 'title' => 'Publikasi Rapor',
-                'text' => "{$currentPublikasi} / {$expectedPublikasi} ({$percent}%)",
-                'url' => \App\Filament\Resources\Rapor\RaporResource::getUrl('index', ['tableFilters' => ['rombel_filter' => ['study_group_id' => $record->id, 'academic_year_id' => $activeYear->id]]]),
+                'text' => count($currentPublikasi) . " / {$expectedPublikasi} ({$percent}%)",
+                'missing' => 'Belum dipublikasi: ' . $missingNames,
+                'url' => \App\Filament\Resources\Rapor\RaporResource::getUrl('index', ['tableFilters' => ['rombel_filter' => ['study_group_id' => $record->id, 'academic_year_id' => $activeYear->id], 'status_rapor' => ['value' => 'belum_publikasi']]]),
             ];
         }
         return null;

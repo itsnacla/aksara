@@ -36,7 +36,7 @@ class SubjectReportMappingResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Mapping Mapel Rapor';
 
-    protected static ?string $recordTitleAttribute = 'nama_lokal';
+    protected static ?string $recordTitleAttribute = 'id';
 
     public static function form(Schema $schema): Schema
     {
@@ -49,22 +49,18 @@ class SubjectReportMappingResource extends Resource
                     ])
                     ->default('Kurikulum SD Merdeka')
                     ->required(),
-                Select::make('level_id')
+                Select::make('level_ids')
                     ->label('Tingkat Kelas')
-                    ->relationship('level', 'nama_tingkatan')
+                    ->options(\App\Models\Level::pluck('nama_tingkatan', 'id'))
+                    ->multiple()
                     ->searchable()
                     ->preload()
                     ->required(),
                 Select::make('subject_id')
-                    ->label('Mata Pelajaran (Global)')
+                    ->label('Mata Pelajaran')
                     ->relationship('subject', 'nama_mapel', modifyQueryUsing: fn($query) => $query->where('subjects.is_graded', true))
                     ->searchable()
                     ->preload()
-                    ->required(),
-                TextInput::make('nama_lokal')
-                    ->label('Nama Lokal (Di Rapor)')
-                    ->placeholder('Contoh: Pendidikan Agama Islam dan Budi Pekerti, Bahasa Sunda...')
-                    ->maxLength(100)
                     ->required(),
                 TextInput::make('no_urut')
                     ->label('No Urut Rapor')
@@ -82,16 +78,12 @@ class SubjectReportMappingResource extends Resource
                     ->label('Kurikulum')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('level.nama_tingkatan')
-                    ->label('Tingkat')
-                    ->searchable()
-                    ->sortable(),
+                TextColumn::make('level_ids')
+                    ->label('Tingkat Kelas')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => \App\Models\Level::find($state)?->nama_tingkatan ?? '-'),
                 TextColumn::make('subject.nama_mapel')
-                    ->label('Nama Mapel (Global)')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('nama_lokal')
-                    ->label('Nama Lokal')
+                    ->label('Nama Mapel')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('subject.subjectReportGroup.nama_kelompok')
@@ -103,20 +95,17 @@ class SubjectReportMappingResource extends Resource
                     ->sortable(),
                 TextColumn::make('no_urut')
                     ->label('No Urut Rapor')
+                    ->sortable()
                     ->badge()
-                    ->color('gray')
-                    ->alignCenter()
-                    ->sortable(),
+                    ->color('success'),
             ])
+            ->defaultSort('no_urut', 'asc')
             ->filters([
                 SelectFilter::make('kurikulum')
                     ->label('Kurikulum')
                     ->options([
                         'Kurikulum SD Merdeka' => 'Kurikulum SD Merdeka',
                     ]),
-                SelectFilter::make('level_id')
-                    ->label('Tingkat Kelas')
-                    ->relationship('level', 'nama_tingkatan'),
             ])
             ->actions([
                 EditAction::make()->modal(),

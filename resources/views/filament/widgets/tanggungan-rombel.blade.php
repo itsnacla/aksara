@@ -4,21 +4,38 @@
             Berikut adalah rincian tugas yang belum selesai untuk rombel ini:
         </p>
         
-        <div class="grid gap-3">
+        <div class="flex flex-col gap-3">
             @foreach($tanggungan as $item)
-                <div class="flex items-center justify-between p-3 border rounded-lg shadow-sm bg-white dark:bg-gray-800 dark:border-gray-700">
-                    <div>
-                        <h4 class="font-medium text-gray-900 dark:text-gray-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-white/5 dark:border-white/10 gap-4">
+                    <div class="space-y-1">
+                        <h4 class="font-semibold text-gray-900 dark:text-white">
                             {{ $item['title'] }}
                         </h4>
-                        <p class="text-sm text-warning-600 dark:text-warning-400 font-medium">
-                            {{ $item['text'] }}
-                        </p>
+                        <div class="flex items-center gap-2 text-sm font-medium text-warning-600 dark:text-warning-400">
+                            <x-heroicon-m-exclamation-triangle class="w-4 h-4" />
+                            <span>{{ $item['text'] }}</span>
+                        </div>
+                        @if(!empty($item['missing']))
+                            <div class="mt-3 p-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg">
+                                <p class="text-sm font-bold text-danger-700 dark:text-danger-400 mb-1">Daftar Siswa yang Belum Selesai:</p>
+                                <p class="text-sm text-danger-600 dark:text-danger-300 leading-relaxed">
+                                    {{ str_replace('Belum dinilai: ', '', str_replace('Belum dicetak: ', '', str_replace('Belum diabsen: ', '', str_replace('Belum ada catatan: ', '', str_replace('Belum dipublikasi: ', '', str_replace('Belum dinilai lengkap: ', '', $item['missing'])))))) }}
+                                </p>
+                            </div>
+                        @endif
                     </div>
-                    <a href="{{ $item['url'] }}" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-white transition bg-primary-600 rounded-lg shadow-sm hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600 dark:focus:ring-offset-gray-900">
-                        Pergi ke halaman
-                        <x-heroicon-m-arrow-right class="w-4 h-4 ml-1.5" />
-                    </a>
+                    
+                    <x-filament::button
+                        tag="a"
+                        href="{{ $item['url'] }}"
+                        size="sm"
+                        icon="heroicon-m-arrow-right"
+                        icon-position="after"
+                        class="w-full sm:w-auto justify-center"
+                        color="gray"
+                    >
+                        Buka Halaman Input
+                    </x-filament::button>
                 </div>
             @endforeach
         </div>

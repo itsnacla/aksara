@@ -51,6 +51,7 @@ class SubjectsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('subjectReportGroup.nama_kelompok', 'asc')
             ->filters([
                 //
             ])

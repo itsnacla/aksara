@@ -41,8 +41,10 @@ class Subject extends Model
                     'Ilmu Pengetahuan Alam' => 'IPA',
                     'Ilmu Pengetahuan Sosial' => 'IPS',
                     'Matematika' => 'MTK',
-                    'Pendidikan Jasmani, Olahraga dan Kesehatan' => 'PJOK',
-                    'Seni Budaya dan Prakarya' => 'SBDP',
+                    'Pendidikan Jasmani, Olahraga' => 'PJOK',
+                    'Seni Budaya' => 'SBDP',
+                    'Pendidikan Pancasila' => 'PPKN',
+                    'Pendidikan Agama' => 'PAI',
                 ];
                 
                 $prefix = '';

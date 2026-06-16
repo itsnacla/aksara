@@ -108,7 +108,7 @@ class StudentParentForm
                             ->dehydrateStateUsing(fn ($state, Get $get) => \App\Services\RegionService::getDistrictName($state, $get('city'))),
                         Select::make('village')
                             ->label('Kelurahan/Desa')
-                            ->options(fn (Get $get) => \App\Services\RegionService::getVillages($get('district')))
+                            ->options(fn (Get $get) => \App\Services\RegionService::getVillages($get('district'), $get('city')))
                             ->searchable()
                             ->formatStateUsing(fn ($state, Get $get) => \App\Services\RegionService::findVillageIdByName($get('district'), $state) ?? $state)
                             ->dehydrateStateUsing(fn ($state, Get $get) => \App\Services\RegionService::getVillageName($state, $get('district'))),

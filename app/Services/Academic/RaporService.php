@@ -18,12 +18,59 @@ use App\Models\ExtracurricularGrade;
 
 class RaporService
 {
+    private function getGroupedSubjects(array $subjectsData): \Illuminate\Support\Collection
+    {
+        return collect($subjectsData)
+            ->groupBy('group')
+            ->sortBy(function ($subjects, $groupName) {
+                if (stripos((string) $groupName, 'Kelompok A') !== false || stripos((string) $groupName, 'Umum') !== false) {
+                    return 1;
+                }
+                if (stripos((string) $groupName, 'Kelompok B') !== false || stripos((string) $groupName, 'Muatan Lokal') !== false) {
+                    return 2;
+                }
+                return 3;
+            });
+    }
+
+    private function getPersistedOrGeneratedData(Student $student, int $academicYearId, ?StudyGroup $rombel): array
+    {
+        $persistedRapor = StudentRapor::where('student_id', $student->id)
+            ->where('academic_year_id', $academicYearId)
+            ->first();
+
+        if ($persistedRapor) {
+            return [
+                'sakit' => $persistedRapor->sakit,
+                'izin' => $persistedRapor->izin,
+                'alpha' => $persistedRapor->alpha,
+                'catatanWalikelas' => $persistedRapor->catatan_wali_kelas,
+                'isNaik' => $persistedRapor->is_naik,
+                'kenaikanKelasTo' => $persistedRapor->kenaikan_kelas_to,
+                'isGenerated' => true,
+            ];
+        }
+
+        $attendance = $this->getAttendanceRecap($student, $academicYearId);
+        $rank = $this->getStudentRank($student, $academicYearId, $rombel);
+
+        return [
+            'sakit' => $attendance['sakit'],
+            'izin' => $attendance['izin'],
+            'alpha' => $attendance['alpha'],
+            'catatanWalikelas' => "Selamat {$student->user->name}, kamu berhasil meraih peringkat ke-{$rank}. Pertahankan semangat belajarmu dan jangan cepat puas nak!",
+            'isNaik' => null,
+            'kenaikanKelasTo' => null,
+            'isGenerated' => false,
+        ];
+    }
+
     /**
      * Get all data required to render the student's academic report card.
      * 
      * @param Student $student
      * @param int $academicYearId
-     * @return array{student: Student, school: \App\Models\SchoolSetting, principal: \App\Models\Teacher|null, activeYear: \App\Models\AcademicYear|null, rombel: \App\Models\StudyGroup|null, groupedSubjects: \Illuminate\Support\Collection, sakit: int, izin: int, alpha: int, ekskuls: array, cocurriculars: array, p5Project: \App\Models\P5Project|null, graduateProfiles: array, rank: int, catatanWalikelas: string}
+     * @return array<string, mixed>
      */
     public function getStudentRaporData(Student $student, int $academicYearId): array
     {
@@ -35,80 +82,50 @@ class RaporService
             'studyGroups.waliKelas.user'
         ]);
 
-        /** @var \App\Models\StudyGroup|null $rombel */
+        /** @var StudyGroup|null $rombel */
         $rombel = $student->studyGroups->where('academic_year_id', $academicYearId)->first();
         
-        /** @var \App\Models\Level|null $level */
+        /** @var Level|null $level */
         $level = $rombel?->level;
 
-        /** @var \App\Models\SchoolSetting $school */
+        /** @var SchoolSetting $school */
         $school = SchoolSetting::current();
 
-        /** @var \App\Models\Teacher|null $principal */
+        /** @var Teacher|null $principal */
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
 
-        /** @var \App\Models\AcademicYear|null $activeYear */
+        /** @var AcademicYear|null $activeYear */
         $activeYear = AcademicYear::find($academicYearId);
 
         $subjectsData = $this->getSubjectsData($student, $academicYearId, $level);
-
-        $groupedSubjects = collect($subjectsData)
-            ->groupBy('group')
-            ->sortBy(function ($subjects, $groupName) {
-                if (stripos($groupName, 'Kelompok A') !== false || stripos($groupName, 'Umum') !== false) {
-                    return 1;
-                }
-                if (stripos($groupName, 'Kelompok B') !== false || stripos($groupName, 'Muatan Lokal') !== false) {
-                    return 2;
-                }
-                return 3;
-            });
+        $groupedSubjects = $this->getGroupedSubjects($subjectsData);
 
         $p5Data = $this->getP5ProjectAndProfiles($student, $academicYearId);
 
-        $persistedRapor = StudentRapor::where('student_id', $student->id)
-            ->where('academic_year_id', $academicYearId)
-            ->first();
+        $attendanceData = $this->getPersistedOrGeneratedData($student, $academicYearId, $rombel);
 
-        if ($persistedRapor) {
-            $sakit = $persistedRapor->sakit;
-            $izin = $persistedRapor->izin;
-            $alpha = $persistedRapor->alpha;
-            $catatanWalikelas = $persistedRapor->catatan_wali_kelas;
-            $isNaik = $persistedRapor->is_naik;
-            $kenaikanKelasTo = $persistedRapor->kenaikan_kelas_to;
-        } else {
-            $attendance = $this->getAttendanceRecap($student, $academicYearId);
-            $sakit = $attendance['sakit'];
-            $izin = $attendance['izin'];
-            $alpha = $attendance['alpha'];
-            $isNaik = null;
-            $kenaikanKelasTo = null;
-            
-            $rank = $this->getStudentRank($student, $academicYearId, $rombel);
-            $catatanWalikelas = "Selamat {$student->user->name}, kamu berhasil meraih peringkat ke-{$rank}. Pertahankan semangat belajarmu dan jangan cepat puas nak!";
-        }
+        /** @var array<string, mixed> $result */
+        $result = [];
+        $result['student'] = $student;
+        $result['school'] = $school;
+        $result['principal'] = $principal;
+        $result['activeYear'] = $activeYear;
+        $result['rombel'] = $rombel;
+        $result['groupedSubjects'] = $groupedSubjects;
+        $result['sakit'] = $attendanceData['sakit'];
+        $result['izin'] = $attendanceData['izin'];
+        $result['alpha'] = $attendanceData['alpha'];
+        $result['ekskuls'] = $this->getEkskulsRecap($student, $academicYearId);
+        $result['cocurriculars'] = $this->getCocurricularData($level, $activeYear);
+        $result['p5Project'] = $p5Data['p5Project'];
+        $result['graduateProfiles'] = $p5Data['graduateProfiles'];
+        $result['rank'] = $this->getStudentRank($student, $academicYearId, $rombel);
+        $result['catatanWalikelas'] = $attendanceData['catatanWalikelas'];
+        $result['isNaik'] = $attendanceData['isNaik'];
+        $result['kenaikanKelasTo'] = $attendanceData['kenaikanKelasTo'];
+        $result['isGenerated'] = $attendanceData['isGenerated'];
 
-        return [
-            'student' => $student,
-            'school' => $school,
-            'principal' => $principal,
-            'activeYear' => $activeYear,
-            'rombel' => $rombel,
-            'groupedSubjects' => $groupedSubjects,
-            'sakit' => $sakit,
-            'izin' => $izin,
-            'alpha' => $alpha,
-            'ekskuls' => $this->getEkskulsRecap($student, $academicYearId),
-            'cocurriculars' => $this->getCocurricularData($level, $activeYear),
-            'p5Project' => $p5Data['p5Project'],
-            'graduateProfiles' => $p5Data['graduateProfiles'],
-            'rank' => $this->getStudentRank($student, $academicYearId, $rombel),
-            'catatanWalikelas' => $catatanWalikelas,
-            'isNaik' => $isNaik,
-            'kenaikanKelasTo' => $kenaikanKelasTo,
-            'isGenerated' => !empty($persistedRapor),
-        ];
+        return $result;
     }
 
     /**
@@ -180,7 +197,7 @@ class RaporService
         }
 
         $mappings = SubjectReportMapping::with('subject.subjectReportGroup')
-            ->where('level_id', $level->id)
+            ->whereJsonContains('level_ids', $level->id)
             ->orderBy('no_urut')
             ->get();
 
@@ -199,13 +216,18 @@ class RaporService
                     ->where('academic_year_id', $academicYearId)
                     ->first();
 
+                // Sembunyikan mata pelajaran Agama yang tidak ada nilainya (berarti bukan agama siswa tersebut)
+                if (!$grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
+                    continue;
+                }
+
                 $groupName = $subject->subjectReportGroup?->nama_kelompok;
                 if (!$groupName) {
                     $groupName = $subject->is_umum ? 'Kelompok A' : 'Kelompok B';
                 }
 
                 $subjectsData[] = [
-                    'nama' => $mapping->nama_lokal ?: $subject->nama_mapel,
+                    'nama' => $subject->nama_mapel,
                     'no_urut' => $mapping->no_urut,
                     'group' => $groupName,
                     'nilai' => $grade ? round(($grade->nilai_tugas + $grade->nilai_uts + $grade->nilai_uas) / 3) : null,
@@ -225,6 +247,11 @@ class RaporService
                     ->where('subject_id', $subject->id)
                     ->where('academic_year_id', $academicYearId)
                     ->first();
+
+                // Sembunyikan mata pelajaran Agama yang tidak ada nilainya (berarti bukan agama siswa tersebut)
+                if (!$grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
+                    continue;
+                }
 
                 $groupName = $subject->subjectReportGroup?->nama_kelompok;
                 if (!$groupName) {
@@ -288,10 +315,11 @@ class RaporService
             ->with('extracurricular')
             ->get()
             ->map(function ($grade) {
+                $defaultKeterangan = ExtracurricularGrade::$defaultKeterangan[$grade->predikat] ?? 'Berpartisipasi aktif dan menunjukkan minat tinggi.';
                 return [
                     'nama'     => $grade->extracurricular->nama_ekskul,
                     'nilai'    => $grade->predikat,
-                    'deskripsi' => $grade->keterangan ?: 'Berpartisipasi aktif dan menunjukkan minat tinggi.',
+                    'deskripsi' => $grade->keterangan ?: $defaultKeterangan,
                 ];
             })
             ->toArray();

@@ -160,7 +160,7 @@ class ExtracurricularGradeResource extends Resource
 
                 SelectFilter::make('study_group_id')
                     ->label('Rombel')
-                    ->options(fn() => \App\Models\StudyGroup::pluck('nama_rombel', 'id'))
+                    ->options(fn() => \App\Models\StudyGroup::where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))->pluck('nama_rombel', 'id'))
                     ->query(function ($query, array $data) {
                         if (!empty($data['value'])) {
                             $query->whereHas('student.studyGroups', function ($q) use ($data) {

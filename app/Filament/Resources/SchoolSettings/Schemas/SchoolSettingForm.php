@@ -105,12 +105,13 @@ class SchoolSettingForm
                             ->columnSpan('full')
                             ->helperText('Rekomendasi ukuran: 200x200px (Max 1MB). Akan digunakan pada kop surat dan laporan.'),
                             
-                        FileUpload::make('kop_surat')
-                            ->label('Kop Surat Khusus (Opsional)')
+                        FileUpload::make('logo_pemda')
+                            ->label('Logo Pemda (Pemerintah Daerah)')
                             ->image()
-                            ->directory('school-settings/kop')
-                            ->maxSize(2048)
-                            ->columnSpan('full'),
+                            ->directory('school-settings/logo-pemda')
+                            ->maxSize(1024)
+                            ->columnSpan('full')
+                            ->helperText('Logo Pemda biasanya digunakan di sisi kiri Kop Surat pada dokumen rapor resmi.'),
                     ])
                     ->columns(1),
 
@@ -144,7 +145,7 @@ class SchoolSettingForm
                             ->afterStateUpdated(fn ($set) => $set('village', null)),
                         Select::make('village')
                             ->label('Kelurahan/Desa')
-                            ->options(fn (callable $get) => SchoolRegionService::getVillages($get('district')))
+                            ->options(fn (callable $get) => \App\Services\RegionService::getVillages($get('district'), $get('city')))
                             ->searchable()
                             ->required(),
                     ])

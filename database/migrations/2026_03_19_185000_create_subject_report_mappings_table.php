@@ -14,14 +14,13 @@ return new class extends Migration
         Schema::create('subject_report_mappings', function (Blueprint $table) {
             $table->id();
             $table->string('kurikulum', 100);
-            $table->foreignId('level_id')->constrained()->cascadeOnDelete();
+            $table->json('level_ids'); // Array of level_id
             $table->foreignId('subject_id')->constrained()->cascadeOnDelete();
-            $table->string('nama_lokal', 100);
             $table->integer('no_urut');
             $table->timestamps();
 
-            // Prevent duplicate mapping of same subject in same curriculum, level
-            $table->unique(['kurikulum', 'level_id', 'subject_id'], 'unique_curriculum_level_subject');
+            // Prevent duplicate mapping of same subject in same curriculum
+            $table->unique(['kurikulum', 'subject_id'], 'unique_curriculum_subject');
         });
     }
 

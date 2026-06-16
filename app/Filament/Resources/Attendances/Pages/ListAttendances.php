@@ -94,6 +94,7 @@ class ListAttendances extends ListRecords
                                     return $query->pluck('nama_rombel', 'id');
                                 })
                                 ->required()
+                                ->default(request()->query('study_group_id'))
                                 ->live()
                                 ->afterStateUpdated(fn (Get $get, Set $set) => self::loadStudentsForModal($get, $set)),
                         ])->columns(2),
@@ -181,6 +182,10 @@ class ListAttendances extends ListRecords
             ->where('tanggal', $tanggal)
             ->get()
             ->keyBy('student_id');
+
+        if (request()->query('missing_only')) {
+            $students = $students->filter(fn ($student) => !isset($existing[$student->id]))->values();
+        }
 
         $items = $students->map(fn ($student) => [
             'student_id' => $student->id,
