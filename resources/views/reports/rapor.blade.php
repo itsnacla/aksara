@@ -591,7 +591,7 @@
                     <p class="font-bold">_________________________</p>
                 </div>
                 <div class="text-center w-60">
-                    <p>................., {{ now()->translatedFormat('d F Y') }}</p>
+                    <p>................., {{ $activeYear && $activeYear->rapor_date ? \Carbon\Carbon::parse($activeYear->rapor_date)->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}</p>
                     <p class="mb-20">Wali Kelas</p>
                     <p class="font-bold underline">{{ $rombel->waliKelas?->nama_lengkap ?? '.........................................' }}</p>
                     <p>NIP. {{ $rombel->waliKelas?->nip ?? '.........................' }}</p>

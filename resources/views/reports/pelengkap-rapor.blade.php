@@ -444,7 +444,7 @@
                 </div>
                 
                 <div class="text-left w-64">
-                    <p class="mb-1 text-[14px]">{{ ucwords(strtolower($school->village ?? 'Desa')) }}, {{ now()->locale('id')->translatedFormat('d F Y') }}</p>
+                    <p class="mb-1 text-[14px]">{{ ucwords(strtolower($school->village ?? 'Desa')) }}, {{ $rombel && $rombel->academicYear && $rombel->academicYear->pelengkap_rapor_date ? \Carbon\Carbon::parse($rombel->academicYear->pelengkap_rapor_date)->locale('id')->translatedFormat('d F Y') : now()->locale('id')->translatedFormat('d F Y') }}</p>
                     <p class="mb-16 text-[14px]">Kepala Sekolah</p>
                     <p class="font-bold text-[14px] underline">{{ $principal?->nama_lengkap ?? '.........................................' }}</p>
                     <p class="font-bold text-[14px]">NIP. {{ $principal?->nip ?? '.........................................' }}</p>

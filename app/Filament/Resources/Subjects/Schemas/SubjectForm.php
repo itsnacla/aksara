@@ -28,7 +28,11 @@ class SubjectForm
                     ->helperText('Jika aktif, guru pengajar akan otomatis Wali Kelas.'),
                 \Filament\Forms\Components\Select::make('subject_report_group_id')
                     ->label('Kelompok Mapel Rapor')
-                    ->relationship('subjectReportGroup', 'nama_kelompok')
+                    ->relationship(
+                        name: 'subjectReportGroup',
+                        titleAttribute: 'nama_kelompok',
+                        modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('is_active', true)
+                    )
                     ->placeholder('Pilih Kelompok Mapel Rapor...')
                     ->searchable()
                     ->preload()

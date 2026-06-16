@@ -2,7 +2,7 @@
 
 <div class="flex min-h-screen bg-gray-50">
     <!-- Left Side: Visual / Illustration -->
-    <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-blue-900 items-center justify-center">
+    <div wire:ignore class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-blue-900 items-center justify-center">
         <!-- Background Image with Overlay -->
         <img src="{{ asset('images/background.png') }}" 
              class="absolute inset-0 w-full h-full object-cover z-0" 
@@ -38,7 +38,7 @@
                 $schoolEmail = $school && $school->email ? $school->email : 'support@samastanuswantara.com';
             @endphp
 
-            <div class="text-center mb-10">
+            <div wire:ignore class="text-center mb-10">
                 <img src="{{ $logoUrl }}" alt="Logo {{ $schoolName }}" class="h-24 mx-auto mb-6 object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300">
                 <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ $schoolName }}</h2>
                 <p class="text-gray-500 mt-2 font-medium">{{ $subtitle }}</p>
@@ -48,11 +48,11 @@
                 {{ $slot }}
             </div>
 
-            <div class="mt-10 text-center text-sm font-medium text-gray-500">
+            <div wire:ignore class="mt-10 text-center text-sm font-medium text-gray-500">
                 Mengalami kendala? <a href="mailto:{{ $schoolEmail }}" class="text-blue-600 hover:text-blue-800 transition-colors border-b border-transparent hover:border-blue-800 pb-0.5">Hubungi Admin</a>
             </div>
             
-            <div class="mt-8 text-center text-xs text-gray-400">
+            <div wire:ignore class="mt-8 text-center text-xs text-gray-400">
                 <p>&copy; {{ date('Y') }} {{ $schoolName }}. Hak Cipta Dilindungi.</p>
                 <p class="mt-1">Developed & Maintained by <a href="https://samastanuswantara.com" target="_blank" class="text-blue-600 hover:text-blue-800 transition-colors font-medium">Tateta</a></p>
             </div>

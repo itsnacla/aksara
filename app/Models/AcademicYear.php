@@ -13,11 +13,15 @@ use Illuminate\Database\Eloquent\Model;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
-#[Fillable(['tahun_ajaran', 'semester', 'is_active'])]
+#[Fillable(['tahun_ajaran', 'semester', 'is_active', 'rapor_date', 'schedule_date', 'attendance_date', 'pelengkap_rapor_date'])]
 class AcademicYear extends Model
 {
     protected $casts = [
         'is_active' => 'boolean',
+        'rapor_date' => 'date',
+        'schedule_date' => 'date',
+        'attendance_date' => 'date',
+        'pelengkap_rapor_date' => 'date',
     ];
 
     protected static function booted()

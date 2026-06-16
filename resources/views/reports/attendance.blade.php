@@ -147,7 +147,7 @@
                 <p>NIP. {{ $principal?->nip ?? '.........................' }}</p>
             </div>
             <div class="text-center w-64">
-                <p>................., {{ now()->translatedFormat('d F Y') }}</p>
+                <p>................., {{ $rombel && $rombel->academicYear && $rombel->academicYear->attendance_date ? \Carbon\Carbon::parse($rombel->academicYear->attendance_date)->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}</p>
                 <p class="mb-20">Wali Kelas</p>
                 <p class="font-bold underline">{{ $rombel->waliKelas?->nama_lengkap ?? '.........................................' }}</p>
                 <p>NIP. {{ $rombel->waliKelas?->nip ?? '.........................' }}</p>
