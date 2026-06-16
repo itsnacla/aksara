@@ -173,7 +173,7 @@
         <div class="page-container" style="justify-content: space-around; text-align: center;">
             <div style="margin-top: 2rem;">
                 @if($school && $school->logo_pemda)
-                    <img src="{{ asset('storage/' . $school->logo_pemda) }}" alt="Logo Pemda" class="h-32 object-contain mx-auto">
+                    <img src="{{ Storage::url($school->logo_pemda) }}" alt="Logo Pemda" class="h-32 object-contain mx-auto">
                 @else
                     <div class="h-32 w-32 border border-dashed border-gray-400 mx-auto flex items-center justify-center text-xs text-gray-500">Logo Pemda</div>
                 @endif
@@ -186,7 +186,7 @@
 
             <div>
                 @if($school && $school->logo)
-                    <img src="{{ asset('storage/' . $school->logo) }}" alt="Logo Sekolah" class="h-32 object-contain mx-auto">
+                    <img src="{{ Storage::url($school->logo) }}" alt="Logo Sekolah" class="h-32 object-contain mx-auto">
                 @else
                     <div class="h-32 w-32 border border-dashed border-gray-400 mx-auto flex items-center justify-center text-xs text-gray-500">Logo Sekolah</div>
                 @endif

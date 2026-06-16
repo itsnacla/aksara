@@ -61,9 +61,20 @@ class PerkembanganNilaiChart extends ChartWidget
 
         // Map data to Chart.js format
         $datasets = [];
-        $colors = ['#3b1b61', '#d93836', '#4a237a', '#c0392b', '#5b2c6f', '#e74c3c', '#8e44ad'];
         
-        $colorIndex = 0;
+        $scheduleColorsLight = ['#fee2e2', '#ffedd5', '#fef9c3', '#dcfce7', '#d1fae5', '#e0f2fe', '#e0e7ff', '#f3e8ff', '#fae8ff'];
+        $scheduleColorsDark  = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981', '#0ea5e9', '#6366f1', '#a855f7', '#d946ef'];
+        
+        $subjectNames = $data['chart']['subject_names'] ?? [];
+        $barBackgroundColors = [];
+        $barBorderColors = [];
+        
+        foreach ($subjectNames as $namaMapel) {
+            $colorIndex = crc32($namaMapel) % count($scheduleColorsLight);
+            $barBackgroundColors[] = $scheduleColorsLight[abs($colorIndex)];
+            $barBorderColors[] = $scheduleColorsDark[abs($colorIndex)];
+        }
+        
         foreach ($data['chart']['series'] as $series) {
             $isLine = $series['name'] === 'Rata-Rata' || $series['type'] === 'line';
             
@@ -78,9 +89,13 @@ class PerkembanganNilaiChart extends ChartWidget
                 $dataset['borderWidth'] = 4;
                 $dataset['fill'] = false;
                 $dataset['tension'] = 0.4; // smooth curve
+                $dataset['order'] = 1;
             } else {
-                $dataset['backgroundColor'] = $colors[$colorIndex % count($colors)];
-                $colorIndex++;
+                $dataset['backgroundColor'] = empty($barBackgroundColors) ? '#8e44ad' : $barBackgroundColors;
+                $dataset['borderColor'] = empty($barBorderColors) ? '#5b2c6f' : $barBorderColors;
+                $dataset['borderWidth'] = 2;
+                $dataset['order'] = 2;
+                $dataset['borderRadius'] = 4;
             }
             
             $datasets[] = $dataset;

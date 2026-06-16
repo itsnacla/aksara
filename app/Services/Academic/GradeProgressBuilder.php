@@ -145,11 +145,26 @@ class GradeProgressBuilder
             $tableData[] = $row;
         }
 
+        $filteredChartSeries = [];
+        foreach ($chartSeries as $series) {
+            $hasData = false;
+            foreach ($series['data'] as $val) {
+                if ($val > 0) {
+                    $hasData = true;
+                    break;
+                }
+            }
+            if ($hasData) {
+                $filteredChartSeries[] = $series;
+            }
+        }
+
         return [
             'table' => $tableData,
             'chart' => [
                 'categories' => $chartCategories,
-                'series' => array_values($chartSeries)
+                'series' => $filteredChartSeries,
+                'subject_names' => $subjects->pluck('nama_mapel')->toArray(),
             ]
         ];
     }

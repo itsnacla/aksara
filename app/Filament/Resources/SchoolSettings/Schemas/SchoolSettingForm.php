@@ -100,17 +100,14 @@ class SchoolSettingForm
                         FileUpload::make('logo')
                             ->label('Logo Sekolah')
                             ->image()
-                            ->directory('school-settings')
-                            ->maxSize(1024)
-                            ->columnSpan('full')
-                            ->helperText('Rekomendasi ukuran: 200x200px (Max 1MB). Akan digunakan pada kop surat dan laporan.'),
-                            
+                            ->maxSize(2048)
+                            ->directory('school-settings/logo')
+                            ->helperText('Logo utama sekolah yang akan tampil di aplikasi dan dokumen.'),
                         FileUpload::make('logo_pemda')
                             ->label('Logo Pemda (Pemerintah Daerah)')
                             ->image()
+                            ->maxSize(2048)
                             ->directory('school-settings/logo-pemda')
-                            ->maxSize(1024)
-                            ->columnSpan('full')
                             ->helperText('Logo Pemda biasanya digunakan di sisi kiri Kop Surat pada dokumen rapor resmi.'),
                     ])
                     ->columns(1),

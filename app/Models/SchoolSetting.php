@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\Model;
     'nis_nss_nds',
     'logo',
     'logo_pemda',
+    'logo_tut_wuri',
     'address',
     'village',
     'district',
