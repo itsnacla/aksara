@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@700;800&display=swap');
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -6,6 +7,145 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Typography */
+    --font-heading: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    /* Color Palette - The Living Ledger */
+    --color-primary: #005da7;
+    --color-primary-container: #2976c7;
+    --color-on-surface: #191c1d;
+    
+    /* Surface Hierarchy (Tonal Layering) */
+    --color-surface: #f8f9fa; /* Level 0 - The Desk */
+    --color-surface-container-low: #f3f4f5; /* Level 1 - Sections */
+    --color-surface-container-lowest: #ffffff; /* Level 2 - Active Cards */
 }
+
+@layer base {
+    /* Support for Filament Dark Mode */
+    .dark {
+        --color-surface: #18181b; /* Zinc-900 for background */
+        --color-surface-container-low: #27272a; /* Zinc-800 for sections */
+        --color-surface-container-lowest: #3f3f46; /* Zinc-700 for cards */
+        --color-on-surface: #fafafa; /* Zinc-50 for text */
+    }
+
+    body {
+        @apply !bg-[var(--color-surface)] !text-[var(--color-on-surface)] antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply !font-heading tracking-tight;
+    }
+}
+
+@layer components {
+    /* The "No-Line" Rule - Soft touch, avoiding breaking layout */
+    .fi-section,
+    .fi-card,
+    .fi-ta-ctn {
+        @apply !border-none !shadow-none !bg-[var(--color-surface-container-lowest)] !rounded-[1rem];
+    }
+
+    /* Tonal Layering for Sidebar */
+    .fi-sidebar {
+        @apply !bg-[var(--color-surface-container-low)] !border-none;
+    }
+
+    /* Pill Buttons with Signature Gradient */
+    .fi-btn {
+        @apply !rounded-full !px-6 transition-all duration-300;
+    }
+    
+    .fi-btn-color-primary {
+        @apply !bg-gradient-to-br !from-[#005da7] !to-[#2976c7] !border-none !shadow-sm hover:!shadow-md;
+    }
+
+    /* Input Fields - Soft touch */
+    .fi-input-wrp {
+        @apply !bg-[var(--color-surface-container-low)] !border-none !rounded-lg !ring-0 !shadow-none;
+    }
+    
+    .fi-input-wrp:focus-within {
+        @apply !ring-2 !ring-[var(--color-primary)]/40;
+    }
+
+    /* Table Zebra Striping (No lines) */
+    .fi-ta-row:nth-child(even) {
+        @apply !bg-[var(--color-surface-container-low)];
+    }
+
+    /* ─── Admin Dashboard Premium Styles ─── */
+    
+    /* Stat Cards - Elevated with subtle hover animation */
+    .fi-wi-stats-overview-stat {
+        @apply !rounded-2xl !border-none transition-all duration-300 ease-out;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .fi-wi-stats-overview-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 93, 167, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Stat card icon container */
+    .fi-wi-stats-overview-stat-icon {
+        @apply !rounded-xl;
+    }
+
+    /* Chart Widgets - Clean card look */
+    .fi-wi-chart {
+        @apply !rounded-2xl !border-none !overflow-hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Table Widgets - Polished card */
+    .fi-wi-table {
+        @apply !rounded-2xl !border-none !overflow-hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Dashboard heading area */
+    .fi-wi-chart .fi-wi-chart-header,
+    .fi-wi-table .fi-ta-header-ctn {
+        @apply !border-b-0;
+    }
+
+    /* Smooth chart canvas transitions */
+    .fi-wi-chart canvas {
+        @apply transition-opacity duration-500;
+    }
+
+    /* Stats overview grid spacing and transparency */
+    .fi-wi-stats-overview,
+    .fi-wi-stats-overview .fi-section,
+    .fi-wi-stats-overview.fi-section {
+        @apply !bg-transparent !shadow-none !border-none;
+    }
+    
+    .fi-wi-stats-overview .fi-section-content {
+        @apply !p-0;
+    }
+
+    .fi-wi-stats-overview-stats {
+        @apply !gap-4 lg:!gap-6;
+    }
+
+    /* Widget section spacing on dashboard */
+    .fi-page-dashboard .fi-widgets {
+        @apply !gap-6;
+    }
+}
+
+@layer utilities {
+    .hide-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none; /* Chrome, Safari and Opera */
+    }
+}
+

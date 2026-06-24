@@ -2,47 +2,99 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $username
+ * @property string|null $email
+ * @property string $password
+ * @property string|null $photo
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ */
+#[Fillable([
+    'name',
+    'username',
+    'email',
+    'password',
+    'photo',
+    'is_active',
+])]
+class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
+    
+    protected $guard_name = 'web';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    // Users table only has created_at, no updated_at
+    const UPDATED_AT = null;
+
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class);
+    }
+
+    public function parent()
+    {
+        return $this->hasOne(StudentParent::class);
+    }
+
+    public function staff()
+    {
+        return $this->hasOne(Staff::class);
+    }
+
+    public function student()
+    {
+        return $this->hasOne(Student::class);
+    }
+
+    public function studentLeaves()
+    {
+        return $this->hasMany(StudentLeave::class);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->is_active;
+    }
+
+    public function getNamaLengkapAttribute()
+    {
+        try {
+            if ($this->relationLoaded('teacher') && $this->teacher) {
+                return $this->teacher->nama_lengkap;
+            } elseif (!$this->relationLoaded('teacher')) {
+                // If preventLazyLoading is active, this will catch the exception
+                if ($this->teacher) {
+                    return $this->teacher->nama_lengkap;
+                }
+            }
+        } catch (\Illuminate\Database\LazyLoadingViolationException $e) {
+            // fallback to name if lazy loading is prevented
+        }
+        
+        return $this->name;
     }
 }
