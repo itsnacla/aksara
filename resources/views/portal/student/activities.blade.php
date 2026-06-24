@@ -45,7 +45,7 @@
                                         <div class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></div>
                                         <div>
                                             <p class="font-bold text-sm text-gray-800 group-hover:text-primary transition-colors truncate">{{ $project->name }}</p>
-                                            <p class="text-[11px] font-medium text-gray-400 mt-0.5">{{ $project->theme?->name ?? 'Tema P5' }}</p>
+                                            <p class="text-[11px] font-medium text-gray-400 mt-0.5">{{ $project->project?->theme?->name ?? 'Tema P5' }}</p>
                                         </div>
                                     </div>
                                 </div>

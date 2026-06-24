@@ -203,7 +203,7 @@ class PortalController extends Controller
             'recentLeaves' => StudentLeave::where('student_id', $studentId)->with(['student.user'])->latest()->take(3)->get(),
             'p5Projects' => $student && $activeYear ? \App\Models\P5Group::whereHas('students', function ($q) use ($student) {
                 $q->where('p5_group_student.student_id', $student->id);
-            })->where('academic_year_id', $activeYear->id)->with('theme')->get() : collect(),
+            })->where('academic_year_id', $activeYear->id)->with('project.theme')->get() : collect(),
             'academicYear' => $activeYear,
         ];
     }
