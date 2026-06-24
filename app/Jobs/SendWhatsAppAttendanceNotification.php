@@ -25,9 +25,15 @@ class SendWhatsAppAttendanceNotification implements ShouldQueue
 
     public function handle(): void
     {
+        // Prevent duplicate notifications
+        $this->attendance->refresh();
+        if ($this->attendance->wa_sent_at) {
+            return;
+        }
+
         $settings = SchoolSetting::current();
 
-        if (!$settings->is_wa_enabled || !$settings->wa_gateway_token) {
+        if (!$settings->is_wa_enabled || !$settings->wa_notify_attendance) {
             return;
         }
 
@@ -40,46 +46,24 @@ class SendWhatsAppAttendanceNotification implements ShouldQueue
 
         $name = $student->user->name;
         $status = $this->attendance->status;
-        $time = now()->format('H:i');
-        $date = now()->isoFormat('dddd, D MMMM YYYY');
+        $time = $this->attendance->created_at->format('H:i');
+        $date = $this->attendance->created_at->isoFormat('dddd, D MMMM YYYY');
         
         $schoolName = strtoupper($settings->name);
         
         $message = "🔔 *NOTIFIKASI PRESENSI $schoolName*\n\n";
         $message .= "Halo Ayah/Bunda,\n";
         $message .= "Alhamdulillah, Ananda *$name* telah melakukan presensi pada:\n\n";
-        $message .= "📅 *Hari/Tgl:* $date\n";
+        $message .= "*Hari/Tgl:* $date\n";
         $message .= "⏰ *Waktu:* $time WIB\n";
-        $message .= "📍 *Status:* " . strtoupper($status) . "\n\n";
+        $message .= "*Status:* " . strtoupper($status) . "\n\n";
         $message .= "Semoga Ananda senantiasa semangat dalam menuntut ilmu. Aamiin.\n\n";
         $message .= "--- _Powered by Aksara | Tateta_ ---";
 
-        try {
-            $url = $settings->wa_gateway_provider === 'custom' 
-                ? $settings->wa_gateway_url 
-                : 'https://api.fonnte.com/send';
+        $sent = \App\Services\WAService::sendMessage($parent->no_whatsapp, $message);
 
-            $phoneParam = $settings->wa_gateway_provider === 'custom'
-                ? $settings->wa_gateway_phone_param
-                : 'target';
-
-            $messageParam = $settings->wa_gateway_provider === 'custom'
-                ? $settings->wa_gateway_message_param
-                : 'message';
-
-            $response = Http::withHeaders([
-                'Authorization' => $settings->wa_gateway_token,
-            ])->post($url, [
-                $phoneParam => $parent->no_whatsapp,
-                $messageParam => $message,
-                'delay' => '2',
-            ]);
-
-            if (!$response->successful()) {
-                Log::error('WA Notification Failed: ' . $response->body());
-            }
-        } catch (\Exception $e) {
-            Log::error('WA Notification Error: ' . $e->getMessage());
+        if ($sent) {
+            $this->attendance->update(['wa_sent_at' => now()]);
         }
     }
 }

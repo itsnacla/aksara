@@ -7,6 +7,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -20,6 +21,18 @@ class SubjectsTable
                     ->label('Mata Pelajaran')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('subjectReportGroup.nama_kelompok')
+                    ->label('Kelompok Rapor')
+                    ->badge()
+                    ->color('primary')
+                    ->placeholder('-')
+                    ->sortable()
+                    ->searchable(),
+                IconColumn::make('is_graded')
+                    ->label('Ikut Rapor')
+                    ->boolean()
+                    ->sortable()
+                    ->alignCenter(),
                 TextColumn::make('kode_mapel')
                     ->label('Kode')
                     ->searchable()
@@ -38,6 +51,7 @@ class SubjectsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('subjectReportGroup.nama_kelompok', 'asc')
             ->filters([
                 //
             ])

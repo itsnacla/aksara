@@ -23,13 +23,17 @@ class UserResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static UnitEnum|string|null $navigationGroup = 'Sistem & Konfigurasi';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Manajemen User';
+    protected static ?string $navigationLabel = 'Data User';
 
-    protected static ?string $recordTitleAttribute = 'User';
+    protected static ?string $modelLabel = 'User';
+
+    protected static ?string $pluralModelLabel = 'User';
+
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
     {

@@ -2,26 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Level;
-use App\Models\Classroom;
-use App\Models\AcademicYear;
 
+/**
+ * @property int $id
+ * @property string $nama_rombel
+ * @property int $level_id
+ * @property int $classroom_id
+ * @property int $academic_year_id
+ * @property int|null $walikelas_id
+ */
+#[Fillable([
+    'nama_rombel',
+    'level_id',
+    'classroom_id',
+    'academic_year_id',
+    'walikelas_id',
+])]
 class StudyGroup extends Model
 {
-    protected $fillable = [
-        'nama_rombel',
-        'level_id',
-        'classroom_id',
-        'academic_year_id',
-        'walikelas_id',
-    ];
-
-    protected static function boot()
+    protected static function booted()
     {
-        parent::boot();
-
         static::creating(function ($model) {
+            if (!$model->academic_year_id) {
+                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            }
             $level = Level::find($model->level_id)?->nama_tingkatan ?? 'N/A';
             $room = Classroom::find($model->classroom_id)?->nama_ruangan ?? 'N/A';
             

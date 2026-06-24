@@ -26,6 +26,21 @@ class SubjectForm
                     ->label('Mapel Umum (Wali Kelas)')
                     ->default(true)
                     ->helperText('Jika aktif, guru pengajar akan otomatis Wali Kelas.'),
+                \Filament\Forms\Components\Select::make('subject_report_group_id')
+                    ->label('Kelompok Mapel Rapor')
+                    ->relationship(
+                        name: 'subjectReportGroup',
+                        titleAttribute: 'nama_kelompok',
+                        modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('is_active', true)
+                    )
+                    ->placeholder('Pilih Kelompok Mapel Rapor...')
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Pilih kelompok pembagian rapor untuk mata pelajaran ini.'),
+                \Filament\Forms\Components\Toggle::make('is_graded')
+                    ->label('Ikut Penilaian / Rapor')
+                    ->default(true)
+                    ->helperText('Jika dinonaktifkan, mata pelajaran ini hanya tampil di jadwal KBM mingguan dan dikecualikan dari cetak rapor.'),
                 TextInput::make('total_jp')
                     ->label('Total Jam Pelajaran (JP)')
                     ->helperText('Jumlah total jam pelajaran untuk mata pelajaran ini dalam satu minggu.')

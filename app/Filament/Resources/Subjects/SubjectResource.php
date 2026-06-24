@@ -19,11 +19,15 @@ class SubjectResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-book-open';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Kurikulum & Referensi';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $navigationLabel = 'Mata Pelajaran';
+
+    protected static ?string $modelLabel = 'Mata Pelajaran';
+
+    protected static ?string $pluralModelLabel = 'Mata Pelajaran';
 
     protected static ?string $recordTitleAttribute = 'nama_mapel';
 

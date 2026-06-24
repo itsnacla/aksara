@@ -4,36 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Aksara System' }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'media',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0f7ff',
-                            100: '#e0effe',
-                            200: '#badffc',
-                            300: '#7cc2f8',
-                            400: '#36a2f1',
-                            500: '#005da7', // Chatbot primary
-                            600: '#004a86',
-                            700: '#003a6c',
-                            800: '#00315a',
-                            900: '#062a4d',
-                            950: '#041b33',
-                        },
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
     <style>
         [xl-cloak] { display: none !important; }
         

@@ -9,8 +9,17 @@ use App\Models\Subject;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
+use Livewire\Attributes\On;
+
 class AdminStatsOverview extends BaseWidget
 {
+    #[On('echo:stats,StatsUpdated')]
+    public function refreshStats($event)
+    {
+        // This will trigger getStats() to be called again
+        $this->dispatch('refreshStats');
+    }
+
     protected static ?int $sort = -3;
 
     protected int | string | array $columnSpan = 'full';
@@ -23,7 +32,7 @@ class AdminStatsOverview extends BaseWidget
     protected function getStats(): array
     {
         $totalStudents = Student::count();
-        $activeStudents = Student::where('status', 'active')->count();
+        $activeStudents = Student::where('status', 'aktif')->count();
 
         $totalTeachers = Teacher::count();
 
@@ -122,6 +131,6 @@ class AdminStatsOverview extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        return auth()->user()?->hasAnyRole(['super_admin', 'staff']) ?? false;
     }
 }

@@ -21,15 +21,24 @@ class TeacherResource extends Resource
 {
     protected static ?string $model = Teacher::class;
 
+    protected static ?string $recordTitleAttribute = 'nip';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-briefcase';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Data Guru';
 
-    protected static ?string $recordTitleAttribute = 'user.name';
+    protected static ?string $modelLabel = 'Guru';
+
+    protected static ?string $pluralModelLabel = 'Guru';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return $record?->user?->name;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -51,6 +60,11 @@ class TeacherResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return TeacherInfoList::configure($schema);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     public static function getPages(): array

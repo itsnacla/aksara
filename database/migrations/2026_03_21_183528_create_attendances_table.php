@@ -18,7 +18,17 @@ return new class extends Migration
             $table->foreignId('schedule_id')->nullable()->constrained()->onDelete('cascade');
             $table->date('tanggal');
             $table->enum('status', ['hadir', 'sakit', 'izin', 'alpha', 'terlambat']);
+            $table->time('check_in')->nullable();
+            $table->time('check_out')->nullable();
             $table->text('catatan')->nullable();
+            $table->timestamp('wa_sent_at')->nullable();
+            
+            // Presensi windows
+            $table->time('check_in_start')->nullable();
+            $table->time('check_in_end')->nullable();
+            $table->time('check_out_start')->nullable();
+            $table->time('check_out_end')->nullable();
+            
             $table->timestamps();
         });
     }

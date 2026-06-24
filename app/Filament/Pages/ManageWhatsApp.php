@@ -21,9 +21,11 @@ use App\Jobs\SendWhatsAppBroadcast;
 use UnitEnum;
 use BackedEnum;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 class ManageWhatsApp extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, HasPageShield;
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
@@ -35,9 +37,9 @@ class ManageWhatsApp extends Page implements HasForms
 
     protected static ?string $slug = 'manage-whats-app';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Sistem & Konfigurasi';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 3;
 
     public ?array $data = [];
     public ?array $broadcastData = [];
@@ -66,10 +68,22 @@ class ManageWhatsApp extends Page implements HasForms
                 Section::make('Status Layanan')
                     ->schema([
                         Toggle::make('is_wa_enabled')
-                            ->label('Aktifkan Notifikasi WA')
-                            ->helperText('Jika aktif, sistem akan mengirim pesan otomatis ke wali murid setiap kali siswa melakukan scan.')
+                            ->label('Aktifkan Layanan WhatsApp')
+                            ->helperText('Aktifkan saklar ini untuk menjalankan semua fitur integrasi WhatsApp.')
                             ->live(),
                     ]),
+
+                Section::make('Notifikasi Otomatis')
+                    ->visible(fn ($get) => $get('is_wa_enabled'))
+                    ->schema([
+                        Toggle::make('wa_notify_attendance')
+                            ->label('Notifikasi Presensi QR')
+                            ->helperText('Kirim WA ke orang tua saat siswa melakukan scan QR presensi.'),
+                        Toggle::make('wa_notify_announcement')
+                            ->label('Notifikasi Pengumuman')
+                            ->helperText('Aktifkan pengiriman pengumuman otomatis jika ada.'),
+                    ])
+                    ->columns(2),
 
                 Section::make('Konfigurasi Gateway')
                     ->visible(fn ($get) => $get('is_wa_enabled'))
@@ -164,37 +178,55 @@ class ManageWhatsApp extends Page implements HasForms
         $data = $this->broadcastForm->getState();
         $settings = SchoolSetting::current();
 
+        // 1. Check if WA is enabled
         if (!$settings->is_wa_enabled) {
             Notification::make()
                 ->title('Gagal: Layanan WA belum aktif')
+                ->body('Silakan aktifkan layanan di tab Pengaturan Gateway terlebih dahulu.')
                 ->danger()
+                ->persistent()
                 ->send();
             return;
         }
 
-        $parents = [];
-        if ($data['target_type'] === 'all') {
-            $parents = StudentParent::whereNotNull('no_whatsapp')->get();
-        } else {
-            $parents = StudentParent::whereHas('students.studyGroups', function ($q) use ($data) {
+        // 2. Fetch target parents
+        $query = StudentParent::query()
+            ->whereNotNull('no_whatsapp')
+            ->where('no_whatsapp', '!=', '');
+
+        if ($data['target_type'] === 'rombel') {
+            $query->whereHas('students.studyGroups', function ($q) use ($data) {
                 $q->where('study_groups.id', $data['study_group_id']);
-            })->whereNotNull('no_whatsapp')->get();
+            });
         }
 
+        $parents = $query->get();
+
+        // 3. Handle empty targets
         if ($parents->isEmpty()) {
             Notification::make()
-                ->title('Gagal: Tidak ada nomor WA ditemukan')
+                ->title('Gagal: Target tidak ditemukan')
+                ->body('Tidak ada orang tua dengan nomor WhatsApp valid pada target yang dipilih.')
                 ->warning()
                 ->send();
             return;
         }
 
+        // 4. Dispatch jobs with progressive delay to avoid "Account Restricted"
+        $count = 0;
+        $delaySeconds = 0;
         foreach ($parents as $parent) {
-            SendWhatsAppBroadcast::dispatch($parent->no_whatsapp, $data['message']);
+            SendWhatsAppBroadcast::dispatch($parent->no_whatsapp, $data['message'])
+                ->delay(now()->addSeconds($delaySeconds));
+            
+            $delaySeconds += 5; // Increment delay by 5 seconds per recipient
+            $count++;
         }
 
+        // 5. Success feedback
         Notification::make()
-            ->title('Broadcast dikirim ke ' . $parents->count() . ' orang tua')
+            ->title('Berhasil!')
+            ->body("Pengumuman sedang dikirim ke $count orang tua siswa.")
             ->success()
             ->send();
 

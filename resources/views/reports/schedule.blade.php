@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jadwal Pelajaran - {{ $school->name ?? 'Aksara' }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @php
             $w = ($paperSize === 'f4') ? '215mm' : '210mm';
@@ -151,7 +151,7 @@
                                     </span>
                                     @if($showTeacherCode)
                                         <span class="teacher-code">
-                                            {{ $item->teacher->kode_guru ?? $item->teacher->user->name }}
+                                            {{ $item->teacher->kode_guru ?? $item->teacher->nama_lengkap }}
                                         </span>
                                     @endif
                                 @endif
@@ -167,13 +167,13 @@
             <div class="text-center w-32">
                 <p>Mengetahui,</p>
                 <p class="mb-8">Kepala Sekolah</p>
-                <p class="font-bold underline">{{ $principal?->user?->name ?? '................................' }}</p>
+                <p class="font-bold underline">{{ $principal?->nama_lengkap ?? '................................' }}</p>
                 <p>NIP. {{ $principal?->nip ?? '........................' }}</p>
             </div>
             <div class="text-center w-32">
-                <p>{{ $school->city ?? 'Banyuwangi' }}, {{ now()->translatedFormat('d F Y') }}</p>
+                <p>{{ $school->city ?? 'Banyuwangi' }}, {{ $rombel && $rombel->academicYear && $rombel->academicYear->schedule_date ? \Carbon\Carbon::parse($rombel->academicYear->schedule_date)->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}</p>
                 <p class="mb-8">Wali Kelas,</p>
-                <p class="font-bold underline">{{ $rombel->waliKelas->user->name ?? '................................' }}</p>
+                <p class="font-bold underline">{{ $rombel->waliKelas?->nama_lengkap ?? '................................' }}</p>
                 <p>NIP. {{ $rombel->waliKelas->nip ?? '........................' }}</p>
             </div>
         </div>
@@ -209,7 +209,7 @@
                         @foreach($legendTeachers as $lt)
                             <div class="flex leading-tight">
                                 <span class="font-bold w-20 shrink-0 whitespace-nowrap">{{ $lt->kode_guru ?? '??' }}</span>
-                                <span class="flex-1">: {{ $lt->user->name }}</span>
+                                <span class="flex-1">: {{ $lt->nama_lengkap }}</span>
                             </div>
                         @endforeach
                     </div>

@@ -21,15 +21,24 @@ class StudentResource extends Resource
 {
     protected static ?string $model = Student::class;
 
+    protected static ?string $recordTitleAttribute = 'nisn';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $navigationLabel = 'Data Siswa';
 
-    protected static ?string $recordTitleAttribute = 'user.name';
+    protected static ?string $modelLabel = 'Siswa';
+
+    protected static ?string $pluralModelLabel = 'Siswa';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return $record?->user?->name;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -48,7 +57,7 @@ class StudentResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->with('user');
         $user = auth()->user();
 
         if ($user->hasRole('guru')) {

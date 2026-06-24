@@ -19,19 +19,21 @@ class StudyGroupResource extends Resource
 {
     protected static ?string $model = StudyGroup::class;
 
+    protected static ?string $recordTitleAttribute = 'nama_rombel';
+
     protected static ?string $slug = 'rombel';
 
-    protected static ?string $label = 'Rombel';
+    protected static ?string $modelLabel = 'Rombel';
 
-    protected static ?string $pluralLabel = 'Rombel';
+    protected static ?string $pluralModelLabel = 'Rombel';
 
     protected static ?string $navigationLabel = 'Rombel / Kelas';
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user-group';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {
@@ -45,7 +47,7 @@ class StudyGroupResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->with(['academicYear', 'level', 'classroom', 'walikelas.user']);
         $user = auth()->user();
 
         if ($user->hasRole('guru')) {

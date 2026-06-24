@@ -101,8 +101,8 @@ class StudentsTable
                 ]),
             SelectFilter::make('studyGroups')
                 ->label('Filter Rombel')
-                ->relationship('studyGroups', 'nama_rombel', function ($query, $get) {
-                    $academicYearId = $get('academic_year');
+                ->relationship('studyGroups', 'nama_rombel', function ($query, $livewire) {
+                    $academicYearId = $livewire->tableFilters['academic_year']['value'] ?? null;
                     if ($academicYearId) {
                         return $query->where('academic_year_id', $academicYearId);
                     }
@@ -263,10 +263,11 @@ class StudentsTable
                     ->label('Cetak Kartu Massal')
                     ->icon('heroicon-o-identification')
                     ->color('info')
-                        ->action(function (Collection $records) {
-                            $ids = $records->pluck('id')->implode(',');
-                            return redirect()->route('student.cards.bulk', ['ids' => $ids]);
-                        }),
+                    ->action(function (Collection $records, \Filament\Resources\Pages\ListRecords $livewire) {
+                        $ids = $records->pluck('id')->implode(',');
+                        $url = route('student.cards.bulk', ['ids' => $ids]);
+                        $livewire->js("window.open('{$url}', '_blank');");
+                    }),
                 ]),
         ];
     }

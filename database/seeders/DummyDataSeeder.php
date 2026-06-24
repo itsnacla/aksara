@@ -14,6 +14,11 @@ use App\Models\Classroom;
 use App\Models\Subject;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Extracurricular;
+use App\Models\Attendance;
+use App\Models\StudentLeave;
+use App\Models\P5Project;
+use App\Models\P5Group;
 
 class DummyDataSeeder extends Seeder
 {
@@ -22,6 +27,10 @@ class DummyDataSeeder extends Seeder
 
     public function run(): void
     {
+        // Seed the random number generators to make Faker and all random functions 100% deterministic!
+        srand(42);
+        mt_srand(42);
+
         $this->academicYears = AcademicYear::where('tahun_ajaran', '2025/2026')->get();
         if ($this->academicYears->isEmpty()) return;
 
@@ -29,18 +38,22 @@ class DummyDataSeeder extends Seeder
         $this->seedGuruMapel();
         $this->seedStaff();
         $this->seedRombelAndStudents();
+        $this->seedAttendance();
+        $this->assignExtracurricularCoordinators();
+        $this->seedP5GroupsAndCocurriculars();
+
     }
 
     protected function seedWaliKelas()
     {
         $data = [
-            ['name' => 'Eni Nuryanti, S.Pd, Gr.', 'username' => 'eni', 'level' => 'Kelas 1', 'room' => 'A'],
-            ['name' => 'Rustiningsih, S.Pd', 'username' => 'rusti', 'level' => 'Kelas 2', 'room' => 'A'],
-            ['name' => 'Fertiko Yoga Lukmana S.Pd', 'username' => 'fertiko', 'level' => 'Kelas 2', 'room' => 'B'],
-            ['name' => 'Alex Nicho Bastyan, S.Pd', 'username' => 'alex', 'level' => 'Kelas 3', 'room' => 'A'],
-            ['name' => 'Drs. Imam Fahrudin', 'username' => 'imam', 'level' => 'Kelas 4', 'room' => 'A'],
-            ['name' => 'Yusril Lufi Habibi, S.Pd', 'username' => 'yusril', 'level' => 'Kelas 5', 'room' => 'A'],
-            ['name' => 'Farid Ruridra, S.Pd', 'username' => 'farid', 'level' => 'Kelas 6', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Eni Nuryanti', 'gb' => 'S.Pd, Gr.', 'username' => 'eni', 'level' => 'Kelas 1', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Rustiningsih', 'gb' => 'S.Pd', 'username' => 'rusti', 'level' => 'Kelas 2', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Fertiko Yoga Lukmana', 'gb' => 'S.Pd', 'username' => 'fertiko', 'level' => 'Kelas 2', 'room' => 'B'],
+            ['gd' => '', 'name' => 'Alex Nicho Bastyan', 'gb' => 'S.Pd', 'username' => 'alex', 'level' => 'Kelas 3', 'room' => 'A'],
+            ['gd' => 'Drs.', 'name' => 'Imam Fahrudin', 'gb' => '', 'username' => 'imam', 'level' => 'Kelas 4', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Yusril Lufi Habibi', 'gb' => 'S.Pd', 'username' => 'yusril', 'level' => 'Kelas 5', 'room' => 'A'],
+            ['gd' => '', 'name' => 'Farid Ruridra', 'gb' => 'S.Pd', 'username' => 'farid', 'level' => 'Kelas 6', 'room' => 'A'],
         ];
 
         foreach ($data as $item) {
@@ -55,6 +68,8 @@ class DummyDataSeeder extends Seeder
 
             $this->teachers[$item['username']] = Teacher::create([
                 'user_id' => $user->id,
+                'gelar_depan' => $item['gd'],
+                'gelar_belakang' => $item['gb'],
                 'nip' => (string)rand(1000000000, 9999999999),
                 'is_walikelas' => true,
                 'status' => 'aktif',
@@ -70,9 +85,9 @@ class DummyDataSeeder extends Seeder
     protected function seedGuruMapel()
     {
         $data = [
-            ['name' => 'Beni Putra, S.Pd', 'username' => 'beni', 'subjects' => ['Pendidikan Jasmani, Olahraga dan Kesehatan']],
-            ['name' => 'Angger Wigunaning Aji, S.Pd', 'username' => 'angger', 'subjects' => ['Bahasa Inggris', 'Bahasa Using', 'Bahasa Jawa']],
-            ['name' => 'Moh. Itqonur Risal, S.Pd', 'username' => 'risal', 'subjects' => ['Pendidikan Agama']],
+            ['gd' => '', 'name' => 'Beni Putra', 'gb' => 'S.Pd', 'username' => 'beni', 'subjects' => ['Pendidikan Jasmani, Olahraga, dan Kesehatan']],
+            ['gd' => '', 'name' => 'Angger Wigunaning Aji', 'gb' => 'S.Pd', 'username' => 'angger', 'subjects' => ['Bahasa Inggris', 'Bahasa Using', 'Bahasa Jawa']],
+            ['gd' => '', 'name' => 'Moh. Itqonur Risal', 'gb' => 'S.Pd', 'username' => 'risal', 'subjects' => ['Pendidikan Agama Islam dan Budi Pekerti']],
         ];
 
         foreach ($data as $item) {
@@ -87,6 +102,8 @@ class DummyDataSeeder extends Seeder
 
             $teacher = Teacher::create([
                 'user_id' => $user->id,
+                'gelar_depan' => $item['gd'],
+                'gelar_belakang' => $item['gb'],
                 'nip' => (string)rand(1000000000, 9999999999),
                 'is_walikelas' => false,
                 'status' => 'aktif',
@@ -98,12 +115,17 @@ class DummyDataSeeder extends Seeder
 
         // CONTOH GURU NON-AKTIF (MUTASI)
         $userMutasi = User::create([
-            'name' => 'Guru Mutasi, S.Pd', 'username' => 'mutasi', 'email' => 'mutasi@aksara.com',
+            'name' => 'Guru Mutasi', 'username' => 'mutasi', 'email' => 'mutasi@aksara.com',
             'password' => Hash::make('password'), 'is_active' => false,
         ]);
         $userMutasi->assignRole('guru');
         Teacher::create([
-            'user_id' => $userMutasi->id, 'nip' => '1234567890', 'is_walikelas' => false, 'status' => 'mutasi'
+            'user_id' => $userMutasi->id, 
+            'gelar_depan' => '', 
+            'gelar_belakang' => 'S.Pd', 
+            'nip' => '1234567890', 
+            'is_walikelas' => false, 
+            'status' => 'mutasi'
         ]);
     }
 
@@ -184,8 +206,8 @@ class DummyDataSeeder extends Seeder
                 'address' => 'Jl. Pendidikan No. ' . $j,
                 'province' => 'JAWA TIMUR',
                 'city' => 'KABUPATEN BANYUWANGI',
-                'district' => 'KABAT',
-                'village' => 'KABAT',
+                'district' => 'PESANGGARAN',
+                'village' => 'PESANGGARAN',
             ]);
 
             // User Siswa
@@ -216,7 +238,7 @@ class DummyDataSeeder extends Seeder
         $places = ['Banyuwangi', 'Jakarta', 'Surabaya', 'Malang', 'Bandung', 'Yogyakarta'];
         
         $name = $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
-        $uniqueId = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+        $uniqueId = substr(md5($name . '_' . $namaRombel . '_' . $index), 0, 6);
         $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name)) . '_' . $uniqueId . '_' . $index;
 
         // Parent Data
@@ -246,8 +268,8 @@ class DummyDataSeeder extends Seeder
             'address' => 'Jl. Mawar No. ' . rand(1, 100),
             'province' => 'JAWA TIMUR',
             'city' => 'KABUPATEN BANYUWANGI',
-            'district' => 'BANYUWANGI',
-            'village' => 'PENGANJURAN',
+            'district' => 'PESANGGARAN',
+            'village' => 'PESANGGARAN',
             // Guardian data (dummy for consistency)
             'guardian_name' => ($index % 5 == 0) ? 'Wali ' . $name : null,
             'guardian_occupation' => ($index % 5 == 0) ? $occupations[array_rand($occupations)] : null,
@@ -280,7 +302,140 @@ class DummyDataSeeder extends Seeder
             'previous_school' => 'TK Dharma Wanita ' . rand(1, 5),
         ]);
 
+        // Randomly assign 1 or 2 "pilihan" extracurriculars
+        $pilihanEkskuls = Extracurricular::where('kategori', 'pilihan')->pluck('id');
+        if ($pilihanEkskuls->isNotEmpty()) {
+            $numPilihan = rand(0, 2);
+            if ($numPilihan > 0) {
+                $randomIds = $pilihanEkskuls->random(min($numPilihan, $pilihanEkskuls->count()));
+                $student->extracurriculars()->syncWithoutDetaching($randomIds);
+            }
+        }
+
         // Connect to Rombels
         $student->studyGroups()->sync($rombelIds);
+    }
+
+
+
+    protected function assignExtracurricularCoordinators()
+    {
+        $ekskuls = [
+              'Pramuka' => 'Imam Fahrudin',
+              'Tari' => 'Angger Wigunaning Aji',
+              'Hadrah' => 'Moh. Itqonur Risal',
+              'Renang' => 'Beni Putra',
+        ];
+        
+        foreach ($ekskuls as $ekskulName => $coordinatorName) {
+            $user = User::where('name', $coordinatorName)->first();
+            if ($user) {
+                Extracurricular::where('nama_ekskul', $ekskulName)->update([
+                    'coordinator_user_id' => $user->id
+                ]);
+            }
+        }
+    }
+
+
+    protected function seedP5GroupsAndCocurriculars()
+    {
+        $academicYear = AcademicYear::where('is_active', true)->first();
+        if (!$academicYear) return;
+
+        // Get P5 Projects
+        $projects = P5Project::where('academic_year_id', $academicYear->id)->get();
+        if ($projects->isEmpty()) return;
+
+        // Get Study Groups for Fase A (Level 1 and 2)
+        $levelIds = Level::where('fase', 'A')->pluck('id');
+        $studyGroups = StudyGroup::whereIn('level_id', $levelIds)
+            ->where('academic_year_id', $academicYear->id)
+            ->with('students')
+            ->get();
+
+        foreach ($studyGroups as $sg) {
+            foreach ($projects as $project) {
+                $group = P5Group::create([
+                    'p5_project_id' => $project->id,
+                    'study_group_id' => $sg->id,
+                    'level_id' => $sg->level_id,
+                    'teacher_id' => $sg->walikelas_id, // Walikelas as coordinator
+                    'academic_year_id' => $academicYear->id,
+                    'name' => "Kelompok P5 {$project->name} - {$sg->nama_rombel}",
+                ]);
+
+                // Attach all students in the study group to this P5 Group
+                if ($sg->students->isNotEmpty()) {
+                    $group->students()->sync($sg->students->pluck('id'));
+                }
+            }
+        }
+    }
+
+    protected function seedAttendance(): void
+    {
+        $studyGroups = StudyGroup::with('students')->get();
+        $startDate = now()->subDays(30);
+        $endDate = now();
+
+        $attendances = [];
+        $leaves = [];
+
+        for ($date = clone $startDate; $date->lte($endDate); $date->addDay()) {
+            if ($date->isWeekend()) {
+                continue;
+            }
+
+            foreach ($studyGroups as $sg) {
+                foreach ($sg->students as $student) {
+                    $rand = rand(1, 100);
+                    if ($rand <= 95) {
+                        $status = 'hadir';
+                    } elseif ($rand <= 98) {
+                        $status = 'sakit';
+                    } elseif ($rand == 99) {
+                        $status = 'izin';
+                    } else {
+                        $status = 'alpha';
+                    }
+
+                    $attendances[] = [
+                        'student_id' => $student->id,
+                        'study_group_id' => $sg->id,
+                        'status' => $status,
+                        'tanggal' => $date->format('Y-m-d'),
+                        'check_in' => $status === 'hadir' ? '07:00:00' : null,
+                        'check_out' => $status === 'hadir' ? '13:00:00' : null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+
+                    if ($status === 'sakit' || $status === 'izin') {
+                        $leaves[] = [
+                            'student_id' => $student->id,
+                            'parent_id' => $student->parent_id,
+                            'study_group_id' => $sg->id,
+                            'type' => $status,
+                            'start_date' => $date->format('Y-m-d'),
+                            'end_date' => $date->format('Y-m-d'),
+                            'reason' => 'Siswa ' . $status . ' (dibuat otomatis oleh seeder)',
+                            'status' => 'approved',
+                            'approved_by' => 1, // Assume user ID 1 is an admin/teacher
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                }
+            }
+        }
+
+        foreach (array_chunk($attendances, 500) as $chunk) {
+            Attendance::insert($chunk);
+        }
+
+        foreach (array_chunk($leaves, 500) as $chunk) {
+            StudentLeave::insert($chunk);
+        }
     }
 }

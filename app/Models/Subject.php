@@ -2,25 +2,49 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $nama_mapel
+ * @property string $kode_mapel
+ * @property bool $is_umum
+ * @property int $total_jp
+ * @property int $kkm
+ * @property int|null $level_id
+ * @property bool $is_one_day_finish
+ * @property int $scheduling_priority
+ */
+#[Fillable([
+    'nama_mapel',
+    'kode_mapel',
+    'is_umum',
+    'total_jp',
+    'kkm',
+    'level_id',
+    'subject_report_group_id',
+    'is_graded',
+    'is_one_day_finish',
+    'scheduling_priority',
+])]
 class Subject extends Model
 {
-    protected static function boot()
+    protected static function booted()
     {
-        parent::boot();
         static::creating(function ($model) {
             if (empty($model->kode_mapel)) {
                 $name = $model->nama_mapel;
                 
-                // Mappings Khusus (Standar Nasional)
                 $mappings = [
                     'Ilmu Pengetahuan Alam dan Sosial' => 'IPAS',
                     'Ilmu Pengetahuan Alam' => 'IPA',
                     'Ilmu Pengetahuan Sosial' => 'IPS',
                     'Matematika' => 'MTK',
-                    'Pendidikan Jasmani, Olahraga dan Kesehatan' => 'PJOK',
-                    'Seni Budaya dan Prakarya' => 'SBDP',
+                    'Pendidikan Jasmani, Olahraga' => 'PJOK',
+                    'Seni Budaya' => 'SBDP',
+                    'Pendidikan Pancasila' => 'PPKN',
+                    'Pendidikan Agama' => 'PAI',
                 ];
                 
                 $prefix = '';
@@ -32,7 +56,6 @@ class Subject extends Model
                 }
                 
                 if (empty($prefix)) {
-                    // Penyederhanaan Kata Utama
                     $prefix = str_ireplace(['Pendidikan', 'Bahasa'], ['Pend.', 'Bhs.'], $name);
                 }
                 
@@ -43,24 +66,21 @@ class Subject extends Model
             }
         });
     }
-    protected $fillable = [
-        'nama_mapel',
-        'kode_mapel',
-        'is_umum',
-        'total_jp',
-        'kkm',
-        'level_id',
-        'is_one_day_finish',
-        'scheduling_priority',
-    ];
 
     protected $casts = [
         'is_umum' => 'boolean',
         'kkm' => 'integer',
         'total_jp' => 'integer',
+        'subject_report_group_id' => 'integer',
+        'is_graded' => 'boolean',
         'is_one_day_finish' => 'boolean',
         'scheduling_priority' => 'integer',
     ];
+
+    public function subjectReportGroup()
+    {
+        return $this->belongsTo(SubjectReportGroup::class, 'subject_report_group_id');
+    }
 
     public function levels()
     {
@@ -70,5 +90,10 @@ class Subject extends Model
     public function schedules()
     {
         return $this->hasMany(Schedule::class);
+    }
+
+    public function teachers()
+    {
+        return $this->belongsToMany(Teacher::class);
     }
 }

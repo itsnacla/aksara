@@ -57,7 +57,7 @@ class GetAcademicData implements Tool
         }
 
         $grades = $query->latest()->limit(10)->get()->map(fn($g) => [
-            'mapel' => $g->subject->nama_pelajaran ?? 'N/A',
+            'mapel' => $g->subject->nama_mapel ?? 'N/A',
             'tugas' => $g->nilai_tugas,
             'uts' => $g->nilai_uts,
             'uas' => $g->nilai_uas,

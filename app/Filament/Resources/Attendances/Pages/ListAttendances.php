@@ -94,6 +94,7 @@ class ListAttendances extends ListRecords
                                     return $query->pluck('nama_rombel', 'id');
                                 })
                                 ->required()
+                                ->default(request()->query('study_group_id'))
                                 ->live()
                                 ->afterStateUpdated(fn (Get $get, Set $set) => self::loadStudentsForModal($get, $set)),
                         ])->columns(2),
@@ -130,8 +131,9 @@ class ListAttendances extends ListRecords
                         ->visible(fn (Get $get) => filled($get('study_group_id'))),
                 ])
                 ->action(function (array $data): void {
+                    $delay = 0;
                     foreach ($data['items'] as $item) {
-                        Attendance::updateOrCreate(
+                        $attendance = Attendance::updateOrCreate(
                             [
                                 'student_id' => $item['student_id'],
                                 'study_group_id' => $data['study_group_id'],
@@ -142,6 +144,14 @@ class ListAttendances extends ListRecords
                                 'catatan' => $item['catatan'],
                             ]
                         );
+
+                        // Send WA Notification for manual batch input
+                        if (!$attendance->wa_sent_at) {
+                            \App\Jobs\SendWhatsAppAttendanceNotification::dispatch($attendance)
+                                ->delay(now()->addSeconds($delay));
+                            
+                            $delay += 2; // Progressive delay for batch
+                        }
                     }
 
                     Notification::make()
@@ -172,6 +182,10 @@ class ListAttendances extends ListRecords
             ->where('tanggal', $tanggal)
             ->get()
             ->keyBy('student_id');
+
+        if (request()->query('missing_only')) {
+            $students = $students->filter(fn ($student) => !isset($existing[$student->id]))->values();
+        }
 
         $items = $students->map(fn ($student) => [
             'student_id' => $student->id,

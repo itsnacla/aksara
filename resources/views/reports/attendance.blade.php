@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Presensi Siswa</title>
     <!-- Tailwind CSS untuk gaya yang rapi dan konsisten -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media print {
             body { 
@@ -82,7 +82,7 @@
                     <tr><td class="font-bold pr-4">Rombongan Belajar</td><td>: {{ $rombel ? $rombel->nama_rombel : 'Semua Rombel (Data Global)' }}</td></tr>
                     @if($rombel)
                     <tr><td class="font-bold pr-4">Tingkat / Ruangan</td><td>: {{ $rombel->level->nama_tingkatan ?? '-' }} / {{ $rombel->classroom->nama_ruangan ?? '-' }}</td></tr>
-                    <tr><td class="font-bold pr-4">Wali Kelas</td><td>: {{ $rombel->waliKelas->user->name ?? '-' }}</td></tr>
+                    <tr><td class="font-bold pr-4">Wali Kelas</td><td>: {{ $rombel->waliKelas?->nama_lengkap ?? '-' }}</td></tr>
                     @endif
                 </table>
             </div>
@@ -143,14 +143,14 @@
             <div class="text-center w-64">
                 <p>&nbsp;</p>
                 <p class="mb-20">Mengetahui,<br>Kepala Sekolah</p>
-                <p class="font-bold underline">{{ $principal->user->name ?? '.........................................' }}</p>
-                <p>NIP. {{ $principal->nip ?? '.........................' }}</p>
+                <p class="font-bold underline">{{ $principal?->nama_lengkap ?? '.........................................' }}</p>
+                <p>NIP. {{ $principal?->nip ?? '.........................' }}</p>
             </div>
             <div class="text-center w-64">
-                <p>................., {{ now()->translatedFormat('d F Y') }}</p>
+                <p>................., {{ $rombel && $rombel->academicYear && $rombel->academicYear->attendance_date ? \Carbon\Carbon::parse($rombel->academicYear->attendance_date)->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}</p>
                 <p class="mb-20">Wali Kelas</p>
-                <p class="font-bold underline">{{ $rombel->waliKelas->user->name ?? '.........................................' }}</p>
-                <p>NIP. {{ $rombel->waliKelas->nip ?? '.........................' }}</p>
+                <p class="font-bold underline">{{ $rombel->waliKelas?->nama_lengkap ?? '.........................................' }}</p>
+                <p>NIP. {{ $rombel->waliKelas?->nip ?? '.........................' }}</p>
             </div>
         </div>
 

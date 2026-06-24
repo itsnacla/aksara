@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('gelar_depan', 20)->nullable();
             $table->string('nip', 20)->nullable()->unique();
+            $table->string('gelar_belakang', 50)->nullable();
             $table->string('kode_guru', 10)->nullable()->unique();
             $table->boolean('is_walikelas')->default(false);
             $table->boolean('is_kepalasekolah')->default(false);

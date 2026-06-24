@@ -11,6 +11,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Teacher;
 
 class TeachersTable
 {
@@ -34,10 +35,11 @@ class TeachersTable
                 ->label('Kode')
                 ->searchable()
                 ->sortable(),
-            TextColumn::make('user.name')
+            TextColumn::make('nama_lengkap')
                 ->label('Nama Guru')
-                ->searchable()
-                ->sortable(),
+                ->searchable(['user.name', 'gelar_depan', 'gelar_belakang'])
+                ->sortable()
+                ->description(fn (Teacher $record): string => $record->nip ? "NIP: {$record->nip}" : '-'),
             TextColumn::make('status')
                 ->label('Status')
                 ->badge()

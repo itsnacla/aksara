@@ -27,7 +27,7 @@ class AcademicYearsTable
                     ->requiresConfirmation()
                     ->modalHeading('Sinkronisasi Tahun Ajaran')
                     ->modalDescription('Sistem akan mendeteksi tahun ajaran dan semester yang aktif berdasarkan tanggal hari ini.')
-                    ->action(function () {
+                    ->action(function ($livewire) {
                         $month = (int) date('n');
                         $year = (int) date('Y');
 
@@ -55,6 +55,8 @@ class AcademicYearsTable
                             ->success()
                             ->body("Tahun Ajaran {$targetTahun} ({$targetSemester}) sekarang menjadi aktif.")
                             ->send();
+                            
+                        $livewire->dispatch('active-academic-year-changed');
                     })
             ])
             ->columns([
@@ -81,13 +83,15 @@ class AcademicYearsTable
                     ->color('success')
                     ->link()
                     ->hidden(fn ($record) => $record->is_active)
-                    ->action(function ($record) {
+                    ->action(function ($record, $livewire) {
                         $record->update(['is_active' => true]);
                         
                         Notification::make()
                             ->title('Tahun Ajaran Diaktifkan')
                             ->success()
                             ->send();
+                            
+                        $livewire->dispatch('active-academic-year-changed');
                     }),
                 Action::make('switch_semester')
                     ->label(fn ($record) => $record->semester === 'ganjil' ? 'Pindah ke Genap' : 'Pindah ke Ganjil')
@@ -96,19 +100,52 @@ class AcademicYearsTable
                     ->link()
                     ->visible(fn ($record) => $record->is_active)
                     ->requiresConfirmation()
-                    ->action(function ($record) {
+                    ->action(function ($record, $livewire) {
                         $newSemester = $record->semester === 'ganjil' ? 'genap' : 'ganjil';
-                        $record->update(['semester' => $newSemester]);
+                        $record->update([
+                            'semester' => $newSemester,
+                            'rapor_date' => null,
+                            'schedule_date' => null,
+                            'attendance_date' => null,
+                            'pelengkap_rapor_date' => null,
+                        ]);
                         
                         Notification::make()
                             ->title('Semester Berhasil Dipindah')
                             ->success()
                             ->body("Sekarang berada di semester " . ucfirst($newSemester))
                             ->send();
+                            
+                        $livewire->dispatch('active-academic-year-changed');
                     }),
                 ViewAction::make()->modal(),
                 EditAction::make()->modal(),
-                DeleteAction::make()->modal(),
+                DeleteAction::make()
+                    ->modal()
+                    ->before(function (DeleteAction $action, AcademicYear $record) {
+                        // Check if academic year has related records
+                        $hasGrades = $record->grades()->exists();
+                        $hasReports = $record->eReports()->exists();
+                        $hasSchedules = $record->schedules()->exists();
+                        $hasClassrooms = $record->studyGroups()->exists();
+
+                        if ($hasGrades || $hasReports || $hasSchedules || $hasClassrooms) {
+                            $relatedItems = [];
+                            if ($hasGrades) $relatedItems[] = 'Nilai';
+                            if ($hasReports) $relatedItems[] = 'Rapor';
+                            if ($hasSchedules) $relatedItems[] = 'Jadwal';
+                            if ($hasClassrooms) $relatedItems[] = 'Kelas';
+
+                            Notification::make()
+                                ->title('Tidak Dapat Menghapus Tahun Ajaran')
+                                ->danger()
+                                ->body('Tahun ajaran ini masih memiliki data terkait: ' . implode(', ', $relatedItems) . '. Hapus data terkait terlebih dahulu.')
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

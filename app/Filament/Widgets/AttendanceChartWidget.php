@@ -5,9 +5,12 @@ namespace App\Filament\Widgets;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
 class AttendanceChartWidget extends ChartWidget
 {
+    use ScopesToTeacherStudents;
+
     protected ?string $heading = 'Tren Kehadiran 7 Hari Terakhir';
 
     protected ?string $description = 'Distribusi status kehadiran siswa per hari';
@@ -29,17 +32,30 @@ class AttendanceChartWidget extends ChartWidget
         $izinData = [];
         $alfaData = [];
 
+        $isGuru = auth()->user()?->hasRole('guru');
+
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $labels[] = $date->translatedFormat('D, d M');
 
-            $hadirData[] = Attendance::whereDate('tanggal', $date)->where('status', 'hadir')->count();
-            $sakitData[] = Attendance::whereDate('tanggal', $date)->where('status', 'sakit')->count();
-            $izinData[] = Attendance::whereDate('tanggal', $date)->where('status', 'izin')->count();
-            $alfaData[] = Attendance::whereDate('tanggal', $date)->where('status', 'alfa')->count();
+            $hadirQuery = Attendance::whereDate('tanggal', $date)->where('status', 'hadir');
+            $sakitQuery = Attendance::whereDate('tanggal', $date)->where('status', 'sakit');
+            $izinQuery = Attendance::whereDate('tanggal', $date)->where('status', 'izin');
+            $alfaQuery = Attendance::whereDate('tanggal', $date)->whereIn('status', ['alfa', 'alpha']);
+
+            if ($isGuru) {
+                $this->scopeTeacherAttendance($hadirQuery);
+                $this->scopeTeacherAttendance($sakitQuery);
+                $this->scopeTeacherAttendance($izinQuery);
+                $this->scopeTeacherAttendance($alfaQuery);
+            }
+
+            $hadirData[] = (clone $hadirQuery)->count();
+            $sakitData[] = (clone $sakitQuery)->count();
+            $izinData[] = (clone $izinQuery)->count();
+            $alfaData[] = (clone $alfaQuery)->count();
         }
 
-        // If no data exists, show demo data
         if (array_sum($hadirData) === 0) {
             $hadirData = [28, 30, 27, 31, 29, 30, 28];
             $sakitData = [2, 1, 3, 1, 2, 1, 2];
@@ -153,6 +169,6 @@ class AttendanceChartWidget extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        return auth()->user()?->hasAnyRole(['super_admin', 'guru', 'staff']) ?? false;
     }
 }

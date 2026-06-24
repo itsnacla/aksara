@@ -40,8 +40,9 @@ class ListStudents extends ListRecords
                         ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id)
                         ->required(),
                 ])
-                ->action(function (array $data) {
-                    return redirect()->route('student.cards.all', ['academic_year_id' => $data['academic_year_id']]);
+                ->action(function (array $data, ListStudents $livewire) {
+                    $url = route('student.cards.all', ['academic_year_id' => $data['academic_year_id']]);
+                    $livewire->js("window.open('{$url}', '_blank');");
                 }),
             Action::make('import_csv')
                 ->label('Import Data Siswa')
@@ -54,7 +55,7 @@ class ListStudents extends ListRecords
                 ->form([
                     Select::make('fallback_study_group_id')
                         ->label('Rombel / Kelas Tujuan (Opsional)')
-                        ->options(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($sg) => [
+                        ->options(fn () => StudyGroup::with('academicYear')->whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($sg) => [
                             $sg->id => "{$sg->nama_rombel} ({$sg->academicYear->tahun_ajaran})"
                         ]))
                         ->searchable()
@@ -74,15 +75,25 @@ class ListStudents extends ListRecords
                             $file = is_array($state) ? reset($state) : $state;
                             $path = null;
 
+                            $isTempDownloaded = false;
                             if (is_string($file)) {
                                 if (file_exists($file)) {
                                     $path = $file;
-                                } elseif (Storage::disk('public')->exists($file)) {
-                                    $path = Storage::disk('public')->path($file);
                                 } elseif (Storage::exists($file)) {
-                                    $path = Storage::path($file);
+                                    $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                                    if (in_array($diskDriver, ['local', 'public'])) {
+                                        $path = Storage::path($file);
+                                    } else {
+                                        $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                        if (!file_exists(dirname($tmpPath))) {
+                                            mkdir(dirname($tmpPath), 0755, true);
+                                        }
+                                        file_put_contents($tmpPath, Storage::get($file));
+                                        $path = $tmpPath;
+                                        $isTempDownloaded = true;
+                                    }
                                 } else {
-                                    $tmpPath = storage_path('app/livewire-tmp/' . $file);
+                                    $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
                                     if (file_exists($tmpPath)) {
                                         $path = $tmpPath;
                                     }
@@ -99,8 +110,10 @@ class ListStudents extends ListRecords
                                 $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
                                 $allRows = $spreadsheet->getActiveSheet()->toArray();
                             } catch (\Exception $e) {
+                                if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
                                 return;
                             }
+                            if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
 
                             $rows = [];
                             foreach ($allRows as $r) {
@@ -211,15 +224,25 @@ class ListStudents extends ListRecords
                     $file = is_array($data['file']) ? reset($data['file']) : $data['file'];
                     $path = null;
 
+                    $isTempDownloaded = false;
                     if (is_string($file)) {
                         if (file_exists($file)) {
                             $path = $file;
-                        } elseif (Storage::disk('public')->exists($file)) {
-                            $path = Storage::disk('public')->path($file);
                         } elseif (Storage::exists($file)) {
-                            $path = Storage::path($file);
+                            $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                            if (in_array($diskDriver, ['local', 'public'])) {
+                                $path = Storage::path($file);
+                            } else {
+                                $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                if (!file_exists(dirname($tmpPath))) {
+                                    mkdir(dirname($tmpPath), 0755, true);
+                                }
+                                file_put_contents($tmpPath, Storage::get($file));
+                                $path = $tmpPath;
+                                $isTempDownloaded = true;
+                            }
                         } else {
-                            $tmpPath = storage_path('app/livewire-tmp/' . $file);
+                            $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
                             if (file_exists($tmpPath)) {
                                 $path = $tmpPath;
                             }
@@ -241,6 +264,7 @@ class ListStudents extends ListRecords
                         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
                         $allRows = $spreadsheet->getActiveSheet()->toArray();
                     } catch (\Exception $e) {
+                        if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
                         Notification::make()
                             ->title('Format berkas tidak didukung')
                             ->body('Pastikan berkas berformat CSV atau Excel (.xlsx/.xls) yang valid.')
@@ -248,6 +272,7 @@ class ListStudents extends ListRecords
                             ->send();
                         return;
                     }
+                    if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
 
                     $rows = [];
                     foreach ($allRows as $r) {
@@ -449,6 +474,8 @@ class ListStudents extends ListRecords
                         'username' => $data['user_username'],
                         'email' => $data['user_email'],
                         'password' => Hash::make($data['user_password']),
+                        'is_active' => $data['user_is_active'] ?? true,
+                        'photo' => $data['user_photo'] ?? null,
                     ]);
 
                     // Assign role
@@ -458,7 +485,7 @@ class ListStudents extends ListRecords
                     $data['user_id'] = $user->id;
 
                     // Remove user and nested parent fields from data, keep only student fields
-                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['parent']);
+                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['user_photo'], $data['user_is_active'], $data['parent']);
 
                     return $data;
                 }),

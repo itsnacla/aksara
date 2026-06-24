@@ -1,27 +1,40 @@
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
-document.addEventListener('DOMContentLoaded', function () {
-    const wrapper = document.getElementById('aksara-chatbot');
-    if (!wrapper) return;
+function initChatbot() {
+    const wrapper = document.getElementById("aksara-chatbot");
+    if (!wrapper || wrapper.dataset.initialized) return;
+    wrapper.dataset.initialized = "true";
 
-    const toggle = document.getElementById('chatbot-toggle');
-    const window_ = document.getElementById('chatbot-window');
-    const minimize = document.getElementById('chatbot-minimize');
-    const maximizeBtn = document.getElementById('chatbot-maximize');
-    const form = document.getElementById('chatbot-form');
-    const input = document.getElementById('chatbot-input');
-    const messages = document.getElementById('chatbot-messages');
-    const fabIcon = document.getElementById('chatbot-fab-icon');
-    const fabClose = document.getElementById('chatbot-fab-close');
-    const fabPulse = document.querySelector('.chatbot-fab-pulse');
-    const statusEl = document.querySelector('.chatbot-status');
-    const backdrop = document.getElementById('chatbot-backdrop');
+    const toggle = document.getElementById("chatbot-toggle");
+    const window_ = document.getElementById("chatbot-window");
+    const minimize = document.getElementById("chatbot-minimize");
+    const maximizeBtn = document.getElementById("chatbot-maximize");
+    const form = document.getElementById("chatbot-form");
+    const input = document.getElementById("chatbot-input");
+    const messages = document.getElementById("chatbot-messages");
+    const fabIcon = document.getElementById("chatbot-fab-icon");
+    const fabClose = document.getElementById("chatbot-fab-close");
+    const fabPulse = document.querySelector(".chatbot-fab-pulse");
+    const statusEl = document.querySelector(".chatbot-status");
+    const backdrop = document.getElementById("chatbot-backdrop");
+
+    const historyToggle = document.getElementById("chatbot-history-toggle");
+    const historyPanel = document.getElementById("chatbot-history-panel");
+    const historyList = document.getElementById("chatbot-history-list");
+    const newChatBtn = document.getElementById("chatbot-new-chat-btn");
+    
+    // Custom Confirm
+    const confirmDialog = document.getElementById("chatbot-confirm-dialog");
+    const confirmCancelBtn = document.getElementById("chatbot-confirm-cancel");
+    const confirmYesBtn = document.getElementById("chatbot-confirm-yes");
 
     let isOpen = false;
     let isMaximized = false;
+    let isHistoryOpen = false;
     let configLoaded = false;
     let conversationHistory = [];
+    let currentConversationId = null;
 
     const botAvatarSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1.27A7 7 0 0 1 13 23h-2a7 7 0 0 1-6.73-4H3a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9.5" cy="15.5" r="1"/><circle cx="14.5" cy="15.5" r="1"/></svg>`;
     const userAvatarSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
@@ -32,47 +45,79 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadConfig() {
         if (configLoaded) return;
         try {
-            const res = await fetch('/chatbot/config', { headers: { 'Accept': 'application/json' } });
+            const res = await fetch("/chatbot/config", {
+                headers: { Accept: "application/json" },
+            });
             if (!res.ok) throw new Error();
             const cfg = await res.json();
-            if (statusEl) statusEl.innerHTML = `<span class="chatbot-status-dot"></span> ${cfg.roleName}`;
+            if (statusEl)
+                statusEl.innerHTML = `<span class="chatbot-status-dot"></span> ${cfg.roleName}`;
             addMessage(cfg.greeting);
             if (cfg.chips && cfg.chips.length) {
-                const chipsDiv = document.createElement('div');
-                chipsDiv.className = 'chatbot-chips';
-                cfg.chips.forEach(c => {
-                    const btn = document.createElement('button');
-                    btn.className = 'chatbot-chip';
-                    btn.setAttribute('data-message', c.message);
+                const chipsDiv = document.createElement("div");
+                chipsDiv.className = "chatbot-chips";
+                cfg.chips.forEach((c) => {
+                    const btn = document.createElement("button");
+                    btn.className = "chatbot-chip";
+                    btn.setAttribute("data-message", c.message);
                     btn.textContent = c.label;
-                    btn.addEventListener('click', handleChipClick);
+                    btn.addEventListener("click", handleChipClick);
                     chipsDiv.appendChild(btn);
                 });
                 messages.appendChild(chipsDiv);
             }
         } catch {
-            addMessage('Halo! 👋 Saya **Aksara AI**. Ada yang bisa saya bantu?');
+            addMessage(
+                "Halo! 👋 Saya **Aksara AI**. Ada yang bisa saya bantu?",
+            );
         }
         configLoaded = true;
     }
 
+    function setupEcho(conversationId) {
+        if (
+            !window.Echo ||
+            !conversationId ||
+            currentConversationId === conversationId
+        )
+            return;
+
+        // Leave old channel if exists
+        if (currentConversationId) {
+            window.Echo.leave(`conversations.${currentConversationId}`);
+        }
+
+        currentConversationId = conversationId;
+
+        window.Echo.private(`conversations.${conversationId}`).listen(
+            "MessageSent",
+            (e) => {
+                console.log("Real-time message received:", e);
+                // Prevent duplicate if we already added it from API response
+                // But for streaming, this is where we update the bubble
+                removeTyping();
+                addMessage(e.content, e.role === "user");
+            },
+        );
+    }
+
     function handleChipClick() {
-        input.value = this.getAttribute('data-message');
-        form.dispatchEvent(new Event('submit'));
-        const c = this.closest('.chatbot-chips');
-        if (c) { 
-            c.style.opacity = '0'; 
-            c.style.transition = 'all 0.3s'; 
-            setTimeout(() => c.remove(), 300); 
+        input.value = this.getAttribute("data-message");
+        form.dispatchEvent(new Event("submit"));
+        const c = this.closest(".chatbot-chips");
+        if (c) {
+            c.style.opacity = "0";
+            c.style.transition = "all 0.3s";
+            setTimeout(() => c.remove(), 300);
         }
     }
 
     function openChat() {
         isOpen = true;
-        window_.style.display = 'flex';
-        fabIcon.style.display = 'none';
-        fabClose.style.display = 'flex';
-        if (fabPulse) fabPulse.style.display = 'none';
+        window_.style.display = "flex";
+        fabIcon.style.display = "none";
+        fabClose.style.display = "flex";
+        if (fabPulse) fabPulse.style.display = "none";
         loadConfig();
         setTimeout(() => input.focus(), 100);
     }
@@ -80,44 +125,192 @@ document.addEventListener('DOMContentLoaded', function () {
     function closeChat() {
         isOpen = false;
         if (isMaximized) toggleMaximize();
-        window_.style.display = 'none';
-        fabIcon.style.display = 'flex';
-        fabClose.style.display = 'none';
+        if (isHistoryOpen) toggleHistory();
+        window_.style.display = "none";
+        fabIcon.style.display = "flex";
+        fabClose.style.display = "none";
     }
 
     function toggleMaximize() {
         isMaximized = !isMaximized;
         if (isMaximized) {
-            wrapper.classList.add('chatbot-fullscreen');
-            backdrop.classList.add('active');
+            wrapper.classList.add("chatbot-fullscreen");
+            backdrop.classList.add("active");
             maximizeBtn.innerHTML = shrinkIcon;
-            maximizeBtn.title = 'Perkecil';
+            maximizeBtn.title = "Perkecil";
         } else {
-            wrapper.classList.remove('chatbot-fullscreen');
-            backdrop.classList.remove('active');
+            wrapper.classList.remove("chatbot-fullscreen");
+            backdrop.classList.remove("active");
             maximizeBtn.innerHTML = expandIcon;
-            maximizeBtn.title = 'Perbesar';
+            maximizeBtn.title = "Perbesar";
         }
         messages.scrollTop = messages.scrollHeight;
         setTimeout(() => input.focus(), 100);
     }
 
-    if (toggle) toggle.addEventListener('click', () => isOpen ? closeChat() : openChat());
-    if (minimize) minimize.addEventListener('click', closeChat);
-    if (maximizeBtn) maximizeBtn.addEventListener('click', toggleMaximize);
-    if (backdrop) backdrop.addEventListener('click', () => { if (isMaximized) toggleMaximize(); });
+    async function loadHistory() {
+        if (!historyList) return;
+        try {
+            const res = await fetch("/chatbot/history", {
+                headers: { Accept: "application/json" },
+            });
+            if (!res.ok) throw new Error();
+            const historyData = await res.json();
+            
+            historyList.innerHTML = "";
+            if (historyData.length === 0) {
+                historyList.innerHTML = '<div class="chatbot-history-empty">Belum ada riwayat percakapan.</div>';
+                return;
+            }
 
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
+            historyData.forEach(conv => {
+                const item = document.createElement("div");
+                item.className = "chatbot-history-item";
+                item.style.display = "flex";
+                item.style.justifyContent = "space-between";
+                item.style.alignItems = "center";
+                
+                const infoDiv = document.createElement("div");
+                infoDiv.style.flex = "1";
+                infoDiv.style.cursor = "pointer";
+                infoDiv.innerHTML = `<h5>${conv.title}</h5><span>${new Date(conv.updated_at).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}</span>`;
+                infoDiv.addEventListener("click", () => fetchConversation(conv.id));
+                
+                const delBtn = document.createElement("button");
+                delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+                delBtn.style.background = "none";
+                delBtn.style.border = "none";
+                delBtn.style.color = "#ef4444";
+                delBtn.style.cursor = "pointer";
+                delBtn.style.padding = "4px";
+                delBtn.style.borderRadius = "4px";
+                delBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    showConfirmDelete(conv.id);
+                });
+                
+                item.appendChild(infoDiv);
+                item.appendChild(delBtn);
+                historyList.appendChild(item);
+            });
+        } catch {
+            historyList.innerHTML = '<div class="chatbot-history-empty">Gagal memuat riwayat.</div>';
+        }
+    }
+
+    async function fetchConversation(id) {
+        try {
+            const res = await fetch(`/chatbot/conversation/${id}`, {
+                headers: { Accept: "application/json" },
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            
+            // Clear current chat
+            messages.innerHTML = "";
+            currentConversationId = data.id;
+            setupEcho(currentConversationId);
+            
+            // Add messages
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    addMessage(msg.content, msg.role === 'user');
+                });
+            } else {
+                addMessage(`Percakapan kosong.`);
+            }
+            toggleHistory(); // close history panel
+        } catch {
+            alert('Gagal memuat percakapan.');
+        }
+    }
+
+    let conversationToDelete = null;
+
+    function showConfirmDelete(id) {
+        conversationToDelete = id;
+        confirmDialog.style.display = 'flex';
+    }
+
+    function closeConfirmDelete() {
+        conversationToDelete = null;
+        confirmDialog.style.display = 'none';
+    }
+
+    if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', closeConfirmDelete);
+    if (confirmYesBtn) confirmYesBtn.addEventListener('click', () => {
+        if (conversationToDelete) deleteConversation(conversationToDelete);
+        closeConfirmDelete();
+    });
+
+    async function deleteConversation(id) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+            const res = await fetch(`/chatbot/conversation/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken,
+                    "Accept": "application/json"
+                }
+            });
+            
+            if (res.ok) {
+                if (currentConversationId === id) {
+                    startNewChat();
+                }
+                loadHistory();
+            }
+        } catch (e) {
+            alert("Gagal menghapus percakapan.");
+        }
+    }
+
+    function toggleHistory() {
+        isHistoryOpen = !isHistoryOpen;
+        if (isHistoryOpen) {
+            historyPanel.style.display = "flex";
+            loadHistory();
+        } else {
+            historyPanel.style.display = "none";
+        }
+    }
+
+    function startNewChat() {
+        currentConversationId = null;
+        messages.innerHTML = "";
+        if (window.Echo && currentConversationId) {
+            window.Echo.leave(`conversations.${currentConversationId}`);
+        }
+        configLoaded = false;
+        loadConfig(); // load greeting again
+        if (isHistoryOpen) toggleHistory();
+    }
+
+    if (historyToggle) historyToggle.addEventListener("click", toggleHistory);
+    if (newChatBtn) newChatBtn.addEventListener("click", startNewChat);
+
+    if (toggle)
+        toggle.addEventListener("click", () =>
+            isOpen ? closeChat() : openChat(),
+        );
+    if (minimize) minimize.addEventListener("click", closeChat);
+    if (maximizeBtn) maximizeBtn.addEventListener("click", toggleMaximize);
+    if (backdrop)
+        backdrop.addEventListener("click", () => {
+            if (isMaximized) toggleMaximize();
+        });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
             if (isMaximized) toggleMaximize();
             else if (isOpen) closeChat();
         }
     });
 
     function addMessage(text, isUser = false) {
-        const d = document.createElement('div');
-        d.className = `chatbot-msg ${isUser ? 'chatbot-msg-user' : 'chatbot-msg-bot'}`;
-        
+        const d = document.createElement("div");
+        d.className = `chatbot-msg ${isUser ? "chatbot-msg-user" : "chatbot-msg-bot"}`;
+
         let fmt;
         if (!isUser) {
             // Render Markdown and Sanitize
@@ -132,46 +325,87 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showTyping() {
-        const d = document.createElement('div');
-        d.className = 'chatbot-msg chatbot-msg-bot'; d.id = 'chatbot-typing';
+        const d = document.createElement("div");
+        d.className = "chatbot-msg chatbot-msg-bot";
+        d.id = "chatbot-typing";
         d.innerHTML = `<div class="chatbot-msg-avatar">${botAvatarSvg}</div><div class="chatbot-msg-bubble chatbot-typing"><span class="chatbot-typing-dot"></span><span class="chatbot-typing-dot"></span><span class="chatbot-typing-dot"></span></div>`;
-        messages.appendChild(d); messages.scrollTop = messages.scrollHeight;
+        messages.appendChild(d);
+        messages.scrollTop = messages.scrollHeight;
     }
 
-    function removeTyping() { const t = document.getElementById('chatbot-typing'); if (t) t.remove(); }
+    function removeTyping() {
+        const t = document.getElementById("chatbot-typing");
+        if (t) t.remove();
+    }
 
     if (form) {
-        form.addEventListener('submit', async function (e) {
+        form.addEventListener("submit", async function (e) {
             e.preventDefault();
             const message = input.value.trim();
             if (!message) return;
+            
+            // Hapus chips jika pengguna mengetik pesan manual
+            const chips = document.querySelector(".chatbot-chips");
+            if (chips) {
+                chips.style.opacity = "0";
+                chips.style.transition = "all 0.3s";
+                setTimeout(() => chips.remove(), 300);
+            }
+
             addMessage(message, true);
-            input.value = '';
+            input.value = "";
             input.disabled = true;
-            document.getElementById('chatbot-send').disabled = true;
+            document.getElementById("chatbot-send").disabled = true;
             showTyping();
             try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                    || document.querySelector('input[name="_token"]')?.value;
-                const response = await fetch('/chatbot/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                    body: JSON.stringify({ message }),
+                const csrfToken =
+                    document
+                        .querySelector('meta[name="csrf-token"]')
+                        ?.getAttribute("content") ||
+                    document.querySelector('input[name="_token"]')?.value;
+                const response = await fetch("/chatbot/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({ 
+                        message, 
+                        conversation_id: currentConversationId 
+                    }),
                 });
                 removeTyping();
                 if (response.ok) {
                     const data = await response.json();
+                    if (data.conversation_id) {
+                        currentConversationId = data.conversation_id;
+                        // setupEcho(data.conversation_id); // Optional: keep for multi-tab if needed
+                    }
+                    
+                    // Selalu tambahkan pesan dari HTTP response agar dijamin muncul!
                     addMessage(data.reply);
                 } else {
-                    addMessage('Maaf, terjadi kesalahan. Silakan coba lagi. 🙏');
+                    addMessage(
+                        "Maaf, terjadi kesalahan. Silakan coba lagi. 🙏",
+                    );
                 }
             } catch {
                 removeTyping();
-                addMessage('Maaf, koneksi terputus. Periksa koneksi internet Anda. 🔌');
+                addMessage(
+                    "Maaf, koneksi terputus. Periksa koneksi internet Anda. 🔌",
+                );
             }
             input.disabled = false;
-            document.getElementById('chatbot-send').disabled = false;
+            document.getElementById("chatbot-send").disabled = false;
             input.focus();
         });
     }
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initChatbot);
+} else {
+    initChatbot();
+}
+document.addEventListener("livewire:navigated", initChatbot);

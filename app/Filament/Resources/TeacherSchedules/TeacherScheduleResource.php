@@ -16,11 +16,13 @@ class TeacherScheduleResource extends Resource
 {
     protected static ?string $model = \App\Models\TeacherSchedule::class;
 
+    protected static ?string $recordTitleAttribute = 'hari';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Akademik Saya';
+    protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Jadwal Mengajar';
 
@@ -32,7 +34,8 @@ class TeacherScheduleResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with(['startTimeSlot', 'endTimeSlot', 'subject', 'studyGroup.classroom']);
         
         if (auth()->check() && auth()->user()->teacher) {
             $query->where('teacher_id', auth()->user()->teacher->id);
@@ -41,13 +44,18 @@ class TeacherScheduleResource extends Resource
         return $query;
     }
 
+    public static function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
+    {
+        return \App\Filament\Resources\Schedules\Schemas\ScheduleForm::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->groups([
                 \Filament\Tables\Grouping\Group::make('hari')
-                    ->label('')
-                    ->getTitleFromRecordUsing(fn ($record) => new \Illuminate\Support\HtmlString("<span style='font-size: 1.1rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary-600);'>" . $record->hari . "</span>"))
+                    ->label('Hari')
+                    ->getTitleFromRecordUsing(fn ($record) => new \Illuminate\Support\HtmlString("<span style='font-size: 1.1rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary-600);'>" . ucfirst($record->hari) . "</span>"))
                     ->collapsible()
                     ->orderQueryUsing(fn (Builder $query, string $direction) => $query->orderByRaw("
                         CASE hari 

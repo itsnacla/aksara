@@ -48,15 +48,25 @@ class ListTeachers extends ListRecords
                             $file = is_array($state) ? reset($state) : $state;
                             $path = null;
 
+                            $isTempDownloaded = false;
                             if (is_string($file)) {
                                 if (file_exists($file)) {
                                     $path = $file;
-                                } elseif (Storage::disk('public')->exists($file)) {
-                                    $path = Storage::disk('public')->path($file);
                                 } elseif (Storage::exists($file)) {
-                                    $path = Storage::path($file);
+                                    $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                                    if (in_array($diskDriver, ['local', 'public'])) {
+                                        $path = Storage::path($file);
+                                    } else {
+                                        $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                        if (!file_exists(dirname($tmpPath))) {
+                                            mkdir(dirname($tmpPath), 0755, true);
+                                        }
+                                        file_put_contents($tmpPath, Storage::get($file));
+                                        $path = $tmpPath;
+                                        $isTempDownloaded = true;
+                                    }
                                 } else {
-                                    $tmpPath = storage_path('app/livewire-tmp/' . $file);
+                                    $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
                                     if (file_exists($tmpPath)) {
                                         $path = $tmpPath;
                                     }
@@ -73,8 +83,10 @@ class ListTeachers extends ListRecords
                                 $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
                                 $allRows = $spreadsheet->getActiveSheet()->toArray();
                             } catch (\Exception $e) {
+                                if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
                                 return;
                             }
+                            if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
 
                             $rows = [];
                             foreach ($allRows as $r) {
@@ -170,6 +182,8 @@ class ListTeachers extends ListRecords
 
                                 $previewRows[] = [
                                     'name' => $name,
+                                    'gelar_depan' => trim($data['gelar_depan'] ?? ''),
+                                    'gelar_belakang' => trim($data['gelar_belakang'] ?? ''),
                                     'nip' => $nip,
                                     'is_auto_nip' => $isAutoNip,
                                     'is_duplicate' => $isDuplicate,
@@ -208,15 +222,25 @@ class ListTeachers extends ListRecords
                     $file = is_array($data['file']) ? reset($data['file']) : $data['file'];
                     $path = null;
 
+                    $isTempDownloaded = false;
                     if (is_string($file)) {
                         if (file_exists($file)) {
                             $path = $file;
-                        } elseif (Storage::disk('public')->exists($file)) {
-                            $path = Storage::disk('public')->path($file);
                         } elseif (Storage::exists($file)) {
-                            $path = Storage::path($file);
+                            $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                            if (in_array($diskDriver, ['local', 'public'])) {
+                                $path = Storage::path($file);
+                            } else {
+                                $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                if (!file_exists(dirname($tmpPath))) {
+                                    mkdir(dirname($tmpPath), 0755, true);
+                                }
+                                file_put_contents($tmpPath, Storage::get($file));
+                                $path = $tmpPath;
+                                $isTempDownloaded = true;
+                            }
                         } else {
-                            $tmpPath = storage_path('app/livewire-tmp/' . $file);
+                            $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
                             if (file_exists($tmpPath)) {
                                 $path = $tmpPath;
                             }
@@ -238,6 +262,7 @@ class ListTeachers extends ListRecords
                         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
                         $allRows = $spreadsheet->getActiveSheet()->toArray();
                     } catch (\Exception $e) {
+                        if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
                         Notification::make()
                             ->title('Format berkas tidak didukung')
                             ->body('Pastikan berkas berformat CSV atau Excel (.xlsx/.xls) yang valid.')
@@ -245,6 +270,7 @@ class ListTeachers extends ListRecords
                             ->send();
                         return;
                     }
+                    if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
 
                     $rows = [];
                     foreach ($allRows as $r) {
@@ -349,6 +375,8 @@ class ListTeachers extends ListRecords
                         $status = trim($rowData['status_guru'] ?? '') ?: 'aktif';
                         $teacher = Teacher::create([
                             'user_id' => $user->id,
+                            'gelar_depan' => trim($rowData['gelar_depan'] ?? null) ?: null,
+                            'gelar_belakang' => trim($rowData['gelar_belakang'] ?? null) ?: null,
                             'nip' => $nip,
                             'status' => strtolower($status),
                             'no_whatsapp' => trim($rowData['no_whatsapp'] ?? '') ?: null,
@@ -394,6 +422,7 @@ class ListTeachers extends ListRecords
                         'username' => $data['user_username'],
                         'email' => $data['user_email'],
                         'password' => Hash::make($data['user_password']),
+                        'is_active' => $data['user_is_active'] ?? true,
                     ]);
 
                     // Assign role
@@ -403,7 +432,7 @@ class ListTeachers extends ListRecords
                     $data['user_id'] = $user->id;
 
                     // Remove user fields from data
-                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password']);
+                    unset($data['user_name'], $data['user_username'], $data['user_email'], $data['user_password'], $data['user_is_active']);
 
                     return $data;
                 }),

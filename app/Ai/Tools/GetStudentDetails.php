@@ -26,16 +26,26 @@ class GetStudentDetails implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        $query = Student::query()->with(['user', 'studyGroup.level', 'parent.user']);
+        $query = Student::query()->with(['user', 'studyGroups.level', 'parent.user']);
 
         // Mengambil nilai dari Request secara aman
         $nisn = $request['nisn'] ?? null;
         $name = $request['name'] ?? null;
+        $roleName = $this->user->roles->first()?->name ?? 'siswa';
 
         if ($nisn) {
             $query->where('nisn', $nisn);
         } elseif ($name) {
             $query->whereHas('user', fn($q) => $q->where('name', 'like', "%{$name}%"));
+        } elseif (str_contains($roleName, 'siswa')) {
+            $student = $this->user->student;
+            if (!$student) return 'Data siswa tidak ditemukan.';
+            $query->where('id', $student->id);
+        } elseif (str_contains($roleName, 'orang_tua') || str_contains($roleName, 'wali')) {
+            $parent = $this->user->parent;
+            if (!$parent) return 'Data orang tua tidak ditemukan.';
+            $childIds = $parent->students->pluck('id')->toArray();
+            $query->whereIn('id', $childIds);
         } else {
             return 'Mohon berikan NISN atau Nama siswa.';
         }
@@ -46,11 +56,13 @@ class GetStudentDetails implements Tool
             return 'Siswa tidak ditemukan.';
         }
 
+        $rombel = $student->currentStudyGroup();
+
         return json_encode([
             'nama' => $student->user->name,
             'nisn' => $student->nisn,
-            'rombel' => $student->studyGroup?->nama_rombel,
-            'tingkatan' => $student->studyGroup?->level?->nama_tingkatan,
+            'rombel' => $rombel?->nama_rombel,
+            'tingkatan' => $rombel?->level?->nama_tingkatan,
             'orang_tua' => $student->parent?->user?->name,
             'email' => $student->user->email,
         ], JSON_PRETTY_PRINT);
@@ -62,8 +74,8 @@ class GetStudentDetails implements Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'nisn' => $schema->string()->description('Nomor Induk Siswa Nasional (10 digit)'),
-            'name' => $schema->string()->description('Nama lengkap atau potongan nama siswa'),
+            'nisn' => $schema->string()->description('Opsional. Nomor Induk Siswa Nasional (10 digit)'),
+            'name' => $schema->string()->description('Opsional. Nama lengkap atau potongan nama siswa'),
         ];
     }
 }

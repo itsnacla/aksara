@@ -23,13 +23,14 @@ class ScheduleForm
     {
         return $schema
             ->components([
-                Hidden::make('id'),
+                Hidden::make('id')
+                    ->dehydrated(false),
                 
                 Fieldset::make('Informasi Rombel & Mapel')
                     ->schema([
                         Select::make('study_group_id')
                             ->label('Rombel')
-                            ->options(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($rombel) => [
+                            ->options(fn () => StudyGroup::with('academicYear')->whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($rombel) => [
                                 $rombel->id => "{$rombel->nama_rombel} ({$rombel->academicYear->tahun_ajaran})"
                             ]))
                             ->required()
@@ -44,7 +45,12 @@ class ScheduleForm
                                     if ($subject && $subject->is_umum) {
                                         $studyGroup = StudyGroup::find($state);
                                         if ($studyGroup && $studyGroup->walikelas_id) {
-                                            $set('teacher_id', $studyGroup->walikelas_id);
+                                            $teacher = Teacher::find($studyGroup->walikelas_id);
+                                            if ($teacher && $teacher->status === 'aktif') {
+                                                $set('teacher_id', $studyGroup->walikelas_id);
+                                            } else {
+                                                $set('teacher_id', null);
+                                            }
                                         }
                                     }
                                 }
@@ -79,66 +85,13 @@ class ScheduleForm
                             ->required()
                             ->live()
                             ->searchable()
-                            ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                if (!$state) return;
-                                
-                                $subject = Subject::find($state);
-                                $rombelId = $get('study_group_id');
-
-                                // Hitung Sisa JP
-                                if ($rombelId) {
-                                    $usedJp = Schedule::where('study_group_id', $rombelId)
-                                        ->where('subject_id', $state)
-                                        ->where('id', '!=', $get('id'))
-                                        ->get()
-                                        ->sum(function($s) {
-                                            $start = TimeSlot::find($s->start_time_slot_id);
-                                            $end = TimeSlot::find($s->end_time_slot_id);
-                                            return ($start && $end) ? abs($end->urutan - $start->urutan) + 1 : 0;
-                                        });
-                                    
-                                    $totalJp = $subject->total_jp ?? 0;
-                                    $remaining = max(0, $totalJp - $usedJp);
-                                    $set('remaining_jp', $remaining);
-
-                                    // OTOMATIS CARI SLOT JIKA HARI SUDAH TERPILIH
-                                    $hari = $get('hari');
-                                    if ($hari) {
-                                        $studyGroup = StudyGroup::find($rombelId);
-                                        $allSlots = TimeSlot::whereHas('levels', fn($q) => $q->where('levels.id', $studyGroup->level_id))->orderBy('urutan')->get();
-                                        
-                                        foreach ($allSlots as $slot) {
-                                            $isBusy = Schedule::where('hari', $hari)->where('study_group_id', $rombelId)
-                                                ->where(fn($q) => $q->where('start_time_slot_id', '<=', $slot->id)->where('end_time_slot_id', '>=', $slot->id))
-                                                ->exists();
-                                            
-                                            if (!$isBusy && !$slot->is_istirahat) {
-                                                $set('start_time_slot_id', $slot->id);
-                                                $duration = min($remaining, $subject->default_jp ?? 2);
-                                                $endSlot = TimeSlot::whereHas('levels', fn($q) => $q->where('levels.id', $studyGroup->level_id))
-                                                    ->where('is_istirahat', false)->where('urutan', '>=', $slot->urutan)
-                                                    ->orderBy('urutan')->take($duration)->get()->last();
-                                                if ($endSlot) $set('end_time_slot_id', $endSlot->id);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if ($subject && $subject->is_umum) {
-                                    $studyGroup = StudyGroup::find($rombelId);
-                                    if ($studyGroup && $studyGroup->walikelas_id) {
-                                        $set('teacher_id', $studyGroup->walikelas_id);
-                                    }
-                                } else {
-                                    $set('teacher_id', null);
-                                }
-                            })
+                            ->afterStateUpdated(fn(Get $get, Set $set, ?string $state) => self::handleSubjectUpdated($get, $set, $state))
                             ->helperText(fn (Get $get) => "Beban Mingguan: " . (Subject::find($get('subject_id'))?->total_jp ?? 0) . " JP | Sisa: " . ($get('remaining_jp') ?? 0) . " JP"),
                         
-                        Hidden::make('remaining_jp'),
+                        Hidden::make('remaining_jp')
+                            ->dehydrated(false),
                     ])
-                    ->columns(2),
+                    ->columns(1),
 
                 Fieldset::make('Pengajar & Waktu')
                     ->schema([
@@ -154,7 +107,7 @@ class ScheduleForm
                                     if ($studyGroup && $studyGroup->walikelas_id) {
                                         $teacher = Teacher::with('user')->find($studyGroup->walikelas_id);
                                         if ($teacher && $teacher->status === 'aktif' && $teacher->user?->is_active) {
-                                            return [$teacher->id => $teacher->user->name . ' (Wali Kelas)'];
+                                            return [$teacher->id => $teacher->nama_lengkap . ' (Wali Kelas)'];
                                         }
                                     }
                                     return []; // Kembalikan kosong jika walikelas tidak aktif
@@ -164,7 +117,7 @@ class ScheduleForm
                                     ->whereHas('user', fn ($q) => $q->where('is_active', true))
                                     ->whereHas('subjects', function ($query) use ($subjectId) {
                                         $query->where('subjects.id', $subjectId);
-                                    })->with('user')->get()->pluck('user.name', 'id');
+                                    })->with('user')->get()->pluck('nama_lengkap', 'id');
                             })
                             ->required()
                             ->searchable()
@@ -260,7 +213,8 @@ class ScheduleForm
                                 if (!$studyGroup) return [];
 
                                 // Ambil Aturan Hari
-                                $dayConfig = \App\Models\DayConfig::where('academic_year_id', $studyGroup->academic_year_id)
+                                $dayConfig = \App\Models\DayConfig::with(['maxTimeSlot'])
+                                    ->where('academic_year_id', $studyGroup->academic_year_id)
                                     ->where('day', $hari)
                                     ->whereJsonContains('level_ids', (int) $studyGroup->level_id)
                                     ->first();
@@ -335,7 +289,8 @@ class ScheduleForm
                                 
                                 if (!$studyGroup) return [];
 
-                                $dayConfig = \App\Models\DayConfig::where('academic_year_id', $studyGroup->academic_year_id)
+                                $dayConfig = \App\Models\DayConfig::with(['maxTimeSlot'])
+                                    ->where('academic_year_id', $studyGroup->academic_year_id)
                                     ->where('day', $hari)
                                     ->whereJsonContains('level_ids', (int) $studyGroup->level_id)
                                     ->first();
@@ -437,7 +392,22 @@ class ScheduleForm
                                             ->where('urutan', '<=', $endSlot->urutan)
                                             ->count();
 
-                                        $remaining = $get('remaining_jp') ?? 0;
+                                        $subjectId = $get('subject_id');
+                                        $subject = Subject::find($subjectId);
+                                        $usedJp = 0;
+                                        if ($subject) {
+                                            $usedJp = Schedule::where('study_group_id', $rombelId)
+                                                ->where('subject_id', $subjectId)
+                                                ->where('id', '!=', $recordId)
+                                                ->get()
+                                                ->sum(function($s) {
+                                                    $sStart = TimeSlot::find($s->start_time_slot_id);
+                                                    $sEnd = TimeSlot::find($s->end_time_slot_id);
+                                                    return ($sStart && $sEnd) ? abs($sEnd->urutan - $sStart->urutan) + 1 : 0;
+                                                });
+                                        }
+                                        $remaining = max(0, ($subject->total_jp ?? 0) - $usedJp);
+
                                         if ($jpCount > $remaining) {
                                             $fail("Total {$jpCount} JP melebihi sisa beban mingguan Mapel ini ({$remaining} JP)!");
                                         }
@@ -467,7 +437,82 @@ class ScheduleForm
                                 },
                             ]),
                     ])
-                    ->columns(2),
+                    ->columns(1),
             ]);
+    }
+
+    public static function handleSubjectUpdated(Get $get, Set $set, ?string $state): void
+    {
+        if (!$state) return;
+        
+        $subject = Subject::find($state);
+        $rombelId = $get('study_group_id');
+
+        if ($rombelId) {
+            self::updateRemainingJp($get, $set, $state, $subject, $rombelId);
+            self::autoFindTimeSlot($get, $set, $subject, $rombelId);
+        }
+
+        self::assignWaliKelas($subject, $rombelId, $set);
+    }
+
+    private static function updateRemainingJp(Get $get, Set $set, string $state, ?Subject $subject, string $rombelId): void
+    {
+        $usedJp = Schedule::where('study_group_id', $rombelId)
+            ->where('subject_id', $state)
+            ->where('id', '!=', $get('id'))
+            ->get()
+            ->sum(function($s) {
+                $start = TimeSlot::find($s->start_time_slot_id);
+                $end = TimeSlot::find($s->end_time_slot_id);
+                return ($start && $end) ? abs($end->urutan - $start->urutan) + 1 : 0;
+            });
+        
+        $totalJp = $subject->total_jp ?? 0;
+        $remaining = max(0, $totalJp - $usedJp);
+        $set('remaining_jp', $remaining);
+    }
+
+    private static function autoFindTimeSlot(Get $get, Set $set, ?Subject $subject, string $rombelId): void
+    {
+        $hari = $get('hari');
+        if (!$hari) return;
+
+        $studyGroup = StudyGroup::find($rombelId);
+        if (!$studyGroup) return;
+
+        $allSlots = TimeSlot::whereHas('levels', fn($q) => $q->where('levels.id', $studyGroup->level_id))->orderBy('urutan')->get();
+        $remaining = $get('remaining_jp') ?? 0;
+
+        foreach ($allSlots as $slot) {
+            $isBusy = Schedule::where('hari', $hari)->where('study_group_id', $rombelId)
+                ->where(fn($q) => $q->where('start_time_slot_id', '<=', $slot->id)->where('end_time_slot_id', '>=', $slot->id))
+                ->exists();
+            
+            if (!$isBusy && !$slot->is_istirahat) {
+                $set('start_time_slot_id', $slot->id);
+                $duration = min($remaining, $subject->default_jp ?? 2);
+                $endSlot = TimeSlot::whereHas('levels', fn($q) => $q->where('levels.id', $studyGroup->level_id))
+                    ->where('is_istirahat', false)->where('urutan', '>=', $slot->urutan)
+                    ->orderBy('urutan')->take($duration)->get()->last();
+                if ($endSlot) $set('end_time_slot_id', $endSlot->id);
+                break;
+            }
+        }
+    }
+
+    private static function assignWaliKelas(?Subject $subject, ?string $rombelId, Set $set): void
+    {
+        if ($subject && $subject->is_umum && $rombelId) {
+            $studyGroup = StudyGroup::find($rombelId);
+            if ($studyGroup && $studyGroup->walikelas_id) {
+                $teacher = Teacher::find($studyGroup->walikelas_id);
+                if ($teacher && $teacher->status === 'aktif') {
+                    $set('teacher_id', $studyGroup->walikelas_id);
+                    return;
+                }
+            }
+        }
+        $set('teacher_id', null);
     }
 }

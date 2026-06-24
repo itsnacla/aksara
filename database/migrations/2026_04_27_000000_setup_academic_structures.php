@@ -41,14 +41,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        if (Schema::hasTable('attendances')) {
-            Schema::table('attendances', function (Blueprint $table) {
-                $table->time('check_in_start')->nullable();
-                $table->time('check_in_end')->nullable();
-                $table->time('check_out_start')->nullable();
-                $table->time('check_out_end')->nullable();
-            });
-        }
     }
 
     public function down(): void
@@ -57,11 +49,5 @@ return new class extends Migration
         Schema::dropIfExists('level_subject');
         Schema::dropIfExists('study_group_student');
         Schema::dropIfExists('day_configs');
-        
-        if (Schema::hasTable('attendances')) {
-            Schema::table('attendances', function (Blueprint $table) {
-                $table->dropColumn(['check_in_start', 'check_in_end', 'check_out_start', 'check_out_end']);
-            });
-        }
     }
 };

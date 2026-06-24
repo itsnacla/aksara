@@ -19,6 +19,12 @@ class LevelsTable
                 TextColumn::make('nama_tingkatan')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('fase')
+                    ->label('Fase')
+                    ->badge()
+                    ->color('info')
+                    ->formatStateUsing(fn (string $state): string => "Fase {$state}")
+                    ->sortable(),
                 \Filament\Tables\Columns\IconColumn::make('is_last_level')
                     ->label('Tingkat Terakhir')
                     ->boolean()

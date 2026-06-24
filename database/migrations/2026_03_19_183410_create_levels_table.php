@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('levels', function (Blueprint $table) {
             $table->id();
             $table->string('nama_tingkatan', 50);
+            $table->string('fase', 10)->nullable();
+            $table->boolean('is_last_level')->default(false);
             $table->timestamps();
         });
     }

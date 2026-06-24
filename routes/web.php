@@ -17,11 +17,22 @@ Route::get('/login', function () {
 // Portal (Students/Parents)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [PortalController::class, 'index'])->name('dashboard');
-    Route::post('/logout', [PortalController::class, 'logout'])->name('logout');
+    Route::get('/dashboard/realtime', [PortalController::class, 'realtimeData'])->name('dashboard.realtime');
+
+    // Student Leaves (Permissions)
+    Route::get('/leaves', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'index'])->name('leaves.index');
+    Route::get('/leaves/create', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'create'])->name('leaves.create');
+    Route::post('/leaves', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'store'])->name('leaves.store');
+    Route::put('/leaves/{leave}', [\App\Http\Controllers\Portal\StudentLeaveController::class, 'update'])->name('leaves.update');
+
+    Route::post('/logout', [PortalController::class, 'logout'])->name('logout')->middleware('throttle:60,1');
 
     // AI Chatbot
     Route::get('/chatbot/config', [ChatbotController::class, 'config'])->name('chatbot.config');
     Route::post('/chatbot/chat', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+    Route::get('/chatbot/history', [ChatbotController::class, 'history'])->name('chatbot.history');
+    Route::get('/chatbot/conversation/{id}', [ChatbotController::class, 'loadConversation'])->name('chatbot.conversation');
+    Route::delete('/chatbot/conversation/{id}', [ChatbotController::class, 'destroyConversation'])->name('chatbot.conversation.destroy');
 
     // Student Cards
     Route::get('/student-card/{student}', [\App\Http\Controllers\StudentCardController::class, 'print'])->name('student.card');
@@ -34,7 +45,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/schedule', [\App\Http\Controllers\ReportController::class, 'schedule'])->name('reports.schedule');
 
     // Standalone QR Scan
-    Route::get('/scan-presensi', \App\Livewire\QrScanStandalone::class)->name('scan-presensi');
+    Route::get('/scan-presensi', \App\Livewire\QrScanStandalone::class)
+        ->name('scan-presensi')
+        ->middleware(['auth', 'can:scan_attendance']);
 
     // Download Template Multi-Format untuk Impor Massal (CSV, XLSX, XLS)
     Route::get('/download-template/{type}/{format?}', function (string $type, string $format = 'csv') {
@@ -42,11 +55,11 @@ Route::middleware(['auth'])->group(function () {
         $examples = [];
 
         if ($type === 'teacher') {
-            $columns = ['nama_lengkap', 'nip', 'status_guru', 'no_whatsapp', 'wali_kelas', 'kepala_sekolah', 'mata_pelajaran'];
+            $columns = ['gelar_depan', 'nama_lengkap', 'gelar_belakang', 'nip', 'status_guru', 'no_whatsapp', 'wali_kelas', 'kepala_sekolah', 'mata_pelajaran'];
             $examples = [
-                ['Budi Santoso, S.Pd.', '198001012005011001', 'aktif', '081234567890', '1', '0', 'Matematika'],
-                ['Dr. Hj. Siti Aminah, M.Si.', '', 'aktif', '08555666777', '0', '1', 'Fisika, Kimia'],
-                ['Ahmad Rivan', '199203032018021002', 'mutasi', '08111222333', '0', '0', 'Bahasa Inggris|Seni Budaya']
+                ['Drs.', 'Budi Santoso', 'S.Pd.', '198001012005011001', 'aktif', '081234567890', '1', '0', 'Matematika'],
+                ['Dr. Hj.', 'Siti Aminah', 'M.Si.', '', 'aktif', '08555666777', '0', '1', 'Fisika, Kimia'],
+                ['', 'Ahmad Rivan', '', '199203032018021002', 'mutasi', '08111222333', '0', '0', 'Bahasa Inggris|Seni Budaya']
             ];
         } elseif ($type === 'student') {
             $columns = [
@@ -70,6 +83,18 @@ Route::middleware(['auth'])->group(function () {
             $examples = [
                 ['Siti Aminah', 'Administrasi Keuangan', 'aktif', '08555666777'],
                 ['Hendra Gunawan', 'Kepala Tata Usaha', 'aktif', '081233334444']
+            ];
+        } elseif ($type === 'learning-objective') {
+            $columns = ['kode_tp', 'deskripsi', 'mata_pelajaran', 'tingkat_kelas'];
+            $examples = [
+                ['TP01', 'Siswa mampu memahami konsep bilangan bulat', 'Matematika', 'Kelas 1'],
+                ['TP02', 'Siswa dapat menjelaskan fungsi organ tubuh', 'Ilmu Pengetahuan Alam', 'Kelas 5']
+            ];
+        } elseif ($type === 'grade') {
+            $columns = ['nisn', 'nama_siswa', 'nilai_tugas', 'nilai_uts', 'nilai_uas'];
+            $examples = [
+                ['0051234567', 'Ahmad Fauzi', '85', '90', '88'],
+                ['0057654321', 'Budi Santoso', '78', '82', '80']
             ];
         } else {
             abort(404, 'Template tidak ditemukan.');
@@ -147,4 +172,18 @@ Route::middleware(['auth'])->group(function () {
 
         return response()->streamDownload($callback, $filename, $headers);
     })->name('download.template');
+
+    // Cetak Buku Induk & Rapor
+    Route::get('/pelengkap-rapor/print-bulk', [\App\Http\Controllers\PrintController::class, 'printPelengkapRaporBulk'])->name('print.pelengkap-rapor-bulk');
+    Route::get('/pelengkap-rapor/print/{student}', [\App\Http\Controllers\PrintController::class, 'printPelengkapRapor'])->name('print.pelengkap-rapor');
+    
+    Route::get('/buku-induk/print-bulk', [\App\Http\Controllers\PrintController::class, 'printBukuIndukBulk'])->name('print.buku-induk-bulk');
+    Route::get('/buku-induk/print/{student}', [\App\Http\Controllers\PrintController::class, 'printBukuInduk'])->name('print.buku-induk');
+    Route::get('/rapor/print-bulk', [\App\Http\Controllers\PrintController::class, 'printRaporBulk'])->name('print.rapor.bulk');
+    Route::get('/rapor/print/{student}', [\App\Http\Controllers\PrintController::class, 'printRapor'])->name('print.rapor');
+
+    // Impersonate (Login As)
+    Route::post('/impersonate/login/{user}', [\App\Http\Controllers\Portal\ImpersonateController::class, 'login'])->name('impersonate.login')->middleware('throttle:60,1');
+    Route::post('/impersonate/logout', [\App\Http\Controllers\Portal\ImpersonateController::class, 'logout'])->name('impersonate.logout')->middleware('throttle:60,1');
 });
+

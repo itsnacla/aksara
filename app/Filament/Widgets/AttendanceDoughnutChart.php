@@ -5,9 +5,12 @@ namespace App\Filament\Widgets;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
 class AttendanceDoughnutChart extends ChartWidget
 {
+    use ScopesToTeacherStudents;
+
     protected ?string $heading = 'Ringkasan Kehadiran Bulan Ini';
 
     protected ?string $description = 'Proporsi status kehadiran seluruh siswa';
@@ -24,28 +27,25 @@ class AttendanceDoughnutChart extends ChartWidget
     protected function getData(): array
     {
         $now = Carbon::now();
+        $isGuru = auth()->user()?->hasRole('guru');
 
-        $hadir = Attendance::whereMonth('tanggal', $now->month)
-            ->whereYear('tanggal', $now->year)
-            ->where('status', 'hadir')
-            ->count();
+        $hadirQuery = Attendance::whereMonth('tanggal', $now->month)->whereYear('tanggal', $now->year)->where('status', 'hadir');
+        $sakitQuery = Attendance::whereMonth('tanggal', $now->month)->whereYear('tanggal', $now->year)->where('status', 'sakit');
+        $izinQuery = Attendance::whereMonth('tanggal', $now->month)->whereYear('tanggal', $now->year)->where('status', 'izin');
+        $alfaQuery = Attendance::whereMonth('tanggal', $now->month)->whereYear('tanggal', $now->year)->whereIn('status', ['alfa', 'alpha']);
 
-        $sakit = Attendance::whereMonth('tanggal', $now->month)
-            ->whereYear('tanggal', $now->year)
-            ->where('status', 'sakit')
-            ->count();
+        if ($isGuru) {
+            $this->scopeTeacherAttendance($hadirQuery);
+            $this->scopeTeacherAttendance($sakitQuery);
+            $this->scopeTeacherAttendance($izinQuery);
+            $this->scopeTeacherAttendance($alfaQuery);
+        }
 
-        $izin = Attendance::whereMonth('tanggal', $now->month)
-            ->whereYear('tanggal', $now->year)
-            ->where('status', 'izin')
-            ->count();
+        $hadir = (clone $hadirQuery)->count();
+        $sakit = (clone $sakitQuery)->count();
+        $izin = (clone $izinQuery)->count();
+        $alfa = (clone $alfaQuery)->count();
 
-        $alfa = Attendance::whereMonth('tanggal', $now->month)
-            ->whereYear('tanggal', $now->year)
-            ->where('status', 'alfa')
-            ->count();
-
-        // If no data, show placeholder
         if (($hadir + $sakit + $izin + $alfa) === 0) {
             $hadir = 85;
             $sakit = 6;
@@ -97,6 +97,6 @@ class AttendanceDoughnutChart extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        return auth()->user()?->hasAnyRole(['super_admin', 'guru', 'staff']) ?? false;
     }
 }

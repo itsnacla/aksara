@@ -25,13 +25,20 @@ class StudentParentResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-users';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Data Wali Murid';
 
-    protected static ?string $recordTitleAttribute = 'user.name';
+    protected static ?string $modelLabel = 'Wali Murid';
+
+    protected static ?string $pluralModelLabel = 'Wali Murid';
+
+    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return $record?->user?->name;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -46,6 +53,11 @@ class StudentParentResource extends Resource
     public static function table(Table $table): Table
     {
         return StudentParentsTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     public static function getRelations(): array

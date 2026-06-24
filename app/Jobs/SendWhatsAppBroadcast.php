@@ -28,37 +28,12 @@ class SendWhatsAppBroadcast implements ShouldQueue
     {
         $settings = SchoolSetting::current();
 
-        if (!$settings->is_wa_enabled || !$settings->wa_gateway_token) {
+        if (!$settings->is_wa_enabled) {
             return;
         }
 
-        try {
-            $url = $settings->wa_gateway_provider === 'custom' 
-                ? $settings->wa_gateway_url 
-                : 'https://api.fonnte.com/send';
+        $finalMessage = $this->message . "\n\n--- _Powered by Aksara | Tateta_ ---";
 
-            $phoneParam = $settings->wa_gateway_provider === 'custom'
-                ? $settings->wa_gateway_phone_param
-                : 'target';
-
-            $messageParam = $settings->wa_gateway_provider === 'custom'
-                ? $settings->wa_gateway_message_param
-                : 'message';
-
-            $finalMessage = $this->message . "\n\n--- _Powered by Aksara | Tateta_ ---";
-
-            $response = Http::withHeaders([
-                'Authorization' => $settings->wa_gateway_token,
-            ])->post($url, [
-                $phoneParam => $this->phone,
-                $messageParam => $finalMessage,
-            ]);
-
-            if (!$response->successful()) {
-                Log::error('WA Broadcast Failed to ' . $this->phone . ': ' . $response->body());
-            }
-        } catch (\Exception $e) {
-            Log::error('WA Broadcast Error to ' . $this->phone . ': ' . $e->getMessage());
-        }
+        \App\Services\WAService::sendMessage($this->phone, $finalMessage);
     }
 }

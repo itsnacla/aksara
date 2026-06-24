@@ -19,13 +19,25 @@ class ScheduleResource extends Resource
 {
     protected static ?string $model = Schedule::class;
 
+    protected static ?string $recordTitleAttribute = 'hari';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Jadwal Pelajaran';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Jadwal Pelajaran';
+    protected static ?string $navigationLabel = 'Semua Jadwal';
+
+    protected static ?string $modelLabel = 'Jadwal';
+
+    protected static ?string $pluralModelLabel = 'Jadwal';
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['startTimeSlot', 'endTimeSlot', 'subject', 'teacher.user', 'studyGroup.classroom']);
+    }
 
     public static function form(Schema $schema): Schema
     {

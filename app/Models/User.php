@@ -2,30 +2,41 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $username
+ * @property string|null $email
+ * @property string $password
+ * @property string|null $photo
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ */
+#[Fillable([
+    'name',
+    'username',
+    'email',
+    'password',
+    'photo',
+    'is_active',
+])]
 class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
     
     protected $guard_name = 'web';
 
-    protected $fillable = [
-        'name',
-        'username',
-        'email',
-        'password',
-        'photo',
-        'is_active',
-    ];
-
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     protected function casts(): array
@@ -59,13 +70,31 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(Student::class);
     }
 
-    public function leaveRequests()
+    public function studentLeaves()
     {
-        return $this->hasMany(LeaveRequest::class);
+        return $this->hasMany(StudentLeave::class);
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->is_active;
+    }
+
+    public function getNamaLengkapAttribute()
+    {
+        try {
+            if ($this->relationLoaded('teacher') && $this->teacher) {
+                return $this->teacher->nama_lengkap;
+            } elseif (!$this->relationLoaded('teacher')) {
+                // If preventLazyLoading is active, this will catch the exception
+                if ($this->teacher) {
+                    return $this->teacher->nama_lengkap;
+                }
+            }
+        } catch (\Illuminate\Database\LazyLoadingViolationException $e) {
+            // fallback to name if lazy loading is prevented
+        }
+        
+        return $this->name;
     }
 }

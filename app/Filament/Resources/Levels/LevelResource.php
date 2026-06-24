@@ -21,11 +21,15 @@ class LevelResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-bars-3-bottom-left';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Sekolah';
+    protected static UnitEnum|string|null $navigationGroup = 'Kurikulum & Referensi';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel = 'Tingkatan';
+
+    protected static ?string $modelLabel = 'Tingkatan';
+
+    protected static ?string $pluralModelLabel = 'Tingkatan';
 
     protected static ?string $recordTitleAttribute = 'nama_tingkatan';
 

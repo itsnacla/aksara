@@ -4,75 +4,230 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class RegionService
 {
-    protected static $baseUrl = 'https://emsifa.github.io/api-wilayah-indonesia/api';
+    private static bool $isOffline = false;
 
+    private static function fetchFromService(string $level, string $parent = '0'): array
+    {
+        $parent = trim((string)$parent);
+        $cacheKey = "tateta_geo_v1_{$level}_{$parent}";
+        
+        return Cache::remember($cacheKey, 86400, function () use ($level, $parent) {
+            if (self::$isOffline) return [];
+
+            $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
+            
+            try {
+                $endpoint = match($level) {
+                    'provinsi' => '/provinces',
+                    'kabupaten' => '/regencies?province_id=' . $parent,
+                    'kecamatan' => '/districts?regency_id=' . $parent,
+                    'desa' => '/villages?district_id=' . $parent,
+                    default => null
+                };
+                
+                if ($endpoint) {
+                    $response = Http::timeout(2)
+                        ->withToken(env('TATETA_GEO_TOKEN'))
+                        ->get("{$baseUrl}{$endpoint}");
+                    if ($response->successful()) {
+                        $data = $response->json();
+                        $results = [];
+                        foreach ($data as $item) {
+                            $code = $item['id'] ?? null;
+                            $name = $item['name'] ?? null;
+                            if ($code && $name) {
+                                $results[(string)$code] = strtoupper($name);
+                            }
+                        }
+                        if (!empty($results)) return $results;
+                    }
+                }
+            } catch (\Exception $e) {
+                self::$isOffline = true;
+                Log::error("TatetaGeo is offline/unreachable: " . $e->getMessage());
+            }
+
+            return [];
+        });
+    }
+
+    // INTERNAL: Get [ID => NAME]
+    private static function getRawProvinces(): array { return self::fetchFromService('provinsi'); }
+    private static function getRawRegencies($pId): array { return self::fetchFromService('kabupaten', $pId); }
+    private static function getRawDistricts($rId): array { return self::fetchFromService('kecamatan', $rId); }
+    private static function getRawVillages($dId): array { return self::fetchFromService('desa', $dId); }
+
+    // PUBLIC: Get [NAME => NAME] for Filament Select
     public static function getProvinces(): array
     {
-        return Cache::remember('provinces', 86400, function () {
-            $response = Http::get(self::$baseUrl . '/provinces.json');
+        $data = self::getRawProvinces();
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function getRegencies($provinceName): array
+    {
+        if (!$provinceName) return [];
+        $pId = self::findProvinceIdByName($provinceName);
+        if (!$pId) return [];
+        $data = self::getRawRegencies($pId);
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function getDistricts($regencyName): array
+    {
+        if (!$regencyName) return [];
+        $rId = self::findRegencyIdByName(null, $regencyName);
+        if (!$rId) return [];
+        $data = self::getRawDistricts($rId);
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function getVillages($districtName, $regencyName = null): array
+    {
+        if (!$districtName) return [];
+        $dId = self::findDistrictIdByName($regencyName, $districtName);
+        if (!$dId) return [];
+        $data = self::getRawVillages($dId);
+        return array_combine(array_values($data), array_values($data));
+    }
+
+    public static function findProvinceIdByName(?string $name): ?string
+    {
+        if (!$name) return null;
+        $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
+
+        try {
+            $response = Http::timeout(2)
+                ->withToken(env('TATETA_GEO_TOKEN'))
+                ->get("{$baseUrl}/provinces/find", ['name' => $name]);
             if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+                $id = $response->json()['id'] ?? null;
+                if ($id) return (string)$id;
             }
-            return [];
-        });
+        } catch (\Exception $e) {
+            // Offline fallback
+        }
+
+        $normSearch = self::normalize($name);
+        foreach (self::getRawProvinces() as $id => $v) {
+            if (self::normalize($v) === $normSearch) return (string)$id;
+        }
+        return null;
     }
 
-    public static function getRegencies($provinceId): array
+    public static function findRegencyIdByName($provinceName, ?string $name): ?string
     {
-        if (!$provinceId) return [];
-        return Cache::remember("regencies_{$provinceId}", 86400, function () use ($provinceId) {
-            $response = Http::get(self::$baseUrl . "/regencies/{$provinceId}.json");
+        if (!$name) return null;
+        $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
+
+        try {
+            $response = Http::timeout(2)
+                ->withToken(env('TATETA_GEO_TOKEN'))
+                ->get("{$baseUrl}/regencies/find", [
+                    'name' => $name,
+                    'province_name' => $provinceName
+                ]);
             if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+                $id = $response->json()['id'] ?? null;
+                if ($id) return (string)$id;
             }
-            return [];
-        });
+        } catch (\Exception $e) {
+            // Offline fallback
+        }
+
+        $normSearch = self::normalize($name);
+        
+        // 1. Try with province context first
+        if ($provinceName) {
+            $pId = is_numeric($provinceName) ? $provinceName : self::findProvinceIdByName($provinceName);
+            if ($pId) {
+                foreach (self::getRawRegencies($pId) as $id => $v) {
+                    if (self::normalize($v) === $normSearch) return (string)$id;
+                }
+            }
+        }
+        
+        // 2. Global search as fallback (expensive but safe)
+        foreach (self::getRawProvinces() as $pId => $pName) {
+            foreach (self::getRawRegencies($pId) as $id => $v) {
+                if (self::normalize($v) === $normSearch) return (string)$id;
+            }
+        }
+        return null;
     }
 
-    public static function getDistricts($regencyId): array
+    public static function findDistrictIdByName($regencyName, ?string $name): ?string
     {
-        if (!$regencyId) return [];
-        return Cache::remember("districts_{$regencyId}", 86400, function () use ($regencyId) {
-            $response = Http::get(self::$baseUrl . "/districts/{$regencyId}.json");
+        if (!$name) return null;
+        $baseUrl = rtrim(env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo'), '/');
+
+        try {
+            $response = Http::timeout(2)
+                ->withToken(env('TATETA_GEO_TOKEN'))
+                ->get("{$baseUrl}/districts/find", [
+                    'name' => $name,
+                    'regency_name' => $regencyName
+                ]);
             if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+                $id = $response->json()['id'] ?? null;
+                if ($id) return (string)$id;
             }
-            return [];
-        });
-    }
+        } catch (\Exception $e) {
+            // Offline fallback
+        }
 
-    public static function getVillages($districtId): array
-    {
-        if (!$districtId) return [];
-        return Cache::remember("villages_{$districtId}", 86400, function () use ($districtId) {
-            $response = Http::get(self::$baseUrl . "/villages/{$districtId}.json");
-            if ($response->successful()) {
-                return collect($response->json())->pluck('name', 'id')->toArray();
+        $normSearch = self::normalize($name);
+        
+        // 1. Try with regency context first
+        if ($regencyName) {
+            $rId = is_numeric($regencyName) ? $regencyName : self::findRegencyIdByName(null, $regencyName);
+            if ($rId) {
+                foreach (self::getRawDistricts($rId) as $id => $v) {
+                    if (self::normalize($v) === $normSearch) return (string)$id;
+                }
             }
-            return [];
-        });
+        }
+
+        // 2. Global search as fallback (if regency context failed or not provided)
+        foreach (self::getRawProvinces() as $pId => $pName) {
+            foreach (self::getRawRegencies($pId) as $rId => $rName) {
+                foreach (self::getRawDistricts($rId) as $id => $v) {
+                    if (self::normalize($v) === $normSearch) return (string)$id;
+                }
+            }
+        }
+        
+        return null;
     }
 
-    public static function getProvinceName($id): ?string
+    public static function findVillageIdByName($districtName, ?string $name): ?string
     {
-        return self::getProvinces()[$id] ?? $id;
+        if (!$name) return null;
+        $normSearch = self::normalize($name);
+        $dId = is_numeric($districtName) ? $districtName : self::findDistrictIdByName(null, $districtName);
+        if (!$dId) return null;
+
+        foreach (self::getRawVillages($dId) as $id => $v) {
+            if (self::normalize($v) === $normSearch) return (string)$id;
+        }
+        return null;
     }
 
-    public static function getRegencyName($id, $provinceId): ?string
+    private static function normalize(?string $name): string
     {
-        return self::getRegencies($provinceId)[$id] ?? $id;
+        if (!$name) return '';
+        $name = preg_replace('/^(PROV\.|PROP\.|KAB\.|KOTA\.|KEC\.|KEL\.|PROVINSI|KABUPATEN|KOTA|KECAMATAN|DESA|KELURAHAN)\s+/i', '', trim($name));
+        $name = str_replace(['DAERAH ISTIMEWA ', 'D.I. '], 'DI ', strtoupper($name));
+        $name = preg_replace('/\s+/', '', $name); // Remove ALL spaces for comparison
+        return strtoupper(preg_replace('/[^A-Z0-9]/', '', $name));
     }
 
-    public static function getDistrictName($id, $regencyId): ?string
-    {
-        return self::getDistricts($regencyId)[$id] ?? $id;
-    }
-
-    public static function getVillageName($id, $districtId): ?string
-    {
-        return self::getVillages($districtId)[$id] ?? $id;
-    }
+    public static function getProvinceName($id) { return $id; }
+    public static function getRegencyName($id, $pId) { return $id; }
+    public static function getDistrictName($id, $rId) { return $id; }
+    public static function getVillageName($id, $dId) { return $id; }
 }

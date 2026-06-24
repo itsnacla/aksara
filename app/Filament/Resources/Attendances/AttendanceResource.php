@@ -21,15 +21,19 @@ class AttendanceResource extends Resource
 {
     protected static ?string $model = Attendance::class;
 
+    protected static ?string $recordTitleAttribute = 'catatan';
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-check-badge';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Manajemen Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik & KBM';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Presensi Siswa';
 
-    protected static ?string $label = 'Presensi';
+    protected static ?string $modelLabel = 'Presensi Siswa';
+
+    protected static ?string $pluralModelLabel = 'Presensi Siswa';
 
     public static function form(Schema $schema): Schema
     {
@@ -187,7 +191,7 @@ class AttendanceResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->with(['student.user', 'studyGroup']);
         
         $user = auth()->user();
         if ($user && $user->hasRole('guru') && $user->teacher) {

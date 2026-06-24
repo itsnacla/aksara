@@ -2,15 +2,20 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Grade;
 use App\Models\AcademicYear;
-use Filament\Widgets\ChartWidget;
+use App\Models\Student;
+use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
-class GradeDistributionChart extends ChartWidget
+class GradeDistributionChart extends BaseWidget
 {
-    protected ?string $heading = 'Distribusi Nilai Rata-rata Siswa';
+    use ScopesToTeacherStudents;
 
-    protected ?string $description = 'Persentase siswa berdasarkan rentang nilai';
+    protected static ?string $heading = 'Nilai Rata-rata Siswa';
+
+    protected static ?string $description = 'Klik baris untuk melihat detail nilai';
 
     protected static ?int $sort = 4;
 
@@ -19,109 +24,101 @@ class GradeDistributionChart extends ChartWidget
         'md' => 1,
     ];
 
-    protected ?string $maxHeight = '320px';
-
-    protected function getData(): array
+    public function table(Table $table): Table
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
+        $isGuru = auth()->user()?->hasRole('guru');
 
-        $grades = Grade::query()
-            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
-            ->get();
-
-        if ($grades->isEmpty()) {
-            // Demo data
-            return [
-                'datasets' => [
-                    [
-                        'data' => [15, 35, 30, 15, 5],
-                        'backgroundColor' => [
-                            'rgba(16, 185, 129, 0.85)',
-                            'rgba(59, 130, 246, 0.85)',
-                            'rgba(245, 158, 11, 0.85)',
-                            'rgba(249, 115, 22, 0.85)',
-                            'rgba(239, 68, 68, 0.85)',
-                        ],
-                        'borderColor' => '#ffffff',
-                        'borderWidth' => 3,
-                        'hoverOffset' => 8,
-                    ],
-                ],
-                'labels' => ['A (90-100)', 'B (80-89)', 'C (70-79)', 'D (60-69)', 'E (<60)'],
-            ];
-        }
-
-        // Calculate average for each student
-        $ranges = ['A (90-100)' => 0, 'B (80-89)' => 0, 'C (70-79)' => 0, 'D (60-69)' => 0, 'E (<60)' => 0];
-
-        $studentGrades = $grades->groupBy('student_id');
-
-        foreach ($studentGrades as $studentId => $gradeSet) {
-            $avg = $gradeSet->avg(function ($grade) {
-                return ($grade->nilai_tugas + $grade->nilai_uts + $grade->nilai_uas) / 3;
+        $query = Student::query()
+            ->with(['user', 'studyGroups'])
+            ->whereHas('grades', function ($q) use ($activeYear) {
+                $q->when($activeYear, fn($sq) => $sq->where('academic_year_id', $activeYear->id));
             });
 
-            if ($avg >= 90) $ranges['A (90-100)']++;
-            elseif ($avg >= 80) $ranges['B (80-89)']++;
-            elseif ($avg >= 70) $ranges['C (70-79)']++;
-            elseif ($avg >= 60) $ranges['D (60-69)']++;
-            else $ranges['E (<60)']++;
+        if ($isGuru) {
+            $studentIds = $this->getTeacherStudentIds();
+            if (empty($studentIds)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn('id', $studentIds);
+            }
         }
 
-        return [
-            'datasets' => [
-                [
-                    'data' => array_values($ranges),
-                    'backgroundColor' => [
-                        'rgba(16, 185, 129, 0.85)',
-                        'rgba(59, 130, 246, 0.85)',
-                        'rgba(245, 158, 11, 0.85)',
-                        'rgba(249, 115, 22, 0.85)',
-                        'rgba(239, 68, 68, 0.85)',
-                    ],
-                    'borderColor' => '#ffffff',
-                    'borderWidth' => 3,
-                    'hoverOffset' => 8,
-                ],
-            ],
-            'labels' => array_keys($ranges),
-        ];
-    }
+        return $table
+            ->query($query)
+            ->columns([
+                TextColumn::make('user.name')
+                    ->label('Nama Siswa')
+                    ->searchable()
+                    ->weight('bold')
+                    ->icon('heroicon-m-user'),
 
-    protected function getType(): string
-    {
-        return 'polarArea';
-    }
+                TextColumn::make('rombel')
+                    ->label('Rombel')
+                    ->badge()
+                    ->color('gray')
+                    ->state(function ($record) {
+                        $sg = $record->studyGroups->first();
+                        return $sg?->nama_rombel ?? '-';
+                    }),
 
-    protected function getOptions(): array
-    {
-        return [
-            'plugins' => [
-                'legend' => [
-                    'position' => 'bottom',
-                    'labels' => [
-                        'usePointStyle' => true,
-                        'pointStyle' => 'circle',
-                        'padding' => 16,
-                    ],
-                ],
-            ],
-            'scales' => [
-                'r' => [
-                    'beginAtZero' => true,
-                    'grid' => [
-                        'color' => 'rgba(0, 0, 0, 0.04)',
-                    ],
-                    'ticks' => [
-                        'display' => false,
-                    ],
-                ],
-            ],
-        ];
+                TextColumn::make('rata_rata')
+                    ->label('Rata-rata')
+                    ->state(function ($record) use ($activeYear) {
+                        $grades = $record->grades()
+                            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+                            ->get();
+                        if ($grades->isEmpty()) return '-';
+                        return round($grades->avg(function ($g) {
+                            return ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3;
+                        }), 1);
+                    })
+                    ->badge()
+                    ->color(fn ($state) => match (true) {
+                        $state >= 90 => 'success',
+                        $state >= 80 => 'info',
+                        $state >= 70 => 'warning',
+                        $state >= 60 => 'orange',
+                        default => 'danger',
+                    }),
+
+                TextColumn::make('grade')
+                    ->label('Grade')
+                    ->state(function ($record) use ($activeYear) {
+                        $grades = $record->grades()
+                            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+                            ->get();
+                        if ($grades->isEmpty()) return '-';
+                        $avg = $grades->avg(function ($g) {
+                            return ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3;
+                        });
+                        return match (true) {
+                            $avg >= 90 => 'A',
+                            $avg >= 80 => 'B',
+                            $avg >= 70 => 'C',
+                            $avg >= 60 => 'D',
+                            default => 'E',
+                        };
+                    })
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'A' => 'success',
+                        'B' => 'info',
+                        'C' => 'warning',
+                        'D' => 'orange',
+                        'E' => 'danger',
+                        default => 'gray',
+                    }),
+            ])
+            ->defaultPaginationPageOption(10)
+            ->striped()
+            ->emptyStateHeading('Belum ada data nilai')
+            ->emptyStateDescription('Nilai siswa akan muncul setelah input dilakukan.')
+            ->emptyStateIcon('heroicon-o-academic-cap');
     }
 
     public static function canView(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        return auth()->user()?->hasAnyRole(['super_admin', 'guru']) ?? false;
     }
 }

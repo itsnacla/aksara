@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('extracurriculars', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->string('nama_ekskul', 50);
-            $table->enum('nilai_kualitatif', ['sangat baik', 'baik', 'cukup', 'kurang']);
+            $table->enum('kategori', ['wajib', 'pilihan'])->default('pilihan');
+            $table->string('nilai_minimum', 20)->nullable();
+            $table->foreignId('coordinator_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->text('deskripsi');
             $table->timestamps();
         });
