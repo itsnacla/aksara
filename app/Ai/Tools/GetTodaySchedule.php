@@ -26,7 +26,7 @@ class GetTodaySchedule implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -50,33 +50,33 @@ class GetTodaySchedule implements Tool
         $query = Schedule::query()
             ->with(['studyGroup.classroom', 'subject', 'teacher.user', 'dayConfig'])
             ->where('hari', $dayNameId)
-            ->orWhereHas('dayConfig', fn($q) => $q->where('nama_hari', $dayNameId))
+            ->orWhereHas('dayConfig', fn ($q) => $q->where('nama_hari', $dayNameId))
             ->orderBy('jam_mulai', 'asc');
 
         // Filter berdasarkan role
         if (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;
-            if (!$student) {
+            if (! $student) {
                 return 'Data siswa tidak ditemukan.';
             }
             $studyGroup = $student->currentStudyGroup();
-            if (!$studyGroup) {
+            if (! $studyGroup) {
                 return '❌ Anda belum terdaftar di kelas manapun.';
             }
             $query->where('study_group_id', $studyGroup->id);
         } elseif (str_contains($roleName, 'guru')) {
             $teacher = $this->user->teacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 return 'Data guru tidak ditemukan.';
             }
             $query->where('teacher_id', $teacher->id);
         } elseif (str_contains($roleName, 'orang_tua')) {
             $parent = $this->user->parent;
-            if (!$parent) {
+            if (! $parent) {
                 return 'Data orang tua tidak ditemukan.';
             }
             $childStudyGroups = $parent->students
-                ->map(fn($s) => $s->currentStudyGroup()?->id)
+                ->map(fn ($s) => $s->currentStudyGroup()?->id)
                 ->filter()
                 ->unique()
                 ->toArray();
@@ -94,10 +94,10 @@ class GetTodaySchedule implements Tool
         $result = $schedules->map(function ($schedule, $index) {
             $jamMulai = \DateTime::createFromFormat('H:i:s', $schedule->jam_mulai);
             $jamSelesai = \DateTime::createFromFormat('H:i:s', $schedule->jam_selesai);
-            
+
             return [
                 'urutan' => $index + 1,
-                'jam' => ($jamMulai?->format('H:i') ?? $schedule->jam_mulai) . ' - ' . ($jamSelesai?->format('H:i') ?? $schedule->jam_selesai),
+                'jam' => ($jamMulai?->format('H:i') ?? $schedule->jam_mulai).' - '.($jamSelesai?->format('H:i') ?? $schedule->jam_selesai),
                 'mapel' => $schedule->subject?->nama_mapel ?? 'N/A',
                 'guru' => $schedule->teacher?->user?->name ?? 'N/A',
                 'kelas' => $schedule->studyGroup?->nama_rombel ?? 'N/A',
@@ -107,17 +107,17 @@ class GetTodaySchedule implements Tool
         })->toArray();
 
         // Sort by time
-        usort($result, fn($a, $b) => strcmp(explode(' - ', $a['jam'])[0], explode(' - ', $b['jam'])[0]));
+        usort($result, fn ($a, $b) => strcmp(explode(' - ', $a['jam'])[0], explode(' - ', $b['jam'])[0]));
 
         $responseText = "**Jadwal Hari Ini** ({$dayNameId}, {$today->format('d-m-Y')})\n\n";
         $responseText .= "| Jam | Mapel | Guru | Kelas | Ruangan |\n";
         $responseText .= "|-----|-------|------|-------|----------|\n";
-        
+
         foreach ($result as $schedule) {
             $responseText .= "| {$schedule['jam']} | {$schedule['mapel']} | {$schedule['guru']} | {$schedule['kelas']} | {$schedule['ruangan']} |\n";
         }
 
-        return $responseText . "\n\n✅ Total: " . count($result) . " pelajaran hari ini.";
+        return $responseText."\n\n✅ Total: ".count($result).' pelajaran hari ini.';
     }
 
     /**

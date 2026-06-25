@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\StudentParents\Schemas;
 
-use Filament\Forms\Components\TextInput;
+use App\Services\RegionService;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 
 class StudentParentForm
 {
@@ -62,7 +64,7 @@ class StudentParentForm
                                     ->label('Pekerjaan Ayah')
                                     ->maxLength(255),
                             ]),
-                        
+
                         Fieldset::make('Informasi Ibu')
                             ->schema([
                                 TextInput::make('mother_name')
@@ -77,41 +79,41 @@ class StudentParentForm
 
                 Section::make('Alamat Domisili Orang Tua')
                     ->schema([
-                        \Filament\Forms\Components\Textarea::make('address')
+                        Textarea::make('address')
                             ->label('Alamat Lengkap (Jalan)')
                             ->rows(2)
                             ->columnSpanFull(),
-                        
+
                         Select::make('province')
                             ->label('Provinsi')
-                            ->options(fn () => \App\Services\RegionService::getProvinces())
+                            ->options(fn () => RegionService::getProvinces())
                             ->searchable()
                             ->live()
-                            ->formatStateUsing(fn ($state) => \App\Services\RegionService::findProvinceIdByName($state) ?? $state)
+                            ->formatStateUsing(fn ($state) => RegionService::findProvinceIdByName($state) ?? $state)
                             ->afterStateUpdated(fn ($set) => $set('city', null)->set('district', null)->set('village', null))
-                            ->dehydrateStateUsing(fn ($state) => \App\Services\RegionService::getProvinceName($state)),
+                            ->dehydrateStateUsing(fn ($state) => RegionService::getProvinceName($state)),
                         Select::make('city')
                             ->label('Kabupaten/Kota')
-                            ->options(fn (Get $get) => \App\Services\RegionService::getRegencies($get('province')))
+                            ->options(fn (Get $get) => RegionService::getRegencies($get('province')))
                             ->searchable()
                             ->live()
-                            ->formatStateUsing(fn ($state, Get $get) => \App\Services\RegionService::findRegencyIdByName($get('province'), $state) ?? $state)
+                            ->formatStateUsing(fn ($state, Get $get) => RegionService::findRegencyIdByName($get('province'), $state) ?? $state)
                             ->afterStateUpdated(fn ($set) => $set('district', null)->set('village', null))
-                            ->dehydrateStateUsing(fn ($state, Get $get) => \App\Services\RegionService::getRegencyName($state, $get('province'))),
+                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getRegencyName($state, $get('province'))),
                         Select::make('district')
                             ->label('Kecamatan')
-                            ->options(fn (Get $get) => \App\Services\RegionService::getDistricts($get('city')))
+                            ->options(fn (Get $get) => RegionService::getDistricts($get('city')))
                             ->searchable()
                             ->live()
-                            ->formatStateUsing(fn ($state, Get $get) => \App\Services\RegionService::findDistrictIdByName($get('city'), $state) ?? $state)
+                            ->formatStateUsing(fn ($state, Get $get) => RegionService::findDistrictIdByName($get('city'), $state) ?? $state)
                             ->afterStateUpdated(fn ($set) => $set('village', null))
-                            ->dehydrateStateUsing(fn ($state, Get $get) => \App\Services\RegionService::getDistrictName($state, $get('city'))),
+                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getDistrictName($state, $get('city'))),
                         Select::make('village')
                             ->label('Kelurahan/Desa')
-                            ->options(fn (Get $get) => \App\Services\RegionService::getVillages($get('district'), $get('city')))
+                            ->options(fn (Get $get) => RegionService::getVillages($get('district'), $get('city')))
                             ->searchable()
-                            ->formatStateUsing(fn ($state, Get $get) => \App\Services\RegionService::findVillageIdByName($get('district'), $state) ?? $state)
-                            ->dehydrateStateUsing(fn ($state, Get $get) => \App\Services\RegionService::getVillageName($state, $get('district'))),
+                            ->formatStateUsing(fn ($state, Get $get) => RegionService::findVillageIdByName($get('district'), $state) ?? $state)
+                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getVillageName($state, $get('district'))),
                     ])
                     ->columns(1),
 
@@ -124,7 +126,7 @@ class StudentParentForm
                         TextInput::make('guardian_occupation')
                             ->label('Pekerjaan Wali')
                             ->maxLength(255),
-                        \Filament\Forms\Components\Textarea::make('guardian_address')
+                        Textarea::make('guardian_address')
                             ->label('Alamat Lengkap Wali')
                             ->rows(2)
                             ->columnSpanFull(),

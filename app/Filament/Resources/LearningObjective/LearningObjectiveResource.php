@@ -6,6 +6,7 @@ use App\Filament\Resources\LearningObjective\Pages\ListLearningObjectives;
 use App\Filament\Resources\LearningObjective\Schemas\LearningObjectiveForm;
 use App\Filament\Resources\LearningObjective\Tables\LearningObjectiveTable;
 use App\Models\LearningObjective;
+use App\Models\StudyGroup;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -25,30 +26,30 @@ class LearningObjectiveResource extends Resource
         $user = auth()->user();
 
         // Filter by teacher role
-        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+        if ($user && $user->hasRole('guru') && ! $user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
             $teacherId = $user->teacher->id;
             $isWaliKelas = $user->teacher->is_walikelas;
-            
+
             if ($isWaliKelas) {
                 // Wali kelas: only TP for mapel umum at their level (active academic year)
-                $managedLevelIds = \App\Models\StudyGroup::where('walikelas_id', $teacherId)
+                $managedLevelIds = StudyGroup::where('walikelas_id', $teacherId)
                     ->whereHas('academicYear', fn ($q) => $q->where('is_active', true))
                     ->pluck('level_id')
                     ->toArray();
-                
+
                 $query->where(function ($q) use ($managedLevelIds) {
                     $q->whereIn('level_id', $managedLevelIds)
-                      ->whereHas('subject', fn ($sq) => $sq->where('is_umum', true));
+                        ->whereHas('subject', fn ($sq) => $sq->where('is_umum', true));
                 });
             } else {
                 // Guru mapel: only TP for subjects they teach
                 $query->whereHas('subject', function ($sq) use ($teacherId) {
                     $sq->whereHas('schedules', fn ($ssq) => $ssq->where('teacher_id', $teacherId))
-                      ->orWhereIn('subjects.id', \DB::table('subject_teacher')->where('teacher_id', $teacherId)->pluck('subject_id'));
+                        ->orWhereIn('subjects.id', \DB::table('subject_teacher')->where('teacher_id', $teacherId)->pluck('subject_id'));
                 });
             }
         }
-        
+
         return $query;
     }
 

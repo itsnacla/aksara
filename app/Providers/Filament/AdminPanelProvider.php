@@ -2,27 +2,29 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\CustomLogin;
+use App\Filament\Pages\Auth\CustomRequestPasswordReset;
+use App\Filament\Pages\Auth\CustomResetPassword;
+use App\Http\Middleware\HandleHybridRedirect;
+use App\Models\SchoolSetting;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Illuminate\Support\Facades\Blade;
-use App\Http\Middleware\HandleHybridRedirect;
-use Filament\Navigation\NavigationItem;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -32,10 +34,10 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login(\App\Filament\Pages\Auth\CustomLogin::class)
-            ->passwordReset(\App\Filament\Pages\Auth\CustomRequestPasswordReset::class, \App\Filament\Pages\Auth\CustomResetPassword::class)
+            ->login(CustomLogin::class)
+            ->passwordReset(CustomRequestPasswordReset::class, CustomResetPassword::class)
             ->profile()
-            ->brandName(fn () => \Illuminate\Support\Facades\Schema::hasTable('school_settings') ? (\App\Models\SchoolSetting::first()->name ?? 'AKSARA') : 'AKSARA')
+            ->brandName(fn () => Schema::hasTable('school_settings') ? (SchoolSetting::first()->name ?? 'AKSARA') : 'AKSARA')
             ->brandLogo(fn () => view('filament.logo'))
             ->plugins([
                 FilamentShieldPlugin::make(),
@@ -43,7 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => '#005da7',
             ])
-            ->defaultAvatarProvider(\App\Providers\Filament\CustomAvatarProvider::class)
+            ->defaultAvatarProvider(CustomAvatarProvider::class)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -57,20 +59,20 @@ class AdminPanelProvider extends PanelProvider
                     ->visible(fn (): bool => auth()->user()?->can('ScanAttendance') ?? false),
             ])
             ->navigationGroups([
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('Master Data'),
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('Kurikulum & Referensi'),
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('Jadwal Pelajaran'),
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('Akademik & KBM'),
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('Buku Induk & Rapor'),
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('Pengembangan Diri'),
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('Sistem & Konfigurasi'),
+                NavigationGroup::make()
+                    ->label('Master Data'),
+                NavigationGroup::make()
+                    ->label('Kurikulum & Referensi'),
+                NavigationGroup::make()
+                    ->label('Jadwal Pelajaran'),
+                NavigationGroup::make()
+                    ->label('Akademik & KBM'),
+                NavigationGroup::make()
+                    ->label('Buku Induk & Rapor'),
+                NavigationGroup::make()
+                    ->label('Pengembangan Diri'),
+                NavigationGroup::make()
+                    ->label('Sistem & Konfigurasi'),
             ])
             ->userMenuItems([
                 Action::make('impersonate')
@@ -107,10 +109,10 @@ class AdminPanelProvider extends PanelProvider
                             <svg xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                             </svg>
-                            <span>Anda sedang login sebagai <strong>' . auth()->user()->name . '</strong> (Mode Impersonasi).</span>
+                            <span>Anda sedang login sebagai <strong>'.auth()->user()->name.'</strong> (Mode Impersonasi).</span>
                         </div>
-                        <form action="' . route('impersonate.logout') . '" method="POST">
-                            ' . csrf_field() . '
+                        <form action="'.route('impersonate.logout').'" method="POST">
+                            '.csrf_field().'
                             <button type="submit" style="background-color: white; color: #d97706; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                                 Kembali ke Admin
                             </button>

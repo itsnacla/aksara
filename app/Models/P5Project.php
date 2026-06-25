@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -32,8 +33,8 @@ class P5Project extends Model
     protected static function booted()
     {
         static::saving(function ($model) {
-            if (!$model->academic_year_id) {
-                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            if (! $model->academic_year_id) {
+                $model->academic_year_id = AcademicYear::where('is_active', true)->first()?->id;
             }
         });
     }
@@ -43,7 +44,7 @@ class P5Project extends Model
         return $this->belongsTo(P5Theme::class, 'p5_theme_id');
     }
 
-    public function levels(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function levels(): BelongsToMany
     {
         return $this->belongsToMany(Level::class, 'p5_project_level');
     }

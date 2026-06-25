@@ -3,7 +3,6 @@
 namespace App\Services\Academic;
 
 use App\Models\AcademicYear;
-use App\Models\Student;
 use App\Models\StudyGroup;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +14,7 @@ class PromotionService
     public function promote(array $studentIds, int $targetStudyGroupId)
     {
         return DB::transaction(function () use ($studentIds, $targetStudyGroupId) {
-            $data = array_map(fn($id) => [
+            $data = array_map(fn ($id) => [
                 'student_id' => $id,
                 'study_group_id' => $targetStudyGroupId,
                 'created_at' => now(),

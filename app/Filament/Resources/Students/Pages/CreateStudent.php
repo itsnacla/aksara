@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Students\Pages;
 
 use App\Filament\Resources\Students\StudentResource;
+use App\Models\StudentParent;
 use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
@@ -26,7 +27,7 @@ class CreateStudent extends CreateRecord
 
             $parentUser->syncRoles(['wali']);
 
-            $studentParent = \App\Models\StudentParent::create([
+            $studentParent = StudentParent::create([
                 'user_id' => $parentUser->id,
                 'no_whatsapp' => $data['parent_whatsapp'] ?? null,
                 'hubungan' => $data['parent_relation'],

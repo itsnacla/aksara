@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\Teachers\Schemas;
 
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Schema;
 use App\Models\Teacher;
 use Closure;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Schema;
 
 class TeacherForm
 {
@@ -65,7 +65,7 @@ class TeacherForm
                             ->label('Gelar Belakang')
                             ->placeholder('Contoh: S.Pd., M.Pd.')
                             ->maxLength(50),
-                        
+
                         Select::make('status')
                             ->label('Status Guru')
                             ->options([
@@ -98,9 +98,9 @@ class TeacherForm
                                     $existing = Teacher::where('is_kepalasekolah', true)
                                         ->where('id', '!=', $component->getRecord()?->id)
                                         ->exists();
-                                    
+
                                     if ($existing) {
-                                        // Optional: warning or handle automatically. 
+                                        // Optional: warning or handle automatically.
                                         // Better to use a validation rule.
                                     }
                                 }
@@ -112,7 +112,7 @@ class TeacherForm
                                             $exists = Teacher::where('is_kepalasekolah', true)
                                                 ->where('id', '!=', $component->getRecord()?->id)
                                                 ->exists();
-                                            
+
                                             if ($exists) {
                                                 $fail('Sudah ada guru lain yang menjabat sebagai Kepala Sekolah!');
                                             }

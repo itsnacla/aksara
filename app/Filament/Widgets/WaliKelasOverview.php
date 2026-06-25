@@ -2,11 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\AcademicYear;
 use App\Models\StudyGroup;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Models\AcademicYear;
 
 class WaliKelasOverview extends BaseWidget
 {
@@ -17,7 +17,7 @@ class WaliKelasOverview extends BaseWidget
         $user = Auth::user();
 
         // Only show for Teachers
-        if (!$user->hasRole('guru')) {
+        if (! $user->hasRole('guru')) {
             return [];
         }
 
@@ -25,7 +25,7 @@ class WaliKelasOverview extends BaseWidget
             ->withCount('students')
             ->first();
 
-        if (!$studyGroup) {
+        if (! $studyGroup) {
             return [
                 Stat::make('Status Wali Kelas', 'Belum Diatur')
                     ->description('Anda belum ditugaskan sebagai wali kelas di rombel manapun.')
@@ -79,10 +79,10 @@ class WaliKelasOverview extends BaseWidget
 
         foreach ($students as $student) {
             $grades = $student->grades()
-                ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+                ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
                 ->get();
 
-            if (!$grades->isEmpty()) {
+            if (! $grades->isEmpty()) {
                 $avg = $grades->avg(function ($g) {
                     return ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3;
                 });

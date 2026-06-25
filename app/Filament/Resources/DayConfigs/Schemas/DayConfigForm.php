@@ -9,8 +9,8 @@ use App\Models\TimeSlot;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 
 class DayConfigForm
 {
@@ -22,8 +22,8 @@ class DayConfigForm
                     ->schema([
                         Select::make('academic_year_id')
                             ->label('Tahun Ajaran')
-                            ->options(fn() => AcademicYear::where('is_active', true)->pluck('tahun_ajaran', 'id'))
-                            ->default(fn() => AcademicYear::where('is_active', true)->first()?->id)
+                            ->options(fn () => AcademicYear::where('is_active', true)->pluck('tahun_ajaran', 'id'))
+                            ->default(fn () => AcademicYear::where('is_active', true)->first()?->id)
                             ->required(),
                         Select::make('day')
                             ->label('Hari')
@@ -38,7 +38,7 @@ class DayConfigForm
                             ->required(),
                         Select::make('level_ids')
                             ->label('Tingkatan (Level)')
-                            ->options(fn() => Level::pluck('nama_tingkatan', 'id'))
+                            ->options(fn () => Level::pluck('nama_tingkatan', 'id'))
                             ->multiple()
                             ->required()
                             ->searchable(),
@@ -49,7 +49,7 @@ class DayConfigForm
                             ->live(),
                         Select::make('max_time_slot_id')
                             ->label('Batas Jam Maksimal')
-                            ->options(fn() => TimeSlot::pluck('nama_jam', 'id'))
+                            ->options(fn () => TimeSlot::pluck('nama_jam', 'id'))
                             ->hint('Jam terakhir yang diperbolehkan')
                             ->searchable()
                             ->hidden(fn (Get $get) => $get('is_closed')),
@@ -60,11 +60,11 @@ class DayConfigForm
                     ->schema([
                         Select::make('mandatory_subject_id')
                             ->label('Mata Pelajaran Wajib')
-                            ->options(fn() => Subject::pluck('nama_mapel', 'id'))
+                            ->options(fn () => Subject::pluck('nama_mapel', 'id'))
                             ->searchable(),
                         Select::make('mandatory_time_slot_id')
                             ->label('Pada Jam Ke-')
-                            ->options(fn() => TimeSlot::pluck('nama_jam', 'id'))
+                            ->options(fn () => TimeSlot::pluck('nama_jam', 'id'))
                             ->searchable(),
                     ])
                     ->columns(1) // Ubah jadi 1 kolom (atas-bawah)

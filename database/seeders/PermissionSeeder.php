@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class PermissionSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
             'ViewAny:AcademicYear',
@@ -437,19 +438,19 @@ class PermissionSeeder extends Seeder
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
-                'guard_name' => 'web'
+                'guard_name' => 'web',
             ]);
         }
 
         $role = Role::firstOrCreate([
             'name' => 'super_admin',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
         $role->syncPermissions($permissions);
 
         $role = Role::firstOrCreate([
             'name' => 'staff',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
         $role->syncPermissions([
             'ViewAny:AcademicYear',
@@ -794,7 +795,7 @@ class PermissionSeeder extends Seeder
 
         $role = Role::firstOrCreate([
             'name' => 'guru',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
         $role->syncPermissions([
             'ViewAny:Attendance',
@@ -871,10 +872,9 @@ class PermissionSeeder extends Seeder
             'View:PrediksiDropout',
         ]);
 
-
         $role = Role::firstOrCreate([
             'name' => 'siswa',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
         $role->syncPermissions([
             'AccessStudentPortal',
@@ -882,7 +882,7 @@ class PermissionSeeder extends Seeder
 
         $role = Role::firstOrCreate([
             'name' => 'wali',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
         $role->syncPermissions([
             'AccessParentPortal',

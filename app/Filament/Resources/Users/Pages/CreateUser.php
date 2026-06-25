@@ -30,7 +30,7 @@ class CreateUser extends CreateRecord
         $data = $this->roleSpecificData;
         $role = $data['selected_role'] ?? null;
 
-        if (!$role) {
+        if (! $role) {
             return;
         }
 

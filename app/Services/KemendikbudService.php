@@ -15,8 +15,8 @@ class KemendikbudService
      */
     public static function fetchByNpsn(string $npsn): array
     {
-        $url = self::$refUrl . "/{$npsn}";
-        
+        $url = self::$refUrl."/{$npsn}";
+
         try {
             $response = Http::withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -25,16 +25,16 @@ class KemendikbudService
                 'Cache-Control' => 'no-cache',
                 'Pragma' => 'no-cache',
             ])
-            ->withoutVerifying()
-            ->timeout(30)
-            ->get($url);
+                ->withoutVerifying()
+                ->timeout(30)
+                ->get($url);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return ['success' => false, 'message' => 'Gagal terhubung ke server Kemendikbud.'];
             }
 
             $html = $response->body();
-            
+
             $data = [
                 'success' => true,
                 'name' => self::extract($html, '/Nama<\/td>\s*<td>:<\/td>\s*<td>(.*?)<\/td>/is'),
@@ -52,8 +52,9 @@ class KemendikbudService
             return self::normalizeData($data);
 
         } catch (\Exception $e) {
-            Log::error("Kemendikbud Fetch Error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()];
+            Log::error('Kemendikbud Fetch Error: '.$e->getMessage());
+
+            return ['success' => false, 'message' => 'Terjadi kesalahan: '.$e->getMessage()];
         }
     }
 
@@ -63,7 +64,7 @@ class KemendikbudService
             if (is_string($value)) {
                 // Bersihkan HTML tag dan decode entities
                 $cleaned = trim(strip_tags(html_entity_decode($value)));
-                
+
                 // Gunakan logic standarisasi yang sama agar matching
                 if (in_array($key, ['village', 'district', 'city', 'province'])) {
                     $cleaned = SchoolRegionService::standardize($cleaned);
@@ -72,6 +73,7 @@ class KemendikbudService
                 $data[$key] = ($cleaned === '-' || empty($cleaned)) ? null : trim($cleaned);
             }
         }
+
         return $data;
     }
 
@@ -80,6 +82,7 @@ class KemendikbudService
         if (preg_match($pattern, $html, $matches)) {
             return $matches[1];
         }
+
         return null;
     }
 }

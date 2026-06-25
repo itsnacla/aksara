@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use App\Events\StatsUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $nis
  * @property string $status
  * @property string|null $pob
- * @property \Illuminate\Support\Carbon|null $dob
+ * @property Carbon|null $dob
  * @property string|null $gender
  * @property string|null $religion
  * @property string|null $phone
@@ -97,11 +101,11 @@ class Student extends Model
     protected static function booted()
     {
         static::created(function ($student) {
-            event(new \App\Events\StatsUpdated('student'));
-            
+            event(new StatsUpdated('student'));
+
             // Automatically enroll in all "wajib" extracurriculars
             if ($student->status === 'aktif') {
-                $wajibEkskuls = \App\Models\Extracurricular::where('kategori', 'wajib')->pluck('id');
+                $wajibEkskuls = Extracurricular::where('kategori', 'wajib')->pluck('id');
                 if ($wajibEkskuls->isNotEmpty()) {
                     $student->extracurriculars()->syncWithoutDetaching($wajibEkskuls);
                 }
@@ -110,7 +114,7 @@ class Student extends Model
 
         static::updated(function ($student) {
             if ($student->isDirty('status') && $student->status === 'aktif') {
-                $wajibEkskuls = \App\Models\Extracurricular::where('kategori', 'wajib')->pluck('id');
+                $wajibEkskuls = Extracurricular::where('kategori', 'wajib')->pluck('id');
                 if ($wajibEkskuls->isNotEmpty()) {
                     $student->extracurriculars()->syncWithoutDetaching($wajibEkskuls);
                 }
@@ -130,13 +134,11 @@ class Student extends Model
 
     /**
      * Get the student's active study group (rombel) for the current academic year.
-     * 
-     * @return \App\Models\StudyGroup|null
      */
     public function currentStudyGroup(): ?StudyGroup
     {
         return $this->studyGroups()
-            ->whereHas('academicYear', function($q) {
+            ->whereHas('academicYear', function ($q) {
                 $q->where('is_active', true);
             })->first();
     }
@@ -166,7 +168,7 @@ class Student extends Model
         return $this->hasMany(Notification::class);
     }
 
-    public function p5Groups(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function p5Groups(): BelongsToMany
     {
         return $this->belongsToMany(P5Group::class, 'p5_group_student')->withTimestamps();
     }
@@ -176,12 +178,12 @@ class Student extends Model
         return $this->hasMany(StudentRapor::class);
     }
 
-    public function extracurriculars(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function extracurriculars(): BelongsToMany
     {
         return $this->belongsToMany(Extracurricular::class, 'extracurricular_student')->withTimestamps();
     }
 
-    public function extracurricularGrades(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function extracurricularGrades(): HasMany
     {
         return $this->hasMany(ExtracurricularGrade::class);
     }

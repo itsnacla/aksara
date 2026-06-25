@@ -8,15 +8,11 @@ class BukuIndukService
 {
     /**
      * Generate / Synchronize Buku Induk data for a student.
-     *
-     * @param Student $student
-     * @param int $academicYearId
-     * @return Student
      */
     public function generateStudentBukuInduk(Student $student, int $academicYearId): Student
     {
         // Pastikan relasi parent di-load untuk sinkronisasi
-        if (!$student->relationLoaded('parent')) {
+        if (! $student->relationLoaded('parent')) {
             $student->load('parent');
         }
 

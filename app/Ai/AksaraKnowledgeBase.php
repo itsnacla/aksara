@@ -15,51 +15,51 @@ class AksaraKnowledgeBase
     public const FAQS = [
         'tentang_rapor' => [
             'q' => 'Apa itu rapor? Bagaimana cara mengunduh rapor?',
-            'a' => 'Rapor adalah laporan akademik siswa yang berisi nilai akhir semester dan prestasi. ' .
-                   'Siswa dan orang tua dapat mengunduh rapor digital di portal /dashboard → Rapor. ' .
+            'a' => 'Rapor adalah laporan akademik siswa yang berisi nilai akhir semester dan prestasi. '.
+                   'Siswa dan orang tua dapat mengunduh rapor digital di portal /dashboard → Rapor. '.
                    'Guru dapat membuat rapor melalui /admin → Rapor atau fitur grading.',
         ],
         'tentang_presensi' => [
             'q' => 'Bagaimana cara melihat presensi dan absensi?',
-            'a' => 'Siswa: Lihat di /dashboard → Presensi. ' .
-                   'Orang tua: Monitor presensi anak di /dashboard → Presensi Anak. ' .
-                   'Guru: Input presensi di /admin → Attendance atau via fitur mobile attendance. ' .
+            'a' => 'Siswa: Lihat di /dashboard → Presensi. '.
+                   'Orang tua: Monitor presensi anak di /dashboard → Presensi Anak. '.
+                   'Guru: Input presensi di /admin → Attendance atau via fitur mobile attendance. '.
                    'Presensi dihitung per pertemuan dengan status Hadir, Sakit, Izin, atau Alfa.',
         ],
         'tentang_nilai' => [
             'q' => 'Bagaimana cara menginput dan melihat nilai siswa?',
-            'a' => 'Guru: Input nilai di /admin → Grades (Tugas, UTS, UAS). ' .
-                   'Siswa: Lihat nilai di /dashboard → Nilai. ' .
-                   'Orang tua: Monitor nilai anak di /dashboard → Nilai Anak. ' .
+            'a' => 'Guru: Input nilai di /admin → Grades (Tugas, UTS, UAS). '.
+                   'Siswa: Lihat nilai di /dashboard → Nilai. '.
+                   'Orang tua: Monitor nilai anak di /dashboard → Nilai Anak. '.
                    'Nilai menggunakan skala 0-100 dan dihitung menjadi nilai rapor dengan rumus tertentu.',
         ],
         'tentang_jadwal' => [
             'q' => 'Bagaimana cara melihat jadwal pelajaran?',
-            'a' => 'Siswa: Lihat jadwal di /dashboard → Jadwal atau /admin → Jadwal Pelajaran. ' .
-                   'Guru: Lihat jadwal mengajar di /admin → Jadwal Mengajar. ' .
+            'a' => 'Siswa: Lihat jadwal di /dashboard → Jadwal atau /admin → Jadwal Pelajaran. '.
+                   'Guru: Lihat jadwal mengajar di /admin → Jadwal Mengajar. '.
                    'Jadwal berisi mata pelajaran, jam mulai-selesai, hari, ruangan, dan guru pengajar.',
         ],
         'tentang_ekstrakurikuler' => [
             'q' => 'Apa itu ekstrakurikuler dan bagaimana cara mendaftar?',
-            'a' => 'Ekstrakurikuler adalah kegiatan akademik tambahan (olahraga, seni, dll). ' .
-                   'Admin/guru dapat mengelola ekstrakurikuler di /admin → Ekstrakurikuler. ' .
+            'a' => 'Ekstrakurikuler adalah kegiatan akademik tambahan (olahraga, seni, dll). '.
+                   'Admin/guru dapat mengelola ekstrakurikuler di /admin → Ekstrakurikuler. '.
                    'Siswa dapat melihat daftar ekstrakurikuler dan nilainya (jika ada) di /dashboard → Ekstrakurikuler.',
         ],
         'tentang_wali_kelas' => [
             'q' => 'Apa peran wali kelas?',
-            'a' => 'Wali kelas adalah guru yang bertanggung jawab atas satu kelas. ' .
-                   'Tugas: Input presensi, monitor nilai, berkomunikasi dengan orang tua, mengelola siswa di kelas. ' .
+            'a' => 'Wali kelas adalah guru yang bertanggung jawab atas satu kelas. '.
+                   'Tugas: Input presensi, monitor nilai, berkomunikasi dengan orang tua, mengelola siswa di kelas. '.
                    'Setiap kelas (rombel) hanya memiliki satu wali kelas yang ditentukan admin.',
         ],
         'tentang_login_as' => [
             'q' => 'Apa itu fitur Login As?',
-            'a' => 'Login As memungkinkan admin melihat sistem dari perspektif user lain (siswa, guru, orang tua). ' .
+            'a' => 'Login As memungkinkan admin melihat sistem dari perspektif user lain (siswa, guru, orang tua). '.
                    'Caranya: /admin → Login As → Pilih user → Login. Berguna untuk testing dan support.',
         ],
         'tentang_buku_induk' => [
             'q' => 'Apa itu Buku Induk?',
-            'a' => 'Buku Induk adalah dokumen lengkap data siswa sejak mendaftar hingga lulus. ' .
-                   'Berisi: biodata, orang tua, riwayat kelas, prestasi, absensi, catatan khusus. ' .
+            'a' => 'Buku Induk adalah dokumen lengkap data siswa sejak mendaftar hingga lulus. '.
+                   'Berisi: biodata, orang tua, riwayat kelas, prestasi, absensi, catatan khusus. '.
                    'Dapat di-generate sebagai PDF untuk arsip resmi sekolah.',
         ],
     ];
@@ -126,29 +126,29 @@ class AksaraKnowledgeBase
     public const GUIDELINES = [
         'data_hierarchy' => [
             'name' => 'Hierarki Data',
-            'content' => 'Akademik Tahun → Level (Tingkatan) → StudyGroup (Rombel) → Siswa. ' .
+            'content' => 'Akademik Tahun → Level (Tingkatan) → StudyGroup (Rombel) → Siswa. '.
                          'Setiap siswa hanya bisa dalam 1 rombel per tahun ajaran.',
         ],
         'grading_scale' => [
             'name' => 'Skala Penilaian',
-            'content' => 'Skala nilai 0-100. Kategori: 0-40=Kurang, 41-60=Cukup, 61-80=Baik, 81-100=Sangat Baik. ' .
+            'content' => 'Skala nilai 0-100. Kategori: 0-40=Kurang, 41-60=Cukup, 61-80=Baik, 81-100=Sangat Baik. '.
                          'Nilai rapor adalah rata-rata dari Tugas (25%), UTS (35%), UAS (40%) atau disesuaikan kebijakan sekolah.',
         ],
         'attendance_status' => [
             'name' => 'Status Presensi',
-            'content' => 'Hadir (H), Sakit (S), Izin (I), Alfa/Tanpa Keterangan (A). ' .
+            'content' => 'Hadir (H), Sakit (S), Izin (I), Alfa/Tanpa Keterangan (A). '.
                          'Syarat kelulusan biasanya: Kehadiran ≥ 80%. Sakit dan Izin tidak mengurangi nilai.',
         ],
         'academic_year_management' => [
             'name' => 'Manajemen Tahun Ajaran',
-            'content' => 'Tahun ajaran format: "2024/2025". Aktifkan 1 tahun ajaran per waktu. ' .
-                         'Saat tahun ajaran berakhir, kelas naik level (auto-promotion atau manual). ' .
+            'content' => 'Tahun ajaran format: "2024/2025". Aktifkan 1 tahun ajaran per waktu. '.
+                         'Saat tahun ajaran berakhir, kelas naik level (auto-promotion atau manual). '.
                          'Data semester 1 dan 2 disimpan terpisah dalam database.',
         ],
         'schedule_auto_generation' => [
             'name' => 'Auto-Generate Jadwal',
-            'content' => 'Fitur auto-generate membuat jadwal pelajaran otomatis dengan constraints: ' .
-                         'Tidak ada guru double, tidak ada rombel double, setiap mapel ada guru-nya, ' .
+            'content' => 'Fitur auto-generate membuat jadwal pelajaran otomatis dengan constraints: '.
+                         'Tidak ada guru double, tidak ada rombel double, setiap mapel ada guru-nya, '.
                          'jam tidak bentrok, prefer guru expertise. Masih bisa edit manual jika perlu.',
         ],
     ];
@@ -173,6 +173,7 @@ class AksaraKnowledgeBase
                 return $faq;
             }
         }
+
         return null;
     }
 
@@ -220,33 +221,29 @@ class AksaraKnowledgeBase
     public static function getRoleTips(string $role): string
     {
         return match (true) {
-            str_contains(strtolower($role), 'admin') =>
-                "TIPS ADMIN: Gunakan /admin → Dashboard untuk overview. " .
-                "Setup data master dulu (Tahun Ajaran, Level, Guru, Ruangan) sebelum bikin kelas. " .
-                "Gunakan auto-schedule generator untuk efisiensi. " .
-                "Monitor broadcast dan chat logs untuk QA.",
+            str_contains(strtolower($role), 'admin') => 'TIPS ADMIN: Gunakan /admin → Dashboard untuk overview. '.
+                'Setup data master dulu (Tahun Ajaran, Level, Guru, Ruangan) sebelum bikin kelas. '.
+                'Gunakan auto-schedule generator untuk efisiensi. '.
+                'Monitor broadcast dan chat logs untuk QA.',
 
-            str_contains(strtolower($role), 'guru') =>
-                "TIPS GURU: Lihat jadwal mengajar Anda di /admin → Jadwal Mengajar. " .
-                "Input presensi siswa setiap pertemuan di Attendance. " .
-                "Input nilai di Grades, bisa bulk-upload atau manual. " .
-                "Download daftar siswa kelas di buku induk untuk referensi offline.",
+            str_contains(strtolower($role), 'guru') => 'TIPS GURU: Lihat jadwal mengajar Anda di /admin → Jadwal Mengajar. '.
+                'Input presensi siswa setiap pertemuan di Attendance. '.
+                'Input nilai di Grades, bisa bulk-upload atau manual. '.
+                'Download daftar siswa kelas di buku induk untuk referensi offline.',
 
-            str_contains(strtolower($role), 'orang_tua') =>
-                "TIPS ORANG TUA: Login ke /dashboard dengan akun Anda. " .
-                "Monitor nilai anak di 'Nilai'. " .
-                "Cek presensi anak setiap bulan. " .
-                "Download rapor anak di 'Rapor' untuk arsip keluarga. " .
-                "Hubungi wali kelas via chat jika ada masalah akademik.",
+            str_contains(strtolower($role), 'orang_tua') => 'TIPS ORANG TUA: Login ke /dashboard dengan akun Anda. '.
+                "Monitor nilai anak di 'Nilai'. ".
+                'Cek presensi anak setiap bulan. '.
+                "Download rapor anak di 'Rapor' untuk arsip keluarga. ".
+                'Hubungi wali kelas via chat jika ada masalah akademik.',
 
-            str_contains(strtolower($role), 'siswa') =>
-                "TIPS SISWA: Lihat jadwal pelajaran di /dashboard → Jadwal. " .
-                "Monitor nilai Anda secara berkala. " .
-                "Jangan sampai absensi tinggi (target ≥80% kehadiran). " .
-                "Lihat rapor semester di 'Rapor' untuk evaluasi diri. " .
-                "Ikuti ekstrakurikuler untuk pengembangan bakat.",
+            str_contains(strtolower($role), 'siswa') => 'TIPS SISWA: Lihat jadwal pelajaran di /dashboard → Jadwal. '.
+                'Monitor nilai Anda secara berkala. '.
+                'Jangan sampai absensi tinggi (target ≥80% kehadiran). '.
+                "Lihat rapor semester di 'Rapor' untuk evaluasi diri. ".
+                'Ikuti ekstrakurikuler untuk pengembangan bakat.',
 
-            default => "Gunakan chat ini untuk pertanyaan akademik dan sistem Aksara."
+            default => 'Gunakan chat ini untuk pertanyaan akademik dan sistem Aksara.'
         };
     }
 }

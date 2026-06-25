@@ -16,10 +16,11 @@ class ScheduleSeeder extends Seeder
 
         if (empty($studyGroupIds)) {
             $this->command->warn('Tidak ada study group aktif. Pastikan academic year aktif sudah ada.');
+
             return;
         }
 
-        $this->command->info('Generating jadwal untuk ' . count($studyGroupIds) . ' rombel...');
+        $this->command->info('Generating jadwal untuk '.count($studyGroupIds).' rombel...');
 
         app(ScheduleGeneratorService::class)->generate(
             studyGroupIds: $studyGroupIds,

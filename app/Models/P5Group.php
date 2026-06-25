@@ -27,7 +27,7 @@ class P5Group extends Model
     protected static function booted()
     {
         static::saving(function ($model) {
-            if ($model->study_group_id && !$model->level_id) {
+            if ($model->study_group_id && ! $model->level_id) {
                 $model->level_id = $model->studyGroup?->level_id;
             }
         });

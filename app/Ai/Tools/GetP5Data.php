@@ -2,9 +2,10 @@
 
 namespace App\Ai\Tools;
 
-use App\Models\P5Theme;
-use App\Models\P5Project;
 use App\Models\P5Group;
+use App\Models\P5Project;
+use App\Models\P5Theme;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -28,7 +29,7 @@ class GetP5Data implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -42,6 +43,7 @@ class GetP5Data implements Tool
 
         if ($queryType === 'themes') {
             $themes = P5Theme::where('is_active', true)->get();
+
             return json_encode([
                 'tema_aktif' => $themes->pluck('name')->toArray(),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -55,14 +57,14 @@ class GetP5Data implements Tool
                 $studentId = $this->user->parent?->students->first()?->id; // simplified
             }
 
-            if (!$studentId) {
+            if (! $studentId) {
                 return 'Data siswa tidak ditemukan untuk mencari kelompok P5.';
             }
 
             // Temukan group P5 dari relasi belongstomany
-            $student = \App\Models\Student::with('p5Groups.project.theme', 'p5Groups.teacher.user')->find($studentId);
-            
-            if (!$student || $student->p5Groups->isEmpty()) {
+            $student = Student::with('p5Groups.project.theme', 'p5Groups.teacher.user')->find($studentId);
+
+            if (! $student || $student->p5Groups->isEmpty()) {
                 return 'Anda belum terdaftar dalam kelompok P5 manapun di tahun ajaran ini.';
             }
 

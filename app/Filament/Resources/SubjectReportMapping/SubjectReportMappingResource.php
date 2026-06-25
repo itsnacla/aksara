@@ -3,19 +3,20 @@
 namespace App\Filament\Resources\SubjectReportMapping;
 
 use App\Filament\Resources\SubjectReportMapping\Pages\ManageSubjectReportMappings;
+use App\Models\Level;
 use App\Models\SubjectReportMapping;
 use BackedEnum;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Tables\Table;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use Filament\Tables\Table;
 use UnitEnum;
 
 class SubjectReportMappingResource extends Resource
@@ -51,14 +52,14 @@ class SubjectReportMappingResource extends Resource
                     ->required(),
                 Select::make('level_ids')
                     ->label('Tingkat Kelas')
-                    ->options(\App\Models\Level::pluck('nama_tingkatan', 'id'))
+                    ->options(Level::pluck('nama_tingkatan', 'id'))
                     ->multiple()
                     ->searchable()
                     ->preload()
                     ->required(),
                 Select::make('subject_id')
                     ->label('Mata Pelajaran')
-                    ->relationship('subject', 'nama_mapel', modifyQueryUsing: fn($query) => $query->where('subjects.is_graded', true))
+                    ->relationship('subject', 'nama_mapel', modifyQueryUsing: fn ($query) => $query->where('subjects.is_graded', true))
                     ->searchable()
                     ->preload()
                     ->required(),
@@ -81,7 +82,7 @@ class SubjectReportMappingResource extends Resource
                 TextColumn::make('level_ids')
                     ->label('Tingkat Kelas')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => \App\Models\Level::find($state)?->nama_tingkatan ?? '-'),
+                    ->formatStateUsing(fn ($state) => Level::find($state)?->nama_tingkatan ?? '-'),
                 TextColumn::make('subject.nama_mapel')
                     ->label('Nama Mapel')
                     ->searchable()

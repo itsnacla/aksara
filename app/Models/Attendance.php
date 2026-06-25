@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Events\AttendanceLogged;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -14,9 +16,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $status
  * @property string|null $check_in
  * @property string|null $check_out
- * @property \Illuminate\Support\Carbon $tanggal
+ * @property Carbon $tanggal
  * @property string|null $catatan
- * @property \Illuminate\Support\Carbon|null $wa_sent_at
+ * @property Carbon|null $wa_sent_at
  */
 #[Fillable([
     'student_id',
@@ -45,7 +47,7 @@ class Attendance extends Model
         });
 
         static::created(function ($attendance) {
-            event(new \App\Events\AttendanceLogged(
+            event(new AttendanceLogged(
                 $attendance,
                 $attendance->student->user->name ?? 'Siswa',
                 $attendance->status

@@ -8,7 +8,6 @@ use App\Models\ChatbotSetting;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use UnitEnum;
 
 class ChatbotSettingResource extends Resource

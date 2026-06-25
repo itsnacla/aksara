@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Level;
 use App\Models\TimeSlot;
 use Illuminate\Database\Seeder;
 
@@ -24,18 +25,19 @@ class TimeSlotSeeder extends Seeder
             ['nama_jam' => 'Jam Kedelapan', 'waktu_mulai' => '11:35', 'waktu_selesai' => '12:10', 'is_istirahat' => false, 'urutan' => 9],
         ];
 
-        $levels = \App\Models\Level::all();
+        $levels = Level::all();
         foreach ($slots as $slot) {
             $timeSlot = TimeSlot::updateOrCreate(
                 ['nama_jam' => $slot['nama_jam']],
                 $slot
             );
-            
+
             // Filter Level: Kelas 1 & 2 maksimal sampai jam ke-6 (urutan 7)
             $targetLevelIds = collect($levels)->filter(function ($level) use ($slot) {
                 if (in_array($level->nama_tingkatan, ['Kelas 1', 'Kelas 2'])) {
                     return $slot['urutan'] <= 7; // Jam 1-6 + Istirahat
                 }
+
                 return true; // Kelas lain sampai jam 8
             })->pluck('id');
 

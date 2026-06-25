@@ -2,12 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\StudentLeave;
 use App\Filament\Resources\StudentLeaves\StudentLeaveResource;
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
+use App\Models\StudentLeave;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
 class LatestLeaveRequestTable extends BaseWidget
 {
@@ -17,7 +17,7 @@ class LatestLeaveRequestTable extends BaseWidget
 
     protected static ?int $sort = 6;
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'default' => 'full',
         'md' => 1,
     ];

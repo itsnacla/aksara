@@ -3,17 +3,21 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\AcademicYear;
 use App\Models\Attendance;
-use App\Models\Grade;
 use App\Models\Extracurricular;
+use App\Models\Grade;
+use App\Models\Notification;
+use App\Models\P5Group;
 use App\Models\Schedule;
 use App\Models\StudentLeave;
-use App\Models\AcademicYear;
 use App\Models\StudentRapor;
-use App\Models\Notification;
-use Carbon\Carbon;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class PortalController extends Controller
 {
@@ -52,8 +56,7 @@ class PortalController extends Controller
      * API endpoint for real-time polling data updates.
      */
     /**
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function realtimeData(Request $request)
     {
@@ -72,7 +75,7 @@ class PortalController extends Controller
     }
 
     /**
-     * @param \App\Models\User $user
+     * @param  User  $user
      * @return array<string, mixed>
      */
     private function getStudentRealtimeData($user): array
@@ -104,7 +107,7 @@ class PortalController extends Controller
     }
 
     /**
-     * @param \App\Models\User $user
+     * @param  User  $user
      * @return array<string, mixed>
      */
     private function getParentRealtimeData($user): array
@@ -144,17 +147,17 @@ class PortalController extends Controller
     }
 
     /**
-     * @param \App\Models\User $user
+     * @param  User  $user
      * @return array<string, mixed>
      */
     private function getStudentDashboardData($user): array
     {
         $studentId = $user->student?->id;
         $activeYear = AcademicYear::where('is_active', true)->first();
-        $cacheKey = "student_dashboard_{$studentId}_" . ($activeYear ? $activeYear->id : '0');
+        $cacheKey = "student_dashboard_{$studentId}_".($activeYear ? $activeYear->id : '0');
 
         /** @var array<string, mixed> $result */
-        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, fn () => $this->buildStudentDashboardArray($user, $activeYear));
+        $result = Cache::remember($cacheKey, 60, fn () => $this->buildStudentDashboardArray($user, $activeYear));
 
         return $result;
     }
@@ -175,7 +178,7 @@ class PortalController extends Controller
     {
         $student = $user->student;
         $studentId = $student?->id;
-        
+
         return [
             'student' => $student,
             'studyGroup' => $student?->currentStudyGroup(),
@@ -201,7 +204,7 @@ class PortalController extends Controller
             'extracurriculars' => $student ? $student->extracurriculars()->with(['coordinator.teacher'])->orderBy('kategori', 'asc')->orderBy('nama_ekskul', 'asc')->get() : collect(),
             'attendance' => $student?->attendances()->where('tanggal', now()->toDateString())->first(),
             'recentLeaves' => StudentLeave::where('student_id', $studentId)->with(['student.user'])->latest()->take(3)->get(),
-            'p5Projects' => $student && $activeYear ? \App\Models\P5Group::whereHas('students', function ($q) use ($student) {
+            'p5Projects' => $student && $activeYear ? P5Group::whereHas('students', function ($q) use ($student) {
                 $q->where('p5_group_student.student_id', $student->id);
             })->where('academic_year_id', $activeYear->id)->with('theme')->get() : collect(),
             'academicYear' => $activeYear,
@@ -214,19 +217,20 @@ class PortalController extends Controller
             ->whereMonth('tanggal', now()->month)
             ->count();
         $totalHadir = $stats['hadir'] ?? 0;
+
         return $totalAttendances > 0 ? (int) round(($totalHadir / $totalAttendances) * 100) : 0;
     }
 
     private function getStudentGrades(?int $studentId, $activeYear)
     {
         return Grade::where('student_id', $studentId)
-            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
             ->whereExists(function ($query) {
                 $query->selectRaw('1')
-                      ->from('student_rapors')
-                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
-                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
-                      ->where('student_rapors.is_published', true);
+                    ->from('student_rapors')
+                    ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                    ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                    ->where('student_rapors.is_published', true);
             })
             ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
     }
@@ -263,10 +267,10 @@ class PortalController extends Controller
         return Grade::where('student_id', $studentId)
             ->whereExists(function ($query) {
                 $query->selectRaw('1')
-                      ->from('student_rapors')
-                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
-                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
-                      ->where('student_rapors.is_published', true);
+                    ->from('student_rapors')
+                    ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                    ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                    ->where('student_rapors.is_published', true);
             })
             ->with(['subject'])
             ->latest()
@@ -274,18 +278,20 @@ class PortalController extends Controller
             ->get();
     }
 
-    private function calculateGradeAverage(\Illuminate\Database\Eloquent\Collection $grades): float
+    private function calculateGradeAverage(Collection $grades): float
     {
         $gradeValues = $grades->map(function ($g) {
             $vals = array_filter([$g->nilai_tugas, $g->nilai_uts, $g->nilai_uas]);
+
             return count($vals) > 0 ? array_sum($vals) / count($vals) : null;
         })->filter();
+
         return $gradeValues->count() > 0 ? round($gradeValues->avg(), 1) : 0;
     }
 
     private function getStudentAttendanceTrend(?int $studentId): array
     {
-        return \Illuminate\Support\Facades\Cache::remember("attendance_trend_{$studentId}", 3600, function () use ($studentId) {
+        return Cache::remember("attendance_trend_{$studentId}", 3600, function () use ($studentId) {
             $trend = [];
             for ($i = 5; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
@@ -307,6 +313,7 @@ class PortalController extends Controller
                     'percentage' => $total > 0 ? round((($monthAttendances['hadir'] ?? 0) / $total) * 100) : 0,
                 ];
             }
+
             return $trend;
         });
     }
@@ -315,6 +322,7 @@ class PortalController extends Controller
     {
         $dayMap = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
         $today = $dayMap[now()->format('l')] ?? now()->format('l');
+
         return $studyGroup
             ? Schedule::where('study_group_id', $studyGroup->id)
                 ->where('hari', $today)
@@ -325,18 +333,18 @@ class PortalController extends Controller
     }
 
     /**
-     * @param \App\Models\User $user
+     * @param  User  $user
      * @return array<string, mixed>
      */
     private function getParentDashboardData($user): array
     {
         $childIds = $user->parent?->students()->pluck('id')->toArray() ?? [];
         $activeYear = AcademicYear::where('is_active', true)->first();
-        
-        $cacheKey = "parent_dashboard_" . implode('_', $childIds) . "_" . ($activeYear ? $activeYear->id : '0');
+
+        $cacheKey = 'parent_dashboard_'.implode('_', $childIds).'_'.($activeYear ? $activeYear->id : '0');
 
         /** @var array<string, mixed> $result */
-        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, fn () => $this->buildParentDashboardArray($user, $childIds, $activeYear));
+        $result = Cache::remember($cacheKey, 60, fn () => $this->buildParentDashboardArray($user, $childIds, $activeYear));
 
         return $result;
     }
@@ -346,14 +354,14 @@ class PortalController extends Controller
      */
     private function buildParentDashboardArray($user, $childIds, $activeYear): array
     {
-        $data = new \stdClass();
+        $data = new \stdClass;
         $data->parent = $user->parent;
-        
+
         $stats = $this->getParentAttendanceStats($childIds);
         $data->attendanceStats = array_merge(['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0], $stats);
         $data->attendanceTrend = $this->getParentAttendanceTrend($childIds);
         $data->attendancePercentage = $this->getParentAttendancePercentage($childIds, $stats);
-        
+
         $grades = $this->getParentGrades($childIds, $activeYear);
         $data->gradeAverage = $this->calculateGradeAverage($grades);
         $data->totalSubjects = $grades->unique('subject_id')->count();
@@ -362,7 +370,7 @@ class PortalController extends Controller
         $data->recentNotifications = $this->getParentRecentNotifications($childIds);
         $data->publishedRapors = $this->getParentPublishedRapors($childIds);
 
-        $data->children = $data->parent?->students()->with(['user', 'attendances' => function($q) {
+        $data->children = $data->parent?->students()->with(['user', 'attendances' => function ($q) {
             $q->where('tanggal', now()->toDateString());
         }])->get() ?? collect();
 
@@ -388,19 +396,20 @@ class PortalController extends Controller
             ->whereMonth('tanggal', now()->month)
             ->count();
         $totalHadir = $stats['hadir'] ?? 0;
+
         return $totalAttendances > 0 ? (int) round(($totalHadir / $totalAttendances) * 100) : 0;
     }
 
     private function getParentGrades(array $childIds, $activeYear)
     {
         return Grade::whereIn('student_id', $childIds)
-            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
             ->whereExists(function ($query) {
                 $query->selectRaw('1')
-                      ->from('student_rapors')
-                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
-                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
-                      ->where('student_rapors.is_published', true);
+                    ->from('student_rapors')
+                    ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                    ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                    ->where('student_rapors.is_published', true);
             })
             ->get(['nilai_tugas', 'nilai_uts', 'nilai_uas', 'subject_id']);
     }
@@ -438,10 +447,10 @@ class PortalController extends Controller
         return Grade::whereIn('student_id', $childIds)
             ->whereExists(function ($query) {
                 $query->selectRaw('1')
-                      ->from('student_rapors')
-                      ->whereColumn('student_rapors.student_id', 'grades.student_id')
-                      ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
-                      ->where('student_rapors.is_published', true);
+                    ->from('student_rapors')
+                    ->whereColumn('student_rapors.student_id', 'grades.student_id')
+                    ->whereColumn('student_rapors.academic_year_id', 'grades.academic_year_id')
+                    ->where('student_rapors.is_published', true);
             })
             ->with(['student.user', 'subject'])
             ->latest()
@@ -451,7 +460,7 @@ class PortalController extends Controller
 
     private function getExtracurricularsList()
     {
-        return \Illuminate\Support\Facades\Cache::remember('extracurriculars_list', 3600, function() {
+        return Cache::remember('extracurriculars_list', 3600, function () {
             return Extracurricular::with(['coordinator.teacher'])
                 ->orderBy('kategori', 'asc')
                 ->orderBy('nama_ekskul', 'asc')
@@ -461,7 +470,7 @@ class PortalController extends Controller
 
     private function getParentAttendanceTrend(array $childIds): array
     {
-        return \Illuminate\Support\Facades\Cache::remember("attendance_trend_parent_" . implode('_', $childIds), 3600, function () use ($childIds) {
+        return Cache::remember('attendance_trend_parent_'.implode('_', $childIds), 3600, function () use ($childIds) {
             $trend = [];
             for ($i = 5; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
@@ -483,6 +492,7 @@ class PortalController extends Controller
                     'percentage' => $total > 0 ? round((($monthAttendances['hadir'] ?? 0) / $total) * 100) : 0,
                 ];
             }
+
             return $trend;
         });
     }

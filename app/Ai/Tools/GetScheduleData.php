@@ -26,14 +26,16 @@ class GetScheduleData implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) return 'Error: User context missing.';
+        if (! $this->user) {
+            return 'Error: User context missing.';
+        }
 
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
         $query = Schedule::with(['subject', 'studyGroup.classroom', 'teacher.user']);
 
         if (str_contains($roleName, 'siswa')) {
             $activeRombelId = $this->user->student->studyGroups()
-                ->whereHas('academicYear', fn($q) => $q->where('is_active', true))
+                ->whereHas('academicYear', fn ($q) => $q->where('is_active', true))
                 ->first()?->id ?? 0;
             $query->where('study_group_id', $activeRombelId);
         } elseif (str_contains($roleName, 'guru')) {
@@ -42,7 +44,7 @@ class GetScheduleData implements Tool
             $query->where('study_group_id', $request['study_group_id']);
         }
 
-        $schedules = $query->get()->map(fn($s) => [
+        $schedules = $query->get()->map(fn ($s) => [
             'hari' => $s->hari,
             'jam' => "{$s->jam_mulai} - {$s->jam_selesai}",
             'mapel' => $s->subject->nama_mapel ?? 'N/A',

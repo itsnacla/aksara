@@ -3,19 +3,20 @@
 namespace App\Filament\Resources\Teachers\Pages;
 
 use App\Filament\Resources\Teachers\TeacherResource;
-use App\Models\User;
-use App\Models\Teacher;
 use App\Models\Subject;
-use Filament\Resources\Pages\ListRecords;
-use Filament\Actions\CreateAction;
+use App\Models\Teacher;
+use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Hidden;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Filament\Notifications\Notification;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ListTeachers extends ListRecords
 {
@@ -29,7 +30,7 @@ class ListTeachers extends ListRecords
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
                 ->modalHeading('Import Berkas Data Guru')
-                ->modalDescription(new HtmlString('Unggah berkas lembar kerja dengan kolom esensial. Sistem akan memparsing otomatis pembuatan akun (Username, Email, Password) dan melengkapi isian NIP yang kosong.<div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;"><a href="' . route('download.template', ['type' => 'teacher', 'format' => 'xlsx']) . '" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #10b981; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xlsx)</a><a href="' . route('download.template', ['type' => 'teacher', 'format' => 'xls']) . '" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #059669; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xls)</a><a href="' . route('download.template', ['type' => 'teacher', 'format' => 'csv']) . '" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #4b5563; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template CSV</a></div>'))
+                ->modalDescription(new HtmlString('Unggah berkas lembar kerja dengan kolom esensial. Sistem akan memparsing otomatis pembuatan akun (Username, Email, Password) dan melengkapi isian NIP yang kosong.<div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;"><a href="'.route('download.template', ['type' => 'teacher', 'format' => 'xlsx']).'" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #10b981; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xlsx)</a><a href="'.route('download.template', ['type' => 'teacher', 'format' => 'xls']).'" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #059669; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xls)</a><a href="'.route('download.template', ['type' => 'teacher', 'format' => 'csv']).'" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #4b5563; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template CSV</a></div>'))
                 ->modalSubmitActionLabel('Mulai Proses Impor')
                 ->modalWidth('7xl')
                 ->form([
@@ -40,8 +41,9 @@ class ListTeachers extends ListRecords
                         ->required()
                         ->live()
                         ->afterStateUpdated(function ($state, callable $set) {
-                            if (!$state) {
+                            if (! $state) {
                                 $set('parsed_json', '[]');
+
                                 return;
                             }
 
@@ -53,12 +55,12 @@ class ListTeachers extends ListRecords
                                 if (file_exists($file)) {
                                     $path = $file;
                                 } elseif (Storage::exists($file)) {
-                                    $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                                    $diskDriver = config('filesystems.disks.'.config('filesystems.default').'.driver');
                                     if (in_array($diskDriver, ['local', 'public'])) {
                                         $path = Storage::path($file);
                                     } else {
-                                        $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
-                                        if (!file_exists(dirname($tmpPath))) {
+                                        $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
+                                        if (! file_exists(dirname($tmpPath))) {
                                             mkdir(dirname($tmpPath), 0755, true);
                                         }
                                         file_put_contents($tmpPath, Storage::get($file));
@@ -66,7 +68,7 @@ class ListTeachers extends ListRecords
                                         $isTempDownloaded = true;
                                     }
                                 } else {
-                                    $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                    $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
                                     if (file_exists($tmpPath)) {
                                         $path = $tmpPath;
                                     }
@@ -75,22 +77,27 @@ class ListTeachers extends ListRecords
                                 $path = $file->getRealPath();
                             }
 
-                            if (!$path || !file_exists($path)) {
+                            if (! $path || ! file_exists($path)) {
                                 return;
                             }
 
                             try {
-                                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
+                                $spreadsheet = IOFactory::load($path);
                                 $allRows = $spreadsheet->getActiveSheet()->toArray();
                             } catch (\Exception $e) {
-                                if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                                if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                                    @unlink($path);
+                                }
+
                                 return;
                             }
-                            if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                            if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                                @unlink($path);
+                            }
 
                             $rows = [];
                             foreach ($allRows as $r) {
-                                if (array_filter($r, fn($cell) => trim((string)$cell) !== '') !== []) {
+                                if (array_filter($r, fn ($cell) => trim((string) $cell) !== '') !== []) {
                                     $rows[] = $r;
                                 }
                             }
@@ -102,14 +109,14 @@ class ListTeachers extends ListRecords
                             $headers = array_map('trim', array_map('strtolower', array_map('strval', array_shift($rows))));
                             $nameColumn = in_array('nama_lengkap', $headers) ? 'nama_lengkap' : (in_array('user_name', $headers) ? 'user_name' : null);
 
-                            if (!$nameColumn) {
+                            if (! $nameColumn) {
                                 return;
                             }
 
                             $totalRows = count($rows);
                             $validRows = 0;
                             $previewRows = [];
-                            
+
                             // Deterministic synchronization tracking
                             $startNipIndex = Teacher::count() + 1;
                             $simulatedUsernames = [];
@@ -126,23 +133,23 @@ class ListTeachers extends ListRecords
                                 $data = array_combine($headers, $row);
 
                                 $name = trim($data[$nameColumn] ?? '');
-                                if (!$name) {
+                                if (! $name) {
                                     continue;
                                 }
 
                                 // 1. Deterministic NIP generation matching final execution block
                                 $nip = trim($data['nip'] ?? '');
                                 if (is_numeric($nip) && str_contains(strtolower($nip), 'e')) {
-                                    $nip = number_format((float)$nip, 0, '', '');
+                                    $nip = number_format((float) $nip, 0, '', '');
                                 }
                                 $isAutoNip = false;
                                 $isDuplicate = false;
 
-                                if (!$nip) {
-                                    $nip = 'NIP' . str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
+                                if (! $nip) {
+                                    $nip = 'NIP'.str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
                                     while (Teacher::where('nip', $nip)->exists() || in_array($nip, $simulatedNips)) {
                                         $startNipIndex++;
-                                        $nip = 'NIP' . str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
+                                        $nip = 'NIP'.str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
                                     }
                                     $startNipIndex++;
                                     $isAutoNip = true;
@@ -166,19 +173,19 @@ class ListTeachers extends ListRecords
                                 $cleanName = explode(',', $name)[0];
                                 $cleanName = preg_replace('/\b(dr|drs|drg|prof|hj|h|ir)\b\.?/i', '', $cleanName);
                                 $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cleanName));
-                                if (!$baseUsername) {
-                                    $baseUsername = 'guru' . rand(100, 999);
+                                if (! $baseUsername) {
+                                    $baseUsername = 'guru'.rand(100, 999);
                                 }
 
                                 $username = $baseUsername;
                                 $suffix = 1;
                                 while (User::where('username', $username)->exists() || in_array($username, $simulatedUsernames)) {
-                                    $username = $baseUsername . $suffix;
+                                    $username = $baseUsername.$suffix;
                                     $suffix++;
                                 }
                                 $simulatedUsernames[] = $username;
 
-                                $email = $username . '@aksara.com';
+                                $email = $username.'@aksara.com';
 
                                 $previewRows[] = [
                                     'name' => $name,
@@ -202,7 +209,7 @@ class ListTeachers extends ListRecords
 
                             $set('parsed_json', json_encode($payload));
                         }),
-                    \Filament\Infolists\Components\TextEntry::make('preview')
+                    TextEntry::make('preview')
                         ->label('Pratinjau Tabel Hasil Parsing')
                         ->state(function (callable $get) {
                             $json = $get('parsed_json');
@@ -210,6 +217,7 @@ class ListTeachers extends ListRecords
                             if (empty($data) || empty($data['rows'])) {
                                 return new HtmlString('<div class="text-sm text-gray-400 italic p-4 border border-dashed rounded-lg text-center bg-gray-50 dark:bg-white/5">Pilih berkas untuk memuat tabel pratinjau otomatis...</div>');
                             }
+
                             return view('filament.components.import-preview-table', [
                                 'type' => 'teacher',
                                 'rows' => $data['rows'],
@@ -227,12 +235,12 @@ class ListTeachers extends ListRecords
                         if (file_exists($file)) {
                             $path = $file;
                         } elseif (Storage::exists($file)) {
-                            $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                            $diskDriver = config('filesystems.disks.'.config('filesystems.default').'.driver');
                             if (in_array($diskDriver, ['local', 'public'])) {
                                 $path = Storage::path($file);
                             } else {
-                                $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
-                                if (!file_exists(dirname($tmpPath))) {
+                                $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
+                                if (! file_exists(dirname($tmpPath))) {
                                     mkdir(dirname($tmpPath), 0755, true);
                                 }
                                 file_put_contents($tmpPath, Storage::get($file));
@@ -240,7 +248,7 @@ class ListTeachers extends ListRecords
                                 $isTempDownloaded = true;
                             }
                         } else {
-                            $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                            $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
                             if (file_exists($tmpPath)) {
                                 $path = $tmpPath;
                             }
@@ -249,32 +257,38 @@ class ListTeachers extends ListRecords
                         $path = $file->getRealPath();
                     }
 
-                    if (!$path || !file_exists($path)) {
+                    if (! $path || ! file_exists($path)) {
                         Notification::make()
                             ->title('Gagal membaca berkas')
                             ->body('Berkas tidak ditemukan pada penyimpanan sementara.')
                             ->danger()
                             ->send();
+
                         return;
                     }
 
                     try {
-                        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
+                        $spreadsheet = IOFactory::load($path);
                         $allRows = $spreadsheet->getActiveSheet()->toArray();
                     } catch (\Exception $e) {
-                        if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                        if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                            @unlink($path);
+                        }
                         Notification::make()
                             ->title('Format berkas tidak didukung')
                             ->body('Pastikan berkas berformat CSV atau Excel (.xlsx/.xls) yang valid.')
                             ->danger()
                             ->send();
+
                         return;
                     }
-                    if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                    if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                        @unlink($path);
+                    }
 
                     $rows = [];
                     foreach ($allRows as $r) {
-                        if (array_filter($r, fn($cell) => trim((string)$cell) !== '') !== []) {
+                        if (array_filter($r, fn ($cell) => trim((string) $cell) !== '') !== []) {
                             $rows[] = $r;
                         }
                     }
@@ -285,18 +299,20 @@ class ListTeachers extends ListRecords
                             ->body('Tidak ada baris data yang dapat diimpor.')
                             ->warning()
                             ->send();
+
                         return;
                     }
 
                     $headers = array_map('trim', array_map('strtolower', array_map('strval', array_shift($rows))));
                     $nameColumn = in_array('nama_lengkap', $headers) ? 'nama_lengkap' : (in_array('user_name', $headers) ? 'user_name' : null);
 
-                    if (!$nameColumn) {
+                    if (! $nameColumn) {
                         Notification::make()
                             ->title('Format berkas tidak sesuai')
                             ->body('Kolom nama_lengkap wajib ada pada baris pertama berkas impor.')
                             ->danger()
                             ->send();
+
                         return;
                     }
 
@@ -316,20 +332,20 @@ class ListTeachers extends ListRecords
                         $rowData = array_combine($headers, $row);
 
                         $name = trim($rowData[$nameColumn] ?? '');
-                        if (!$name) {
+                        if (! $name) {
                             continue;
                         }
 
                         // Handling NIP Kosong -> NIP0000n deterministically
                         $nip = trim($rowData['nip'] ?? '');
                         if (is_numeric($nip) && str_contains(strtolower($nip), 'e')) {
-                            $nip = number_format((float)$nip, 0, '', '');
+                            $nip = number_format((float) $nip, 0, '', '');
                         }
-                        if (!$nip) {
-                            $nip = 'NIP' . str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
+                        if (! $nip) {
+                            $nip = 'NIP'.str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
                             while (Teacher::where('nip', $nip)->exists() || in_array($nip, $insertedNips)) {
                                 $startNipIndex++;
-                                $nip = 'NIP' . str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
+                                $nip = 'NIP'.str_pad($startNipIndex, 5, '0', STR_PAD_LEFT);
                             }
                             $startNipIndex++;
                             $insertedNips[] = $nip;
@@ -338,6 +354,7 @@ class ListTeachers extends ListRecords
                             // maka baris ini sepenuhnya dilewati (diabaikan) sesuai arahan sistem.
                             if (Teacher::where('nip', $nip)->exists() || in_array($nip, $insertedNips)) {
                                 $skippedCount++;
+
                                 continue;
                             }
                             $insertedNips[] = $nip;
@@ -347,19 +364,19 @@ class ListTeachers extends ListRecords
                         $cleanName = explode(',', $name)[0];
                         $cleanName = preg_replace('/\b(dr|drs|drg|prof|hj|h|ir)\b\.?/i', '', $cleanName);
                         $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cleanName));
-                        if (!$baseUsername) {
-                            $baseUsername = 'guru' . rand(100, 999);
+                        if (! $baseUsername) {
+                            $baseUsername = 'guru'.rand(100, 999);
                         }
 
                         $username = $baseUsername;
                         $suffix = 1;
                         while (User::where('username', $username)->exists() || in_array($username, $insertedUsernames)) {
-                            $username = $baseUsername . $suffix;
+                            $username = $baseUsername.$suffix;
                             $suffix++;
                         }
                         $insertedUsernames[] = $username;
 
-                        $email = $username . '@aksara.com';
+                        $email = $username.'@aksara.com';
                         $password = 'password';
 
                         // 1. Create User
@@ -385,20 +402,20 @@ class ListTeachers extends ListRecords
                         ]);
 
                         // 3. Attach Subjects (Multi / Array support)
-                        if (!empty($rowData['mata_pelajaran'])) {
+                        if (! empty($rowData['mata_pelajaran'])) {
                             // Split multi subject values gracefully by comma, semicolon, or line pipes
                             $mapelNames = preg_split('/[,;|]/', $rowData['mata_pelajaran']);
                             $subjectIds = [];
                             foreach ($mapelNames as $mName) {
                                 $mName = trim($mName);
                                 if ($mName) {
-                                    $subj = Subject::where('nama_mapel', 'ilike', '%' . $mName . '%')->first();
+                                    $subj = Subject::where('nama_mapel', 'ilike', '%'.$mName.'%')->first();
                                     if ($subj) {
                                         $subjectIds[] = $subj->id;
                                     }
                                 }
                             }
-                            if (!empty($subjectIds)) {
+                            if (! empty($subjectIds)) {
                                 $teacher->subjects()->syncWithoutDetaching($subjectIds);
                             }
                         }
@@ -408,8 +425,8 @@ class ListTeachers extends ListRecords
 
                     Notification::make()
                         ->title("Proses Impor Selesai: {$importedCount} Guru Ditambahkan")
-                        ->body($skippedCount > 0 
-                            ? "Sebanyak <b>{$skippedCount} baris data dilewati</b> karena NIP sudah terdaftar." 
+                        ->body($skippedCount > 0
+                            ? "Sebanyak <b>{$skippedCount} baris data dilewati</b> karena NIP sudah terdaftar."
                             : "Seluruh data berhasil diparsing dengan sandi default 'password'")
                         ->success()
                         ->send();

@@ -26,7 +26,7 @@ class GetExamSchedule implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -39,26 +39,26 @@ class GetExamSchedule implements Tool
         // Filter berdasarkan role
         if (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;
-            if (!$student) {
+            if (! $student) {
                 return 'Data siswa tidak ditemukan.';
             }
             $studyGroup = $student->currentStudyGroup();
-            if (!$studyGroup) {
+            if (! $studyGroup) {
                 return 'Siswa belum terdaftar di kelas manapun.';
             }
             $query->where('study_group_id', $studyGroup->id);
         } elseif (str_contains($roleName, 'guru')) {
             $teacher = $this->user->teacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 return 'Data guru tidak ditemukan.';
             }
             $query->where('teacher_id', $teacher->id);
         } elseif (str_contains($roleName, 'orang_tua')) {
             $parent = $this->user->parent;
-            if (!$parent) {
+            if (! $parent) {
                 return 'Data orang tua tidak ditemukan.';
             }
-            $childStudyGroups = $parent->students->map(fn($s) => $s->currentStudyGroup()?->id)->filter()->unique();
+            $childStudyGroups = $parent->students->map(fn ($s) => $s->currentStudyGroup()?->id)->filter()->unique();
             $query->whereIn('study_group_id', $childStudyGroups);
         } elseif ($studyGroupId && (str_contains($roleName, 'admin') || str_contains($roleName, 'staff'))) {
             $query->where('study_group_id', $studyGroupId);
@@ -80,7 +80,7 @@ class GetExamSchedule implements Tool
         $result = $schedules->map(function ($schedule) {
             return [
                 'hari' => $schedule->dayConfig?->nama_hari ?? $schedule->hari,
-                'jam' => $schedule->jam_mulai . ' - ' . $schedule->jam_selesai,
+                'jam' => $schedule->jam_mulai.' - '.$schedule->jam_selesai,
                 'mapel' => $schedule->subject?->nama_mapel,
                 'guru' => $schedule->teacher?->user?->name,
                 'kelas' => $schedule->studyGroup?->nama_rombel,

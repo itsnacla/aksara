@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->foreignId('academic_year_id')->constrained('academic_years')->cascadeOnDelete();
-            
+
             // Attendance metrics saved at generation time
             $table->integer('sakit')->default(0);
             $table->integer('izin')->default(0);

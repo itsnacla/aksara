@@ -3,9 +3,15 @@
 namespace App\Filament\Resources\Schedules\Pages;
 
 use App\Filament\Resources\Schedules\ScheduleResource;
+use App\Models\StudyGroup;
 use App\Services\Academic\ScheduleGeneratorService;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Grid;
 
 class ListSchedules extends ListRecords
@@ -15,31 +21,31 @@ class ListSchedules extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('generate_jadwal')
+            Action::make('generate_jadwal')
                 ->label('Auto-Generate Jadwal')
                 ->icon('heroicon-o-sparkles')
                 ->color('success')
                 ->form([
-                    \Filament\Forms\Components\Select::make('study_group_ids')
+                    Select::make('study_group_ids')
                         ->label('Pilih Rombel')
-                        ->options(fn() => \App\Models\StudyGroup::whereHas('academicYear', fn($q) => $q->where('is_active', true))->pluck('nama_rombel', 'id')->toArray())
+                        ->options(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))->pluck('nama_rombel', 'id')->toArray())
                         ->multiple()
                         ->required()
                         ->searchable()
                         ->hint('Anda bisa memilih lebih dari satu rombel'),
-                    \Filament\Forms\Components\Toggle::make('overwrite')
+                    Toggle::make('overwrite')
                         ->label('Hapus Jadwal Lama Rombel Ini?')
                         ->default(false),
                 ])
                 ->action(fn (array $data) => $this->autoGenerateSchedule($data)),
-            \Filament\Actions\Action::make('cetak_jadwal')
+            Action::make('cetak_jadwal')
                 ->label('Cetak Jadwal')
                 ->icon('heroicon-o-printer')
                 ->color('warning')
                 ->form([
                     Grid::make(2)
                         ->schema([
-                            \Filament\Forms\Components\Radio::make('print_mode')
+                            Radio::make('print_mode')
                                 ->label('Mode Cetak')
                                 ->options([
                                     'global' => 'Global (Semua Rombel)',
@@ -47,9 +53,9 @@ class ListSchedules extends ListRecords
                                 ])
                                 ->default('single')
                                 ->live(),
-                            \Filament\Forms\Components\Select::make('study_group_id')
+                            Select::make('study_group_id')
                                 ->label('Pilih Rombel')
-                                ->options(\App\Models\StudyGroup::all()->pluck('nama_rombel', 'id'))
+                                ->options(StudyGroup::all()->pluck('nama_rombel', 'id'))
                                 ->placeholder('Pilih Rombel...')
                                 ->searchable()
                                 ->visible(fn ($get) => $get('print_mode') === 'single')
@@ -57,7 +63,7 @@ class ListSchedules extends ListRecords
                         ]),
                     Grid::make(3)
                         ->schema([
-                            \Filament\Forms\Components\Select::make('paper_size')
+                            Select::make('paper_size')
                                 ->label('Ukuran Kertas')
                                 ->options([
                                     'a4' => 'A4 (210 x 297 mm)',
@@ -65,7 +71,7 @@ class ListSchedules extends ListRecords
                                 ])
                                 ->default('a4')
                                 ->required(),
-                            \Filament\Forms\Components\Select::make('orientation')
+                            Select::make('orientation')
                                 ->label('Orientasi')
                                 ->options([
                                     'portrait' => 'Portrait (Tegak)',
@@ -73,10 +79,10 @@ class ListSchedules extends ListRecords
                                 ])
                                 ->default('landscape')
                                 ->required(),
-                            \Filament\Forms\Components\Toggle::make('show_subject_code')
+                            Toggle::make('show_subject_code')
                                 ->label('Tampilkan Kode Mapel')
                                 ->default(true),
-                            \Filament\Forms\Components\Toggle::make('show_teacher_code')
+                            Toggle::make('show_teacher_code')
                                 ->label('Tampilkan Kode Guru')
                                 ->default(true),
                         ]),
@@ -89,7 +95,7 @@ class ListSchedules extends ListRecords
                         'paper_size' => $data['paper_size'] ?? 'a4',
                         'orientation' => $data['orientation'] ?? 'landscape',
                     ]);
-                    
+
                     $livewire->js("window.open('{$url}', '_blank');");
                 }),
             CreateAction::make(),
@@ -103,7 +109,7 @@ class ListSchedules extends ListRecords
             $data['overwrite'] ?? false,
         );
 
-        \Filament\Notifications\Notification::make()
+        Notification::make()
             ->title('Jadwal Berhasil di-Generate Otomatis!')
             ->success()
             ->send();

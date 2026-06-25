@@ -2,12 +2,12 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 use App\Models\AcademicYear;
 use App\Models\Student;
-use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
+use Filament\Widgets\TableWidget as BaseWidget;
 
 class GradeDistributionChart extends BaseWidget
 {
@@ -19,7 +19,7 @@ class GradeDistributionChart extends BaseWidget
 
     protected static ?int $sort = 4;
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'default' => 'full',
         'md' => 1,
     ];
@@ -32,7 +32,7 @@ class GradeDistributionChart extends BaseWidget
         $query = Student::query()
             ->with(['user', 'studyGroups'])
             ->whereHas('grades', function ($q) use ($activeYear) {
-                $q->when($activeYear, fn($sq) => $sq->where('academic_year_id', $activeYear->id));
+                $q->when($activeYear, fn ($sq) => $sq->where('academic_year_id', $activeYear->id));
             });
 
         if ($isGuru) {
@@ -59,6 +59,7 @@ class GradeDistributionChart extends BaseWidget
                     ->color('gray')
                     ->state(function ($record) {
                         $sg = $record->studyGroups->first();
+
                         return $sg?->nama_rombel ?? '-';
                     }),
 
@@ -66,9 +67,12 @@ class GradeDistributionChart extends BaseWidget
                     ->label('Rata-rata')
                     ->state(function ($record) use ($activeYear) {
                         $grades = $record->grades()
-                            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+                            ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
                             ->get();
-                        if ($grades->isEmpty()) return '-';
+                        if ($grades->isEmpty()) {
+                            return '-';
+                        }
+
                         return round($grades->avg(function ($g) {
                             return ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3;
                         }), 1);
@@ -86,12 +90,15 @@ class GradeDistributionChart extends BaseWidget
                     ->label('Grade')
                     ->state(function ($record) use ($activeYear) {
                         $grades = $record->grades()
-                            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+                            ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
                             ->get();
-                        if ($grades->isEmpty()) return '-';
+                        if ($grades->isEmpty()) {
+                            return '-';
+                        }
                         $avg = $grades->avg(function ($g) {
                             return ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3;
                         });
+
                         return match (true) {
                             $avg >= 90 => 'A',
                             $avg >= 80 => 'B',

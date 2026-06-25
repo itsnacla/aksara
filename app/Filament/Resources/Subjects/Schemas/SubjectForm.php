@@ -2,8 +2,11 @@
 
 namespace App\Filament\Resources\Subjects\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class SubjectForm
 {
@@ -22,22 +25,22 @@ class SubjectForm
                     ->dehydrated()
                     ->placeholder('Akan diisi otomatis...')
                     ->maxLength(30),
-                \Filament\Forms\Components\Toggle::make('is_umum')
+                Toggle::make('is_umum')
                     ->label('Mapel Umum (Wali Kelas)')
                     ->default(true)
                     ->helperText('Jika aktif, guru pengajar akan otomatis Wali Kelas.'),
-                \Filament\Forms\Components\Select::make('subject_report_group_id')
+                Select::make('subject_report_group_id')
                     ->label('Kelompok Mapel Rapor')
                     ->relationship(
                         name: 'subjectReportGroup',
                         titleAttribute: 'nama_kelompok',
-                        modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('is_active', true)
+                        modifyQueryUsing: fn (Builder $query) => $query->where('is_active', true)
                     )
                     ->placeholder('Pilih Kelompok Mapel Rapor...')
                     ->searchable()
                     ->preload()
                     ->helperText('Pilih kelompok pembagian rapor untuk mata pelajaran ini.'),
-                \Filament\Forms\Components\Toggle::make('is_graded')
+                Toggle::make('is_graded')
                     ->label('Ikut Penilaian / Rapor')
                     ->default(true)
                     ->helperText('Jika dinonaktifkan, mata pelajaran ini hanya tampil di jadwal KBM mingguan dan dikecualikan dari cetak rapor.'),
@@ -47,7 +50,7 @@ class SubjectForm
                     ->numeric()
                     ->default(2)
                     ->required(),
-                \Filament\Forms\Components\Select::make('levels')
+                Select::make('levels')
                     ->label('Tingkatan (Level)')
                     ->relationship('levels', 'nama_tingkatan')
                     ->multiple()
@@ -59,11 +62,11 @@ class SubjectForm
                     ->numeric()
                     ->default(75)
                     ->required(),
-                \Filament\Forms\Components\Toggle::make('is_one_day_finish')
+                Toggle::make('is_one_day_finish')
                     ->label('Selesai Dalam 1 Hari')
                     ->helperText('Jika aktif, seluruh JP akan dipaksakan selesai dalam satu hari (seperti PJOK).')
                     ->default(false),
-                \Filament\Forms\Components\Select::make('scheduling_priority')
+                Select::make('scheduling_priority')
                     ->label('Prioritas Penjadwalan')
                     ->options([
                         1 => 'Normal (Biasa)',

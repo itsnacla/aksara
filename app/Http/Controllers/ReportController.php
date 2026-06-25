@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicYear;
 use App\Models\Attendance;
-use App\Models\StudyGroup;
+use App\Models\Schedule;
 use App\Models\SchoolSetting;
+use App\Models\StudyGroup;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -23,7 +26,7 @@ class ReportController extends Controller
             $teacherId = $user->teacher->id;
             $query->where(function ($q) use ($teacherId) {
                 $q->whereHas('studyGroup', fn ($sq) => $sq->where('walikelas_id', $teacherId))
-                  ->orWhereHas('schedule', fn ($sq) => $sq->where('teacher_id', $teacherId));
+                    ->orWhereHas('schedule', fn ($sq) => $sq->where('teacher_id', $teacherId));
             });
         }
 
@@ -48,7 +51,7 @@ class ReportController extends Controller
         // Get additional info
         $rombel = $studyGroupId ? StudyGroup::with(['level', 'classroom', 'academicYear', 'waliKelas.user'])->find($studyGroupId) : null;
         $school = SchoolSetting::first();
-        $principal = \App\Models\Teacher::with('user')->where('is_kepalasekolah', true)->first();
+        $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
 
         return view('reports.attendance', compact('attendances', 'summary', 'rombel', 'school', 'principal', 'from', 'until'));
     }
@@ -56,11 +59,11 @@ class ReportController extends Controller
     private function calculateAttendanceSummary($attendances): array
     {
         $summary = [];
-        
+
         foreach ($attendances as $attendance) {
             $studentId = $attendance->student_id;
-            
-            if (!isset($summary[$studentId])) {
+
+            if (! isset($summary[$studentId])) {
                 $summary[$studentId] = [
                     'name' => $attendance->student->user->name ?? 'Unknown',
                     'nisn' => $attendance->student->nisn ?? '-',
@@ -90,23 +93,23 @@ class ReportController extends Controller
         $studyGroupId = $request->input('study_group_id');
         $showSubjectCode = $request->input('show_subject_code', 1);
         $showTeacherCode = $request->input('show_teacher_code', 0);
-        $academicYearId = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+        $academicYearId = AcademicYear::where('is_active', true)->first()?->id;
 
-        $query = \App\Models\Schedule::with(['subject', 'teacher.user', 'studyGroup.level', 'startTimeSlot', 'endTimeSlot']);
+        $query = Schedule::with(['subject', 'teacher.user', 'studyGroup.level', 'startTimeSlot', 'endTimeSlot']);
 
         if ($studyGroupId && $studyGroupId !== 'all') {
             $query->where('study_group_id', $studyGroupId);
         } elseif ($academicYearId) {
-            $query->whereHas('studyGroup', fn($q) => $q->where('academic_year_id', $academicYearId));
+            $query->whereHas('studyGroup', fn ($q) => $q->where('academic_year_id', $academicYearId));
         }
 
         $schedules = $query->orderBy('hari')->get();
-        
+
         // Group by Rombel
         $groupedSchedules = $schedules->groupBy('study_group_id');
 
         // If 'all', we might want to include Rombols that have NO schedule yet (optional)
-        if ($studyGroupId === 'all' || !$studyGroupId) {
+        if ($studyGroupId === 'all' || ! $studyGroupId) {
             $rombels = StudyGroup::with(['level', 'academicYear', 'waliKelas.user'])
                 ->where('academic_year_id', $academicYearId)
                 ->get();
@@ -117,12 +120,12 @@ class ReportController extends Controller
         }
 
         $school = SchoolSetting::first();
-        $principal = \App\Models\Teacher::with('user')->where('is_kepalasekolah', true)->first();
+        $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
         $paperSize = $request->input('paper_size', 'a4');
         $orientation = $request->input('orientation', 'landscape');
 
         return view('reports.schedule', compact(
-            'groupedSchedules', 'school', 'principal', 'rombels', 'studyGroupId', 
+            'groupedSchedules', 'school', 'principal', 'rombels', 'studyGroupId',
             'showSubjectCode', 'showTeacherCode', 'paperSize', 'orientation'
         ));
     }

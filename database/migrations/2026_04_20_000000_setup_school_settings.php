@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\SchoolSetting;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('website')->nullable();
             $table->string('motto')->nullable();
-            
+
             // WA Settings
             $table->boolean('is_wa_enabled')->default(false);
             $table->string('wa_gateway_provider')->default('fonnte');
@@ -33,12 +34,12 @@ return new class extends Migration
             $table->string('wa_gateway_message_param')->default('message');
             $table->boolean('wa_notify_attendance')->default(false);
             $table->boolean('wa_notify_announcement')->default(false);
-            
+
             $table->timestamps();
         });
 
         // Insert default data
-        \App\Models\SchoolSetting::updateOrCreate(
+        SchoolSetting::updateOrCreate(
             ['id' => 1],
             [
                 'name' => 'Aksara Academic System',

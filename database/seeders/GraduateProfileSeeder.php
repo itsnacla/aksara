@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\GraduateProfile;
 use App\Models\AcademicYear;
+use App\Models\GraduateProfile;
 use Illuminate\Database\Seeder;
 
 class GraduateProfileSeeder extends Seeder
@@ -14,7 +14,7 @@ class GraduateProfileSeeder extends Seeder
     public function run(): void
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
-        if (!$activeYear) {
+        if (! $activeYear) {
             return;
         }
 
@@ -84,4 +84,3 @@ class GraduateProfileSeeder extends Seeder
         }
     }
 }
-

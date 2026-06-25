@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Students\Schemas;
 
-use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -52,8 +52,10 @@ class StudentInfoList
                                 if ($record->lives_with_parent && $record->parent) {
                                     $p = $record->parent;
                                     $full = "{$p->address}, Desa {$p->village}, Kec. {$p->district}, {$p->city}, {$p->province}";
-                                    return $full . " (Ikut Orang Tua)";
+
+                                    return $full.' (Ikut Orang Tua)';
                                 }
+
                                 return "{$state}, Desa {$record->village}, Kec. {$record->district}, {$record->city}, {$record->province}";
                             })
                             ->columnSpanFull(),

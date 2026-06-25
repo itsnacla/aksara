@@ -2,17 +2,17 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
 use App\Filament\Widgets\SystemHealthWidget;
-use Illuminate\Contracts\Support\Htmlable;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
-
-use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Pages\Page;
+use Illuminate\Contracts\Support\Htmlable;
 
 class SystemHealth extends Page
 {
     use HasPageShield;
+
     protected string $view = 'filament.pages.system-health';
 
     public static function getNavigationIcon(): string|\BackedEnum|null
@@ -46,7 +46,7 @@ class SystemHealth extends Page
                 ->icon('heroicon-m-arrow-path')
                 ->action(function () {
                     $this->dispatch('refresh-stats');
-                    
+
                     Notification::make()
                         ->title('Health Check Completed')
                         ->success()

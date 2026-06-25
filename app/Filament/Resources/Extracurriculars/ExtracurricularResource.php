@@ -12,6 +12,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class ExtracurricularResource extends Resource
@@ -32,7 +33,7 @@ class ExtracurricularResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'nama_ekskul';
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['coordinator', 'coordinator.teacher']);
     }

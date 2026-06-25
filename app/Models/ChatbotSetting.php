@@ -59,6 +59,7 @@ class ChatbotSetting extends Model
         if (is_array($this->fallback_providers)) {
             return $this->fallback_providers;
         }
+
         return array_filter(array_map('trim', explode(',', $this->fallback_providers)));
     }
 
@@ -78,6 +79,7 @@ class ChatbotSetting extends Model
                 default => null,
             };
         }
+
         return $model;
     }
 

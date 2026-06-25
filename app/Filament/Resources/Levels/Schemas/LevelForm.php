@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Levels\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
 class LevelForm
@@ -14,7 +16,7 @@ class LevelForm
                 TextInput::make('nama_tingkatan')
                     ->required()
                     ->maxLength(50),
-                \Filament\Forms\Components\Select::make('fase')
+                Select::make('fase')
                     ->label('Fase (Kurikulum Merdeka)')
                     ->options([
                         'Fondasi' => 'Fase Fondasi (PAUD/TK)',
@@ -27,7 +29,7 @@ class LevelForm
                     ])
                     ->required()
                     ->placeholder('Pilih Fase...'),
-                \Filament\Forms\Components\Toggle::make('is_last_level')
+                Toggle::make('is_last_level')
                     ->label('Tingkatan Terakhir?')
                     ->helperText('Jika aktif, siswa yang naik dari tingkat ini akan otomatis berstatus Lulus.')
                     ->default(false),

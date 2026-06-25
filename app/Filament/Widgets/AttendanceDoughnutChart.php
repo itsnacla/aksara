@@ -2,10 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
-use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
 class AttendanceDoughnutChart extends ChartWidget
 {
@@ -17,7 +17,7 @@ class AttendanceDoughnutChart extends ChartWidget
 
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'default' => 'full',
         'md' => 1,
     ];

@@ -2,21 +2,26 @@
 
 namespace App\Filament\Resources\Students\Tables;
 
-use App\Models\StudyGroup;
 use App\Models\AcademicYear;
-use Illuminate\Support\Facades\Hash;
+use App\Models\StudyGroup;
+use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\Select;
-use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Hash;
 
 class StudentsTable
 {
@@ -32,7 +37,7 @@ class StudentsTable
     protected static function getColumns(): array
     {
         return [
-            \Filament\Tables\Columns\ImageColumn::make('user.photo')
+            ImageColumn::make('user.photo')
                 ->label('Foto')
                 ->circular(),
 
@@ -68,7 +73,7 @@ class StudentsTable
                 })
                 ->sortable(),
 
-            \Filament\Tables\Columns\IconColumn::make('user.is_active')
+            IconColumn::make('user.is_active')
                 ->label('Akun Aktif')
                 ->boolean(),
         ];
@@ -81,12 +86,13 @@ class StudentsTable
                 ->label('Tahun Ajaran')
                 ->options(fn () => AcademicYear::query()
                     ->get()
-                    ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)])
+                    ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - ".ucfirst($year->semester)])
                 )
                 ->query(function ($query, array $data) {
                     if (empty($data['value'])) {
                         return $query;
                     }
+
                     return $query->whereHas('studyGroups', function ($q) use ($data) {
                         $q->where('academic_year_id', $data['value']);
                     });
@@ -106,6 +112,7 @@ class StudentsTable
                     if ($academicYearId) {
                         return $query->where('academic_year_id', $academicYearId);
                     }
+
                     return $query;
                 }),
         ];
@@ -130,8 +137,9 @@ class StudentsTable
                     if ($parent) {
                         $data['parent'] = $parent->toArray();
                     }
+
                     return $data;
-                }),   
+                }),
             EditAction::make()
                 ->modal()
                 ->modalWidth('7xl')
@@ -148,6 +156,7 @@ class StudentsTable
                     if ($parent) {
                         $data['parent'] = $parent->toArray();
                     }
+
                     return $data;
                 })
                 ->mutateFormDataUsing(function (array $data, $record): array {
@@ -161,7 +170,7 @@ class StudentsTable
                             'is_active' => $data['user_is_active'] ?? true,
                         ];
 
-                        if (!empty($data['user_password'])) {
+                        if (! empty($data['user_password'])) {
                             $updateUserData['password'] = Hash::make($data['user_password']);
                         }
 
@@ -188,7 +197,7 @@ class StudentsTable
                 ->color('info')
                 ->url(fn ($record) => route('student.card', $record))
                 ->openUrlInNewTab(),
-            \Filament\Actions\DeleteAction::make()
+            DeleteAction::make()
                 ->modal(),
         ];
     }
@@ -204,7 +213,7 @@ class StudentsTable
                     ->form([
                         Select::make('academic_year_id')
                             ->label('Tahun Ajaran')
-                            ->options(fn () => AcademicYear::all()->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)]))
+                            ->options(fn () => AcademicYear::all()->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - ".ucfirst($year->semester)]))
                             ->required()
                             ->live(),
                         Select::make('study_group_id')
@@ -223,7 +232,7 @@ class StudentsTable
                     ->form([
                         Select::make('academic_year_id')
                             ->label('Tahun Ajaran Baru')
-                            ->options(fn () => AcademicYear::all()->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)]))
+                            ->options(fn () => AcademicYear::all()->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - ".ucfirst($year->semester)]))
                             ->required()
                             ->live(),
                         Select::make('study_group_id')
@@ -238,7 +247,7 @@ class StudentsTable
                         foreach ($records as $record) {
                             if (empty($data['study_group_id'])) {
                                 // Check if student is in the last level
-                                $currentRombel = $record->studyGroups()->whereHas('academicYear', fn($q) => $q->where('is_active', true))->first();
+                                $currentRombel = $record->studyGroups()->whereHas('academicYear', fn ($q) => $q->where('is_active', true))->first();
                                 if ($currentRombel && $currentRombel->level && $currentRombel->level->is_last_level) {
                                     $record->update(['status' => 'lulus']);
                                     $graduatedCount++;
@@ -250,11 +259,15 @@ class StudentsTable
                             }
                         }
 
-                        $message = "Proses selesai. ";
-                        if ($promotedCount > 0) $message .= "{$promotedCount} siswa naik kelas. ";
-                        if ($graduatedCount > 0) $message .= "{$graduatedCount} siswa diluluskan.";
+                        $message = 'Proses selesai. ';
+                        if ($promotedCount > 0) {
+                            $message .= "{$promotedCount} siswa naik kelas. ";
+                        }
+                        if ($graduatedCount > 0) {
+                            $message .= "{$graduatedCount} siswa diluluskan.";
+                        }
 
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title($message)
                             ->success()
                             ->send();
@@ -263,12 +276,12 @@ class StudentsTable
                     ->label('Cetak Kartu Massal')
                     ->icon('heroicon-o-identification')
                     ->color('info')
-                    ->action(function (Collection $records, \Filament\Resources\Pages\ListRecords $livewire) {
+                    ->action(function (Collection $records, ListRecords $livewire) {
                         $ids = $records->pluck('id')->implode(',');
                         $url = route('student.cards.bulk', ['ids' => $ids]);
                         $livewire->js("window.open('{$url}', '_blank');");
                     }),
-                ]),
+            ]),
         ];
     }
 }

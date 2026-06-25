@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\ChatbotSetting;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class ChatbotSettingPolicy
 {
     use HandlesAuthorization;
-    
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:ChatbotSetting');
@@ -71,5 +71,4 @@ class ChatbotSettingPolicy
     {
         return $authUser->can('Reorder:ChatbotSetting');
     }
-
 }

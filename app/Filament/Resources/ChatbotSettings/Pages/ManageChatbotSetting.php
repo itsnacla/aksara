@@ -16,7 +16,7 @@ class ManageChatbotSetting extends EditRecord
      * Singleton pattern: always edit the single settings record.
      * Creates a default record if none exists.
      */
-    public function mount(int|string $record = null): void
+    public function mount(int|string|null $record = null): void
     {
         $settings = ChatbotSetting::current();
         parent::mount($settings->id);

@@ -15,13 +15,13 @@ class LogAiTraffic
     public function handle(AgentPrompt $prompt, Closure $next)
     {
         Log::info('--- AI PROMPT START ---');
-        Log::info('User Prompt: ' . $prompt->prompt);
-        
+        Log::info('User Prompt: '.$prompt->prompt);
+
         $response = $next($prompt);
 
         if ($response instanceof AgentResponse) {
-            Log::info('AI Response: ' . $response->text);
-            if (!empty($response->usage)) {
+            Log::info('AI Response: '.$response->text);
+            if (! empty($response->usage)) {
                 // Ensure usage is converted to array for logging
                 Log::info('Token Usage: ', (array) $response->usage);
             }

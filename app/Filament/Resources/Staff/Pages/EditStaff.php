@@ -55,7 +55,7 @@ class EditStaff extends EditRecord
                 'email' => $userData['email'],
             ]);
 
-            if (!empty($userData['password'])) {
+            if (! empty($userData['password'])) {
                 $updateData['password'] = Hash::make($userData['password']);
             }
 

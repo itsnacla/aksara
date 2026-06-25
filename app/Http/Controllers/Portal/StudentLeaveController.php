@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\StudentLeave;
-use App\Models\SchoolSetting;
+use App\Services\WAService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class StudentLeaveController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        
+
         // If parent, show leaves for all their children
         if ($user->hasRole('wali')) {
             $parent = $user->parent;
@@ -22,6 +24,7 @@ class StudentLeaveController extends Controller
                 ->with(['student.user', 'studyGroup'])
                 ->latest()
                 ->get();
+
             return view('portal.leaves.index', compact('leaves'));
         }
 
@@ -32,6 +35,7 @@ class StudentLeaveController extends Controller
                 ->with(['studyGroup'])
                 ->latest()
                 ->get();
+
             return view('portal.leaves.index', compact('leaves'));
         }
 
@@ -41,11 +45,12 @@ class StudentLeaveController extends Controller
     public function create()
     {
         $user = Auth::user();
-        if (!$user->hasRole('wali')) {
+        if (! $user->hasRole('wali')) {
             return redirect()->route('dashboard');
         }
 
         $children = $user->parent?->students()->with('user')->get() ?? collect();
+
         return view('portal.leaves.create', compact('children'));
     }
 
@@ -92,14 +97,14 @@ class StudentLeaveController extends Controller
         // Notify Walikelas via WA
         if ($currentRombel && $currentRombel->waliKelas && $currentRombel->waliKelas->no_whatsapp) {
             $teacher = $currentRombel->waliKelas;
-            \Illuminate\Support\Facades\Log::info('WA Notify: Attempting to send to ' . $teacher->no_whatsapp);
+            Log::info('WA Notify: Attempting to send to '.$teacher->no_whatsapp);
             $schoolName = strtoupper(SchoolSetting::current()->name);
             $parentName = $user->name;
             $studentName = $student->user->name;
             $type = strtoupper($request->type);
-            $dates = $request->start_date === $request->end_date 
-                ? $request->start_date 
-                : $request->start_date . ' s/d ' . $request->end_date;
+            $dates = $request->start_date === $request->end_date
+                ? $request->start_date
+                : $request->start_date.' s/d '.$request->end_date;
 
             $message = "*NOTIFIKASI IZIN SISWA - $schoolName*\n\n";
             $message .= "Yth. Bapak/Ibu *$teacher->kode_guru*,\n";
@@ -110,14 +115,14 @@ class StudentLeaveController extends Controller
             $message .= "*Waktu:* $dates\n";
             $message .= "*Alasan:* $request->reason\n\n";
             $message .= "Mohon segera tinjau permohonan ini melalui Dashboard Aksara.\n";
-            $message .= "--- _Powered by Aksara_ ---";
+            $message .= '--- _Powered by Aksara_ ---';
 
-            \App\Services\WAService::sendMessageAsync($teacher->no_whatsapp, $message);
+            WAService::sendMessageAsync($teacher->no_whatsapp, $message);
         } else {
-            \Illuminate\Support\Facades\Log::warning('WA Notify: Conditions not met.', [
-                'hasRombel' => (bool)$currentRombel,
-                'hasWalikelas' => $currentRombel ? (bool)$currentRombel->waliKelas : false,
-                'hasPhone' => ($currentRombel && $currentRombel->waliKelas) ? (bool)$currentRombel->waliKelas->no_whatsapp : false,
+            Log::warning('WA Notify: Conditions not met.', [
+                'hasRombel' => (bool) $currentRombel,
+                'hasWalikelas' => $currentRombel ? (bool) $currentRombel->waliKelas : false,
+                'hasPhone' => ($currentRombel && $currentRombel->waliKelas) ? (bool) $currentRombel->waliKelas->no_whatsapp : false,
             ]);
         }
 
@@ -170,12 +175,12 @@ class StudentLeaveController extends Controller
             $message .= "Yth. Bapak/Ibu *$teacher->kode_guru*,\n";
             $message .= "Orang tua telah mengirimkan REVISI permohonan izin untuk:\n\n";
             $message .= "*Siswa:* $studentName\n";
-            $message .= "*Jenis:* " . strtoupper($request->type) . "\n";
+            $message .= '*Jenis:* '.strtoupper($request->type)."\n";
             $message .= "*Alasan Baru:* $request->reason\n\n";
             $message .= "Mohon tinjau kembali melalui Dashboard Aksara.\n";
-            $message .= "--- _Powered by Aksara_ ---";
+            $message .= '--- _Powered by Aksara_ ---';
 
-            \App\Services\WAService::sendMessageAsync($teacher->no_whatsapp, $message);
+            WAService::sendMessageAsync($teacher->no_whatsapp, $message);
         }
 
         return back()->with('success', 'Permohonan izin berhasil diperbarui.');

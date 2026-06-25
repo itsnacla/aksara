@@ -27,7 +27,9 @@ class GetReportLink implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) return 'Error: User context missing.';
+        if (! $this->user) {
+            return 'Error: User context missing.';
+        }
 
         $studentId = $request['student_id'] ?? null;
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
@@ -47,7 +49,9 @@ class GetReportLink implements Tool
         }
 
         $report = $query->latest()->first();
-        if (!$report) return 'Rapor tidak ditemukan.';
+        if (! $report) {
+            return 'Rapor tidak ditemukan.';
+        }
 
         return json_encode([
             'semester' => $report->semester,

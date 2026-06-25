@@ -2,10 +2,7 @@
 
 namespace App\Filament\Resources\Students;
 
-use App\Filament\Resources\Students\Pages\CreateStudent;
-use App\Filament\Resources\Students\Pages\EditStudent;
 use App\Filament\Resources\Students\Pages\ListStudents;
-use App\Filament\Resources\Students\Pages\ViewStudent;
 use App\Filament\Resources\Students\Schemas\StudentForm;
 use App\Filament\Resources\Students\Schemas\StudentInfoList;
 use App\Filament\Resources\Students\Tables\StudentsTable;
@@ -13,8 +10,9 @@ use App\Models\Student;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class StudentResource extends Resource
@@ -35,7 +33,7 @@ class StudentResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Siswa';
 
-    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    public static function getRecordTitle(?Model $record): ?string
     {
         return $record?->user?->name;
     }
@@ -55,7 +53,7 @@ class StudentResource extends Resource
         return StudentsTable::configure($table);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with('user');
         $user = auth()->user();

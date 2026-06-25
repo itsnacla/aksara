@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\SchoolSetting;
-use App\Models\Teacher;
 use App\Models\AcademicYear;
+use App\Models\SchoolSetting;
+use App\Models\Student;
+use App\Models\StudentRapor;
+use App\Models\Teacher;
+use App\Services\Academic\BukuIndukDataBuilder;
 use App\Services\Academic\RaporService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +21,7 @@ class PrintController extends Controller
     {
         $school = SchoolSetting::current();
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
-        
+
         $student->load(['user', 'parent', 'studyGroups.level']);
         $rombel = $student->currentStudyGroup();
 
@@ -31,24 +33,24 @@ class PrintController extends Controller
      */
     public function printRapor(Student $student, Request $request): View
     {
-        $academicYearId = (int)($request->input('academic_year_id') ?: AcademicYear::where('is_active', true)->value('id'));
-        if (!$academicYearId) {
+        $academicYearId = (int) ($request->input('academic_year_id') ?: AcademicYear::where('is_active', true)->value('id'));
+        if (! $academicYearId) {
             abort(400, 'Tahun ajaran aktif tidak ditemukan.');
         }
 
         // Security check for parents and students
         $user = auth()->user();
         if ($user && ($user->hasRole('siswa') || $user->hasRole('wali'))) {
-            $isPublished = \App\Models\StudentRapor::where('student_id', $student->id)
+            $isPublished = StudentRapor::where('student_id', $student->id)
                 ->where('academic_year_id', $academicYearId)
                 ->where('is_published', true)
                 ->exists();
-            if (!$isPublished) {
+            if (! $isPublished) {
                 abort(403, 'Rapor Anda belum dipublikasikan oleh Wali Kelas.');
             }
         }
 
-        $raporService = new RaporService();
+        $raporService = new RaporService;
         $raporData = $raporService->getStudentRaporData($student, $academicYearId);
 
         return view('reports.rapor', $raporData);
@@ -60,13 +62,13 @@ class PrintController extends Controller
     public function printRaporBulk(Request $request): View
     {
         $studentIds = explode(',', $request->input('student_ids'));
-        $academicYearId = (int)($request->input('academic_year_id') ?: AcademicYear::where('is_active', true)->value('id'));
-        if (!$academicYearId) {
+        $academicYearId = (int) ($request->input('academic_year_id') ?: AcademicYear::where('is_active', true)->value('id'));
+        if (! $academicYearId) {
             abort(400, 'Tahun ajaran aktif tidak ditemukan.');
         }
 
         $students = Student::whereIn('id', $studentIds)->get();
-        $raporService = new RaporService();
+        $raporService = new RaporService;
 
         $studentsData = [];
         /** @var Student $student */
@@ -116,11 +118,11 @@ class PrintController extends Controller
     {
         $school = SchoolSetting::current();
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
-        
+
         $student->load(['user', 'parent', 'studyGroups.level']);
         $rombel = $student->currentStudyGroup();
 
-        $dataBuilder = new \App\Services\Academic\BukuIndukDataBuilder();
+        $dataBuilder = new BukuIndukDataBuilder;
         $chunkedData = $dataBuilder->getBukuIndukData($student);
 
         return view('reports.buku-induk', [
@@ -131,8 +133,8 @@ class PrintController extends Controller
                     'principal' => $principal,
                     'rombel' => $rombel,
                     'chunkedData' => $chunkedData,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 
@@ -149,7 +151,7 @@ class PrintController extends Controller
             ->whereIn('id', $studentIds)
             ->get();
 
-        $dataBuilder = new \App\Services\Academic\BukuIndukDataBuilder();
+        $dataBuilder = new BukuIndukDataBuilder;
         $reports = [];
         foreach ($students as $student) {
             $reports[] = [

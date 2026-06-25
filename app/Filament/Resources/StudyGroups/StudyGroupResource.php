@@ -12,8 +12,8 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
-use Filament\Support\Icons\Heroicon;
 
 class StudyGroupResource extends Resource
 {
@@ -45,7 +45,7 @@ class StudyGroupResource extends Resource
         return StudyGroupsTable::configure($table);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with(['academicYear', 'level', 'classroom', 'walikelas.user']);
         $user = auth()->user();

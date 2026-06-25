@@ -2,28 +2,30 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Subject;
-use App\Models\StudyGroup;
 use App\Models\Student;
+use App\Models\StudyGroup;
+use App\Models\Subject;
 use App\Services\Academic\GradeProgressBuilder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
-use Livewire\Attributes\On;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\On;
 
 class PerkembanganNilaiTable extends TableWidget
 {
     protected static bool $isDiscovered = false;
 
     public ?int $studyGroupId = null;
+
     public ?string $studentId = 'all';
-    
+
     // We cache the table data to avoid querying for each cell
     protected array $builderDataCache = [];
+
     protected bool $dataLoaded = false;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     #[On('filter-updated')]
     public function updateFilters($studyGroupId, $studentId)
@@ -32,21 +34,25 @@ class PerkembanganNilaiTable extends TableWidget
         $this->studentId = $studentId;
         $this->dataLoaded = false; // force reload
     }
-    
+
     protected function loadData()
     {
-        if ($this->dataLoaded) return;
-        
-        if (!$this->studyGroupId) {
+        if ($this->dataLoaded) {
+            return;
+        }
+
+        if (! $this->studyGroupId) {
             $this->builderDataCache = [];
             $this->dataLoaded = true;
+
             return;
         }
 
         $sg = StudyGroup::find($this->studyGroupId);
-        if (!$sg) {
+        if (! $sg) {
             $this->builderDataCache = [];
             $this->dataLoaded = true;
+
             return;
         }
 
@@ -55,7 +61,7 @@ class PerkembanganNilaiTable extends TableWidget
             $student = Student::find($this->studentId);
         }
 
-        $builder = new GradeProgressBuilder();
+        $builder = new GradeProgressBuilder;
         $this->builderDataCache = $builder->build($sg, $student)['table'];
         $this->dataLoaded = true;
     }
@@ -63,16 +69,17 @@ class PerkembanganNilaiTable extends TableWidget
     protected function getSubjectData($subjectName, $semesterColumn)
     {
         $this->loadData();
-        
+
         foreach ($this->builderDataCache as $row) {
             if ($row['nama_mapel'] === $subjectName) {
                 if ($semesterColumn === 'rata_rata') {
                     return $row['rata_rata'];
                 }
+
                 return $row['semesters'][$semesterColumn] ?? '-';
             }
         }
-        
+
         return '-';
     }
 
@@ -80,22 +87,22 @@ class PerkembanganNilaiTable extends TableWidget
     {
         return $table
             ->query(function (): Builder {
-                if (!$this->studyGroupId) {
+                if (! $this->studyGroupId) {
                     // return empty if no filter
                     return Subject::query()->where('id', 0);
                 }
-                
+
                 // Only show subjects that have grades in this builder data
                 $this->loadData();
                 $subjectNames = collect($this->builderDataCache)->pluck('nama_mapel')->toArray();
-                
+
                 return Subject::query()->whereIn('nama_mapel', $subjectNames);
             })
             ->columns([
                 TextColumn::make('index')
                     ->label('No')
                     ->rowIndex(),
-                    
+
                 TextColumn::make('nama_mapel')
                     ->label('Nama Mapel')
                     ->searchable()

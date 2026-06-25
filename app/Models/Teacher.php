@@ -31,48 +31,51 @@ use Illuminate\Database\Eloquent\Model;
 class Teacher extends Model
 {
     protected $with = ['user'];
+
     protected static function booted()
     {
         static::creating(function ($model) {
             if (empty($model->kode_guru)) {
                 $name = $model->user->name ?? 'Guru';
-                
+
                 $cleanName = explode(',', $name)[0];
-                
+
                 $frontTitles = [
-                    'Drs\.', 'Dra\.', 'Ir\.', 'H\.', 'Hj\.', 'Prof\.', 'Dr\.', 'Pdt\.', 'St\.'
+                    'Drs\.', 'Dra\.', 'Ir\.', 'H\.', 'Hj\.', 'Prof\.', 'Dr\.', 'Pdt\.', 'St\.',
                 ];
-                
+
                 $backTitles = [
-                    'S\.Pd\.I', 'S\.Pd', 'M\.Pd', 'S\.Kom', 'S\.T', 'S\.H', 'S\.Si', 'M\.Si', 
-                    'S\.E', 'M\.E', 'S\.Sos', 'Gr\.', 'Gr', 'L\.c', 'M\.A', 'B\.A'
+                    'S\.Pd\.I', 'S\.Pd', 'M\.Pd', 'S\.Kom', 'S\.T', 'S\.H', 'S\.Si', 'M\.Si',
+                    'S\.E', 'M\.E', 'S\.Sos', 'Gr\.', 'Gr', 'L\.c', 'M\.A', 'B\.A',
                 ];
 
                 $allTitles = array_merge($frontTitles, $backTitles);
-                
+
                 foreach ($allTitles as $title) {
-                    $cleanName = preg_replace('/(?i)\b' . $title . '\b/', '', $cleanName);
+                    $cleanName = preg_replace('/(?i)\b'.$title.'\b/', '', $cleanName);
                     if (str_ends_with($title, '\.')) {
-                        $cleanName = preg_replace('/(?i)' . $title . '/', '', $cleanName);
+                        $cleanName = preg_replace('/(?i)'.$title.'/', '', $cleanName);
                     }
                 }
-                
+
                 $cleanName = trim(preg_replace('/[^a-zA-Z\s]/', '', $cleanName));
                 $cleanName = preg_replace('/\s+/', ' ', $cleanName);
-                
+
                 $words = explode(' ', $cleanName);
                 $prefix = '';
                 foreach ($words as $w) {
-                    if (!empty($w)) {
+                    if (! empty($w)) {
                         $prefix .= strtoupper(substr($w, 0, 1));
                     }
                 }
-                
-                if (empty($prefix)) $prefix = 'G';
 
-                $latest = static::where('kode_guru', 'like', $prefix . '%')->orderBy('kode_guru', 'desc')->first();
-                $number = $latest ? (int)filter_var($latest->kode_guru, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
-                $model->kode_guru = $prefix . ' ' . str_pad($number, 2, '0', STR_PAD_LEFT);
+                if (empty($prefix)) {
+                    $prefix = 'G';
+                }
+
+                $latest = static::where('kode_guru', 'like', $prefix.'%')->orderBy('kode_guru', 'desc')->first();
+                $number = $latest ? (int) filter_var($latest->kode_guru, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
+                $model->kode_guru = $prefix.' '.str_pad($number, 2, '0', STR_PAD_LEFT);
             }
         });
 
@@ -90,9 +93,10 @@ class Teacher extends Model
 
     public function getNamaLengkapAttribute(): string
     {
-        $depan = $this->gelar_depan ? trim($this->gelar_depan) . ' ' : '';
-        $belakang = $this->gelar_belakang ? ', ' . trim($this->gelar_belakang) : '';
-        return $depan . ($this->user->name ?? '') . $belakang;
+        $depan = $this->gelar_depan ? trim($this->gelar_depan).' ' : '';
+        $belakang = $this->gelar_belakang ? ', '.trim($this->gelar_belakang) : '';
+
+        return $depan.($this->user->name ?? '').$belakang;
     }
 
     public function user()

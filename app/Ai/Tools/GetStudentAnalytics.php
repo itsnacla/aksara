@@ -2,9 +2,8 @@
 
 namespace App\Ai\Tools;
 
-use App\Models\Grade;
-use App\Models\Student;
 use App\Models\Attendance;
+use App\Models\Grade;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -28,7 +27,7 @@ class GetStudentAnalytics implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -38,17 +37,17 @@ class GetStudentAnalytics implements Tool
         $limit = $request['limit'] ?? 10;
 
         // Security check
-        if (!str_contains($roleName, 'admin') && !str_contains($roleName, 'staff') && !str_contains($roleName, 'guru')) {
+        if (! str_contains($roleName, 'admin') && ! str_contains($roleName, 'staff') && ! str_contains($roleName, 'guru')) {
             return 'Anda tidak memiliki akses untuk melihat analytics siswa.';
         }
 
         // For guru, only their class
         if (str_contains($roleName, 'guru')) {
             $teacher = $this->user->teacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 return 'Data guru tidak ditemukan.';
             }
-            if (!$studyGroupId) {
+            if (! $studyGroupId) {
                 $studyGroupId = $teacher->studyGroups()
                     ->where('wali_kelas_id', $teacher->id)
                     ->first()?->id;
@@ -62,13 +61,13 @@ class GetStudentAnalytics implements Tool
             $topPerformers = Grade::query()
                 ->selectRaw('student_id, AVG((nilai_tugas + nilai_uts + nilai_uas) / 3) as avg_nilai')
                 ->with(['student.user'])
-                ->when($studyGroupId, fn($q) => $q->whereHas('student.studyGroups', fn($sq) => $sq->where('study_groups.id', $studyGroupId)))
+                ->when($studyGroupId, fn ($q) => $q->whereHas('student.studyGroups', fn ($sq) => $sq->where('study_groups.id', $studyGroupId)))
                 ->groupBy('student_id')
                 ->orderByDesc('avg_nilai')
                 ->limit($limit)
                 ->get();
 
-            $result['top_performers'] = $topPerformers->map(fn($g) => [
+            $result['top_performers'] = $topPerformers->map(fn ($g) => [
                 'nama' => $g->student?->user?->name,
                 'nisn' => $g->student?->nisn,
                 'rata_rata_nilai' => round($g->avg_nilai, 2),
@@ -80,13 +79,13 @@ class GetStudentAnalytics implements Tool
             $lowPerformers = Grade::query()
                 ->selectRaw('student_id, AVG((nilai_tugas + nilai_uts + nilai_uas) / 3) as avg_nilai')
                 ->with(['student.user'])
-                ->when($studyGroupId, fn($q) => $q->whereHas('student.studyGroups', fn($sq) => $sq->where('study_groups.id', $studyGroupId)))
+                ->when($studyGroupId, fn ($q) => $q->whereHas('student.studyGroups', fn ($sq) => $sq->where('study_groups.id', $studyGroupId)))
                 ->groupBy('student_id')
                 ->orderBy('avg_nilai', 'asc')
                 ->limit($limit)
                 ->get();
 
-            $result['low_performers'] = $lowPerformers->map(fn($g) => [
+            $result['low_performers'] = $lowPerformers->map(fn ($g) => [
                 'nama' => $g->student?->user?->name,
                 'nisn' => $g->student?->nisn,
                 'rata_rata_nilai' => round($g->avg_nilai, 2),
@@ -100,16 +99,16 @@ class GetStudentAnalytics implements Tool
                 ->selectRaw('student_id, 
                     ROUND(SUM(CASE WHEN status = "H" THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) as attendance_pct')
                 ->with(['student.user'])
-                ->when($studyGroupId, fn($q) => $q->where('study_group_id', $studyGroupId))
+                ->when($studyGroupId, fn ($q) => $q->where('study_group_id', $studyGroupId))
                 ->groupBy('student_id')
                 ->orderByDesc('attendance_pct')
                 ->limit($limit)
                 ->get();
 
-            $result['top_attendance'] = $topAttendance->map(fn($a) => [
+            $result['top_attendance'] = $topAttendance->map(fn ($a) => [
                 'nama' => $a->student?->user?->name,
                 'nisn' => $a->student?->nisn,
-                'presensi_pct' => $a->attendance_pct . '%',
+                'presensi_pct' => $a->attendance_pct.'%',
             ])->toArray();
         }
 
@@ -119,17 +118,17 @@ class GetStudentAnalytics implements Tool
                 ->selectRaw('student_id, 
                     ROUND(SUM(CASE WHEN status = "H" THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) as attendance_pct')
                 ->with(['student.user'])
-                ->when($studyGroupId, fn($q) => $q->where('study_group_id', $studyGroupId))
+                ->when($studyGroupId, fn ($q) => $q->where('study_group_id', $studyGroupId))
                 ->groupBy('student_id')
                 ->having('attendance_pct', '<', 80)
                 ->orderBy('attendance_pct', 'asc')
                 ->limit($limit)
                 ->get();
 
-            $result['low_attendance'] = $lowAttendance->map(fn($a) => [
+            $result['low_attendance'] = $lowAttendance->map(fn ($a) => [
                 'nama' => $a->student?->user?->name,
                 'nisn' => $a->student?->nisn,
-                'presensi_pct' => $a->attendance_pct . '%',
+                'presensi_pct' => $a->attendance_pct.'%',
                 'status_warning' => '🚨 PERLU PERHATIAN ORANG TUA',
             ])->toArray();
         }
@@ -139,12 +138,12 @@ class GetStudentAnalytics implements Tool
             $classRanking = Grade::query()
                 ->selectRaw('student_id, AVG((nilai_tugas + nilai_uts + nilai_uas) / 3) as avg_nilai')
                 ->with(['student.user'])
-                ->whereHas('student.studyGroups', fn($q) => $q->where('study_groups.id', $studyGroupId))
+                ->whereHas('student.studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
                 ->groupBy('student_id')
                 ->orderByDesc('avg_nilai')
                 ->get();
 
-            $result['class_ranking'] = $classRanking->map(fn($g, $index) => [
+            $result['class_ranking'] = $classRanking->map(fn ($g, $index) => [
                 'ranking' => $index + 1,
                 'nama' => $g->student?->user?->name,
                 'nisn' => $g->student?->nisn,

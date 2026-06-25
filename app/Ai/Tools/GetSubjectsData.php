@@ -26,7 +26,7 @@ class GetSubjectsData implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -35,7 +35,7 @@ class GetSubjectsData implements Tool
 
         if ($search) {
             $query->where('nama_mapel', 'like', "%{$search}%")
-                  ->orWhere('kode_mapel', 'like', "%{$search}%");
+                ->orWhere('kode_mapel', 'like', "%{$search}%");
         }
 
         $subjects = $query->limit(50)->get();
@@ -50,7 +50,7 @@ class GetSubjectsData implements Tool
                 'kode' => $s->kode_mapel ?? 'N/A',
                 'nama_mapel' => $s->nama_mapel,
                 'tingkat' => $s->level?->nama_tingkatan ?? 'Umum',
-                'total_jp' => $s->total_jp . ' Jam',
+                'total_jp' => $s->total_jp.' Jam',
                 'kkm' => $s->kkm,
                 'kategori' => $s->is_umum ? 'Muatan Umum' : 'Muatan Khusus',
             ];

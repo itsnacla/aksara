@@ -3,9 +3,10 @@
 namespace App\Ai\Tools;
 
 use App\Models\Attendance;
-use App\Models\Student;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Collection;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -27,7 +28,7 @@ class GetAbsentStudents implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -50,8 +51,8 @@ class GetAbsentStudents implements Tool
                 $now->copy()->endOfWeek(),
             ],
             'month' => [
-                \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth(),
-                \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth(),
+                Carbon::createFromDate($year, $month, 1)->startOfMonth(),
+                Carbon::createFromDate($year, $month, 1)->endOfMonth(),
             ],
             default => [
                 $now->copy()->startOfDay(),
@@ -67,14 +68,14 @@ class GetAbsentStudents implements Tool
         // Role-based filtering
         if (str_contains($roleName, 'guru')) {
             $teacher = $this->user->teacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 return 'Data guru tidak ditemukan.';
             }
             // Guru hanya bisa lihat absent di kelas perwalian-nya
-            $query->whereHas('studyGroup', fn($q) => $q->where('walikelas_id', $teacher->id));
+            $query->whereHas('studyGroup', fn ($q) => $q->where('walikelas_id', $teacher->id));
         } elseif ($studyGroupId && (str_contains($roleName, 'admin') || str_contains($roleName, 'staff'))) {
             $query->where('study_group_id', $studyGroupId);
-        } elseif (!str_contains($roleName, 'admin') && !str_contains($roleName, 'staff') && !str_contains($roleName, 'guru')) {
+        } elseif (! str_contains($roleName, 'admin') && ! str_contains($roleName, 'staff') && ! str_contains($roleName, 'guru')) {
             return 'Anda tidak memiliki akses untuk melihat data absent siswa.';
         }
 
@@ -107,7 +108,7 @@ class GetAbsentStudents implements Tool
         ];
     }
 
-    private function formatAbsentStudents(\Illuminate\Support\Collection $absents): array
+    private function formatAbsentStudents(Collection $absents): array
     {
         $groupedByClass = $absents->groupBy(function ($a) {
             /** @var Attendance $a */
@@ -121,7 +122,7 @@ class GetAbsentStudents implements Tool
                 return [
                     'nama' => $a->student?->user?->name,
                     'nisn' => $a->student?->nisn,
-                    'tanggal' => \Carbon\Carbon::parse($a->tanggal)->format('d-m-Y'),
+                    'tanggal' => Carbon::parse($a->tanggal)->format('d-m-Y'),
                     'status' => $a->status,
                 ];
             })->toArray();

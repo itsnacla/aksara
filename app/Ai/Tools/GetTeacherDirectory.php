@@ -26,7 +26,7 @@ class GetTeacherDirectory implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -49,8 +49,8 @@ class GetTeacherDirectory implements Tool
 
         $result = $teachers->map(function ($t) use ($roleName) {
             /** @var Teacher $t */
-            $namaLengkap = trim(($t->gelar_depan ? $t->gelar_depan . ' ' : '') . $t->user->name . ($t->gelar_belakang ? ', ' . $t->gelar_belakang : ''));
-            
+            $namaLengkap = trim(($t->gelar_depan ? $t->gelar_depan.' ' : '').$t->user->name.($t->gelar_belakang ? ', '.$t->gelar_belakang : ''));
+
             $data = [
                 'nama' => $namaLengkap,
                 'nip' => $t->nip ?? 'N/A',

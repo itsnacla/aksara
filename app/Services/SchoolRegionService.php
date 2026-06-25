@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
-
 class SchoolRegionService
 {
     public static function getProvinces(): array
@@ -53,10 +51,12 @@ class SchoolRegionService
      */
     public static function standardize($name): string
     {
-        if (!$name) return '';
-        
+        if (! $name) {
+            return '';
+        }
+
         $name = strtoupper(trim($name));
-        
+
         // Remove common prefixes and punctuation
         $patterns = [
             '/^(PROV\.|PROP\.|PROVINSI|PROP)\s+/i',
@@ -65,25 +65,27 @@ class SchoolRegionService
             '/^(DESA|KEL\.|KELURAHAN)\s+/i',
             '/\./', // Remove dots like in "KAB."
         ];
-        
+
         $name = preg_replace($patterns, '', $name);
-        
+
         return trim($name);
     }
 
     private static function findInArray($search, $array): ?string
     {
-        if (!$search || empty($array)) return null;
-        
+        if (! $search || empty($array)) {
+            return null;
+        }
+
         $searchStandard = self::standardize($search);
-        
+
         foreach ($array as $code => $name) {
             // Compare standardized versions
             if (self::standardize($name) === $searchStandard) {
                 return (string) $code; // Return the ORIGINAL key
             }
         }
-        
+
         return null;
     }
 }

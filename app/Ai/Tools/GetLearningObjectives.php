@@ -26,7 +26,7 @@ class GetLearningObjectives implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -40,17 +40,17 @@ class GetLearningObjectives implements Tool
         // Apply filters based on role
         if (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;
-            if (!$student) {
+            if (! $student) {
                 return 'Data siswa tidak ditemukan.';
             }
             $studyGroup = $student->currentStudyGroup();
-            if (!$studyGroup) {
+            if (! $studyGroup) {
                 return 'Siswa belum terdaftar di kelas manapun.';
             }
             $query->where('study_group_id', $studyGroup->id);
         } elseif (str_contains($roleName, 'guru')) {
             $teacher = $this->user->teacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 return 'Data guru tidak ditemukan.';
             }
             // Guru bisa lihat learning objectives untuk kelas-kelas yang dia ajar

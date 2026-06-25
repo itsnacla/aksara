@@ -57,6 +57,7 @@ class ExtracurricularForm
                             ->get()
                             ->mapWithKeys(function ($user) use ($teacherUserIds) {
                                 $prefix = $teacherUserIds->contains($user->id) ? '[Guru]' : '[Staf]';
+
                                 return [$user->id => "{$prefix} {$user->name}"];
                             })
                             ->toArray();

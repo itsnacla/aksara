@@ -2,23 +2,29 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use Filament\Tables\Table;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\Action;
 use App\Models\User;
+use Filament\Actions\Action;
+use Filament\Pages\Page;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class LoginAs extends Page implements HasTable
 {
     use InteractsWithTable;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-arrows-right-left';
+
     protected static ?string $title = 'Login As (Switch User)';
+
     protected static ?string $slug = 'login-as';
+
     protected string $view = 'filament.pages.login-as';
+
     protected static ?string $navigationLabel = 'Login As';
 
     public static function shouldRegisterNavigation(): bool
@@ -58,7 +64,7 @@ class LoginAs extends Page implements HasTable
                         'siswa' => 'info',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match(strtolower($state)) {
+                    ->formatStateUsing(fn (string $state): string => match (strtolower($state)) {
                         'siswa' => '🎓 Siswa',
                         'orang_tua', 'wali' => '👥 Orang Tua',
                         'guru', 'teacher' => '👨‍🏫 Guru',
@@ -85,12 +91,12 @@ class LoginAs extends Page implements HasTable
                     ->modalHeading('Konfirmasi Impersonasi')
                     ->modalDescription('Apakah Anda yakin ingin masuk sebagai pengguna ini? Sesi Anda akan beralih sementara.')
                     ->action(function (User $record) {
-                        if (!\Illuminate\Support\Facades\Gate::allows('impersonate', $record)) {
+                        if (! Gate::allows('impersonate', $record)) {
                             abort(403, 'Hanya Super Admin yang dapat menggunakan fitur Login As.');
                         }
 
                         $currentUser = auth()->user();
-                        if (!$currentUser) {
+                        if (! $currentUser) {
                             return;
                         }
 
@@ -98,7 +104,7 @@ class LoginAs extends Page implements HasTable
                         session(['impersonator_id' => $currentUser->id]);
 
                         // Login as the target user
-                        \Illuminate\Support\Facades\Auth::login($record);
+                        Auth::login($record);
 
                         // Redirect based on target user role
                         $targetRole = strtolower($record->roles->first()?->name ?? '');

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\TimeSlots;
 
-use App\Filament\Resources\TimeSlots\Pages;
 use App\Filament\Resources\TimeSlots\Schemas\TimeSlotForm;
 use App\Filament\Resources\TimeSlots\Tables\TimeSlotsTable;
 use App\Models\TimeSlot;

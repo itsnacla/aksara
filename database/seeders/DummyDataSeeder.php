@@ -2,27 +2,28 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Teacher;
-use App\Models\StudyGroup;
-use App\Models\Student;
-use App\Models\StudentParent;
 use App\Models\AcademicYear;
-use App\Models\Level;
-use App\Models\Staff;
+use App\Models\Attendance;
 use App\Models\Classroom;
+use App\Models\Extracurricular;
+use App\Models\Level;
+use App\Models\P5Group;
+use App\Models\P5Project;
+use App\Models\Staff;
+use App\Models\Student;
+use App\Models\StudentLeave;
+use App\Models\StudentParent;
+use App\Models\StudyGroup;
 use App\Models\Subject;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Extracurricular;
-use App\Models\Attendance;
-use App\Models\StudentLeave;
-use App\Models\P5Project;
-use App\Models\P5Group;
 
 class DummyDataSeeder extends Seeder
 {
     protected $academicYears;
+
     protected $teachers = [];
 
     public function run(): void
@@ -32,7 +33,9 @@ class DummyDataSeeder extends Seeder
         mt_srand(42);
 
         $this->academicYears = AcademicYear::where('tahun_ajaran', '2025/2026')->get();
-        if ($this->academicYears->isEmpty()) return;
+        if ($this->academicYears->isEmpty()) {
+            return;
+        }
 
         $this->seedWaliKelas();
         $this->seedGuruMapel();
@@ -60,7 +63,7 @@ class DummyDataSeeder extends Seeder
             $user = User::create([
                 'name' => $item['name'],
                 'username' => $item['username'],
-                'email' => $item['username'] . '@aksara.com',
+                'email' => $item['username'].'@aksara.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
             ]);
@@ -70,7 +73,7 @@ class DummyDataSeeder extends Seeder
                 'user_id' => $user->id,
                 'gelar_depan' => $item['gd'],
                 'gelar_belakang' => $item['gb'],
-                'nip' => (string)rand(1000000000, 9999999999),
+                'nip' => (string) rand(1000000000, 9999999999),
                 'is_walikelas' => true,
                 'status' => 'aktif',
             ]);
@@ -94,7 +97,7 @@ class DummyDataSeeder extends Seeder
             $user = User::create([
                 'name' => $item['name'],
                 'username' => $item['username'],
-                'email' => $item['username'] . '@aksara.com',
+                'email' => $item['username'].'@aksara.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
             ]);
@@ -104,7 +107,7 @@ class DummyDataSeeder extends Seeder
                 'user_id' => $user->id,
                 'gelar_depan' => $item['gd'],
                 'gelar_belakang' => $item['gb'],
-                'nip' => (string)rand(1000000000, 9999999999),
+                'nip' => (string) rand(1000000000, 9999999999),
                 'is_walikelas' => false,
                 'status' => 'aktif',
             ]);
@@ -120,12 +123,12 @@ class DummyDataSeeder extends Seeder
         ]);
         $userMutasi->assignRole('guru');
         Teacher::create([
-            'user_id' => $userMutasi->id, 
-            'gelar_depan' => '', 
-            'gelar_belakang' => 'S.Pd', 
-            'nip' => '1234567890', 
-            'is_walikelas' => false, 
-            'status' => 'mutasi'
+            'user_id' => $userMutasi->id,
+            'gelar_depan' => '',
+            'gelar_belakang' => 'S.Pd',
+            'nip' => '1234567890',
+            'is_walikelas' => false,
+            'status' => 'mutasi',
         ]);
     }
 
@@ -140,7 +143,7 @@ class DummyDataSeeder extends Seeder
             $user = User::create([
                 'name' => $item['name'],
                 'username' => $item['username'],
-                'email' => $item['username'] . '@aksara.com',
+                'email' => $item['username'].'@aksara.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
             ]);
@@ -150,7 +153,7 @@ class DummyDataSeeder extends Seeder
                 'user_id' => $user->id,
                 'jabatan' => $item['jabatan'],
                 'status' => 'aktif',
-                'no_whatsapp' => '08' . rand(111111111, 999999999),
+                'no_whatsapp' => '08'.rand(111111111, 999999999),
             ]);
         }
     }
@@ -160,7 +163,7 @@ class DummyDataSeeder extends Seeder
         foreach ($this->teachers as $teacher) {
             $level = Level::where('nama_tingkatan', $teacher->temp_level)->first();
             $room = Classroom::where('nama_ruangan', $teacher->temp_room)->first();
-            
+
             $rombelIds = [];
 
             foreach ($this->academicYears as $ay) {
@@ -199,11 +202,11 @@ class DummyDataSeeder extends Seeder
             ]);
             $uWali->assignRole('wali');
             $parent = StudentParent::create([
-                'user_id' => $uWali->id, 
+                'user_id' => $uWali->id,
                 'hubungan' => 'ayah',
                 'father_name' => "Ayah $name",
                 'mother_name' => "Ibu $name",
-                'address' => 'Jl. Pendidikan No. ' . $j,
+                'address' => 'Jl. Pendidikan No. '.$j,
                 'province' => 'JAWA TIMUR',
                 'city' => 'KABUPATEN BANYUWANGI',
                 'district' => 'PESANGGARAN',
@@ -219,13 +222,13 @@ class DummyDataSeeder extends Seeder
                 'is_active' => false,
             ]);
             $u->assignRole('siswa');
-            
+
             Student::create([
-                'user_id' => $u->id, 
+                'user_id' => $u->id,
                 'parent_id' => $parent->id,
-                'nisn' => "999000$j", 
-                'status' => 'lulus', 
-                'gender' => 'L'
+                'nisn' => "999000$j",
+                'status' => 'lulus',
+                'gender' => 'L',
             ]);
         }
     }
@@ -236,20 +239,20 @@ class DummyDataSeeder extends Seeder
         $lastNames = ['Saputra', 'Wijaya', 'Lestari', 'Hidayat', 'Kusuma', 'Santoso', 'Pratiwi', 'Fauzi', 'Ramadhan', 'Sari'];
         $religions = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha'];
         $places = ['Banyuwangi', 'Jakarta', 'Surabaya', 'Malang', 'Bandung', 'Yogyakarta'];
-        
-        $name = $firstNames[array_rand($firstNames)] . ' ' . $lastNames[array_rand($lastNames)];
-        $uniqueId = substr(md5($name . '_' . $namaRombel . '_' . $index), 0, 6);
-        $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name)) . '_' . $uniqueId . '_' . $index;
+
+        $name = $firstNames[array_rand($firstNames)].' '.$lastNames[array_rand($lastNames)];
+        $uniqueId = substr(md5($name.'_'.$namaRombel.'_'.$index), 0, 6);
+        $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name)).'_'.$uniqueId.'_'.$index;
 
         // Parent Data
-        $fatherName = "Bapak " . $firstNames[array_rand($firstNames)] . " " . $lastNames[array_rand($lastNames)];
-        $motherName = "Ibu " . $firstNames[array_rand($firstNames)] . " " . $lastNames[array_rand($lastNames)];
+        $fatherName = 'Bapak '.$firstNames[array_rand($firstNames)].' '.$lastNames[array_rand($lastNames)];
+        $motherName = 'Ibu '.$firstNames[array_rand($firstNames)].' '.$lastNames[array_rand($lastNames)];
 
         // Parent Account
         $parentUser = User::create([
             'name' => $fatherName,
-            'username' => 'wali_' . $username,
-            'email' => 'wali_' . $username . '@aksara.samastanuswantara.com',
+            'username' => 'wali_'.$username,
+            'email' => 'wali_'.$username.'@aksara.samastanuswantara.com',
             'password' => Hash::make('password'),
             'is_active' => true,
         ]);
@@ -258,29 +261,29 @@ class DummyDataSeeder extends Seeder
         $occupations = ['PNS', 'Karyawan Swasta', 'Wiraswasta', 'Petani', 'Buruh', 'Guru', 'Pedagang'];
 
         $parent = StudentParent::create([
-            'user_id' => $parentUser->id, 
+            'user_id' => $parentUser->id,
             'hubungan' => 'ayah',
             'father_name' => $fatherName,
             'father_occupation' => $occupations[array_rand($occupations)],
             'mother_name' => $motherName,
             'mother_occupation' => $occupations[array_rand($occupations)],
-            'no_whatsapp' => '08' . rand(100000000, 999999999),
-            'address' => 'Jl. Mawar No. ' . rand(1, 100),
+            'no_whatsapp' => '08'.rand(100000000, 999999999),
+            'address' => 'Jl. Mawar No. '.rand(1, 100),
             'province' => 'JAWA TIMUR',
             'city' => 'KABUPATEN BANYUWANGI',
             'district' => 'PESANGGARAN',
             'village' => 'PESANGGARAN',
             // Guardian data (dummy for consistency)
-            'guardian_name' => ($index % 5 == 0) ? 'Wali ' . $name : null,
+            'guardian_name' => ($index % 5 == 0) ? 'Wali '.$name : null,
             'guardian_occupation' => ($index % 5 == 0) ? $occupations[array_rand($occupations)] : null,
-            'guardian_address' => ($index % 5 == 0) ? 'Jl. Wali No. ' . rand(1, 10) : null,
+            'guardian_address' => ($index % 5 == 0) ? 'Jl. Wali No. '.rand(1, 10) : null,
         ]);
 
         // Student Account
         $studentUser = User::create([
             'name' => $name,
             'username' => $username,
-            'email' => $username . '@aksara.samastanuswantara.com',
+            'email' => $username.'@aksara.samastanuswantara.com',
             'password' => Hash::make('password'),
             'is_active' => true,
         ]);
@@ -290,16 +293,16 @@ class DummyDataSeeder extends Seeder
             'user_id' => $studentUser->id,
             'parent_id' => $parent->id,
             'status' => 'aktif',
-            'nisn' => '00' . rand(10000000, 99999999),
+            'nisn' => '00'.rand(10000000, 99999999),
             'nis' => rand(1000, 9999),
             'gender' => ($index % 2 == 0) ? 'L' : 'P',
             'pob' => $places[array_rand($places)],
             'dob' => now()->subYears(rand(7, 12))->subDays(rand(1, 365)),
             'religion' => $religions[array_rand($religions)],
-            'phone' => '08' . rand(100000000, 999999999),
+            'phone' => '08'.rand(100000000, 999999999),
             'lives_with_parent' => true, // Defaulting to true for demo
             'address' => null, // Inherited from parent
-            'previous_school' => 'TK Dharma Wanita ' . rand(1, 5),
+            'previous_school' => 'TK Dharma Wanita '.rand(1, 5),
         ]);
 
         // Randomly assign 1 or 2 "pilihan" extracurriculars
@@ -316,36 +319,37 @@ class DummyDataSeeder extends Seeder
         $student->studyGroups()->sync($rombelIds);
     }
 
-
-
     protected function assignExtracurricularCoordinators()
     {
         $ekskuls = [
-              'Pramuka' => 'Imam Fahrudin',
-              'Tari' => 'Angger Wigunaning Aji',
-              'Hadrah' => 'Moh. Itqonur Risal',
-              'Renang' => 'Beni Putra',
+            'Pramuka' => 'Imam Fahrudin',
+            'Tari' => 'Angger Wigunaning Aji',
+            'Hadrah' => 'Moh. Itqonur Risal',
+            'Renang' => 'Beni Putra',
         ];
-        
+
         foreach ($ekskuls as $ekskulName => $coordinatorName) {
             $user = User::where('name', $coordinatorName)->first();
             if ($user) {
                 Extracurricular::where('nama_ekskul', $ekskulName)->update([
-                    'coordinator_user_id' => $user->id
+                    'coordinator_user_id' => $user->id,
                 ]);
             }
         }
     }
 
-
     protected function seedP5GroupsAndCocurriculars()
     {
         $academicYear = AcademicYear::where('is_active', true)->first();
-        if (!$academicYear) return;
+        if (! $academicYear) {
+            return;
+        }
 
         // Get P5 Projects
         $projects = P5Project::where('academic_year_id', $academicYear->id)->get();
-        if ($projects->isEmpty()) return;
+        if ($projects->isEmpty()) {
+            return;
+        }
 
         // Get Study Groups for Fase A (Level 1 and 2)
         $levelIds = Level::where('fase', 'A')->pluck('id');
@@ -419,7 +423,7 @@ class DummyDataSeeder extends Seeder
                             'type' => $status,
                             'start_date' => $date->format('Y-m-d'),
                             'end_date' => $date->format('Y-m-d'),
-                            'reason' => 'Siswa ' . $status . ' (dibuat otomatis oleh seeder)',
+                            'reason' => 'Siswa '.$status.' (dibuat otomatis oleh seeder)',
                             'status' => 'approved',
                             'approved_by' => 1, // Assume user ID 1 is an admin/teacher
                             'created_at' => now(),

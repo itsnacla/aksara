@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\P5Project\Schemas;
 
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TagsInput;
-use Filament\Forms\Components\Hidden;
-use Filament\Schemas\Schema;
 use App\Models\AcademicYear;
+use App\Models\GraduateProfile;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
 
 class P5ProjectForm
 {
@@ -17,11 +17,11 @@ class P5ProjectForm
         return $schema
             ->components([
                 Hidden::make('academic_year_id')
-                    ->default(fn() => AcademicYear::where('is_active', true)->first()?->id),
-                
+                    ->default(fn () => AcademicYear::where('is_active', true)->first()?->id),
+
                 Select::make('p5_theme_id')
                     ->relationship('theme', 'name', modifyQueryUsing: function ($query) {
-                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                        $activeYearId = AcademicYear::where('is_active', true)->value('id');
                         if ($activeYearId) {
                             $query->where('academic_year_id', $activeYearId);
                         }
@@ -54,23 +54,23 @@ class P5ProjectForm
                     ->label('Profil Lulusan (Dimensi/Elemen)')
                     ->multiple()
                     ->options(function () {
-                        $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
-                        if (!$activeYear) {
+                        $activeYear = AcademicYear::where('is_active', true)->first();
+                        if (! $activeYear) {
                             return [];
                         }
-                        
+
                         $options = [];
-                        $profiles = \App\Models\GraduateProfile::where('academic_year_id', $activeYear->id)
+                        $profiles = GraduateProfile::where('academic_year_id', $activeYear->id)
                             ->with('subdimensions')
                             ->get();
-                        
+
                         foreach ($profiles as $profile) {
                             foreach ($profile->subdimensions as $subdimension) {
                                 $key = "{$profile->dimensi}: {$subdimension->subdimensi}";
                                 $options[$key] = "{$profile->dimensi} - {$subdimension->subdimensi}";
                             }
                         }
-                        
+
                         return $options;
                     })
                     ->preload()

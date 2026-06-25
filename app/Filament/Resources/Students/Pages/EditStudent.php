@@ -66,7 +66,7 @@ class EditStudent extends EditRecord
                 'photo' => $userData['photo'],
             ], fn ($value) => $value !== null);
 
-            if (!empty($userData['password'])) {
+            if (! empty($userData['password'])) {
                 $updateData['password'] = Hash::make($userData['password']);
             }
 

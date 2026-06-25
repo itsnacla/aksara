@@ -2,11 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Student;
-use App\Models\StudyGroup;
-use App\Models\AcademicYear;
-use Filament\Widgets\ChartWidget;
 use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
+use App\Models\AcademicYear;
+use App\Models\StudyGroup;
+use Filament\Widgets\ChartWidget;
 
 class StudentDistributionChart extends ChartWidget
 {
@@ -18,7 +17,7 @@ class StudentDistributionChart extends ChartWidget
 
     protected static ?int $sort = 2;
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'default' => 'full',
         'md' => 1,
     ];
@@ -80,7 +79,7 @@ class StudentDistributionChart extends ChartWidget
         }
 
         $studyGroups = StudyGroup::query()
-            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
             ->withCount('students')
             ->orderBy('nama_rombel')
             ->get();
@@ -183,8 +182,13 @@ class StudentDistributionChart extends ChartWidget
     public static function canView(): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
-        if ($user->hasRole('guru')) return false;
+        if (! $user) {
+            return false;
+        }
+        if ($user->hasRole('guru')) {
+            return false;
+        }
+
         return $user->hasAnyRole(['super_admin', 'staff']);
     }
 }

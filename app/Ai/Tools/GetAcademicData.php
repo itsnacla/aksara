@@ -2,8 +2,8 @@
 
 namespace App\Ai\Tools;
 
-use App\Models\Grade;
 use App\Models\Attendance;
+use App\Models\Grade;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -27,7 +27,9 @@ class GetAcademicData implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) return 'Error: User context missing.';
+        if (! $this->user) {
+            return 'Error: User context missing.';
+        }
 
         $studentId = $request['student_id'] ?? null;
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
@@ -37,11 +39,15 @@ class GetAcademicData implements Tool
         // Security logic based on existing ChatbotController
         if (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;
-            if (!$student) return 'Data siswa tidak ditemukan.';
+            if (! $student) {
+                return 'Data siswa tidak ditemukan.';
+            }
             $query->where('student_id', $student->id);
         } elseif (str_contains($roleName, 'orang_tua')) {
             $parent = $this->user->parent;
-            if (!$parent) return 'Data orang tua tidak ditemukan.';
+            if (! $parent) {
+                return 'Data orang tua tidak ditemukan.';
+            }
             $childIds = $parent->students->pluck('id')->toArray();
             if ($studentId && in_array($studentId, $childIds)) {
                 $query->where('student_id', $studentId);
@@ -56,7 +62,7 @@ class GetAcademicData implements Tool
             }
         }
 
-        $grades = $query->latest()->limit(10)->get()->map(fn($g) => [
+        $grades = $query->latest()->limit(10)->get()->map(fn ($g) => [
             'mapel' => $g->subject->nama_mapel ?? 'N/A',
             'tugas' => $g->nilai_tugas,
             'uts' => $g->nilai_uts,

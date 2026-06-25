@@ -2,15 +2,18 @@
 
 namespace App\Filament\Resources\Extracurriculars\RelationManagers;
 
-use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Schemas\Schema;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
+use App\Models\AcademicYear;
+use App\Models\Student;
+use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DetachAction;
 use Filament\Actions\DetachBulkAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ExtracurricularStudentRelationManager extends RelationManager
 {
@@ -40,7 +43,7 @@ class ExtracurricularStudentRelationManager extends RelationManager
             ->headerActions(
                 $isWajib
                     ? [
-                        \Filament\Actions\Action::make('syncAllStudents')
+                        Action::make('syncAllStudents')
                             ->label('Sinkronkan Semua Siswa')
                             ->icon('heroicon-o-arrow-path')
                             ->color('warning')
@@ -49,27 +52,28 @@ class ExtracurricularStudentRelationManager extends RelationManager
                             ->modalDescription('Semua siswa yang terdaftar di rombel tahun ajaran aktif akan otomatis menjadi anggota ekskul wajib ini. Lanjutkan?')
                             ->action(function () {
                                 $ekskul = $this->getOwnerRecord();
-                                $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                                $activeYearId = AcademicYear::where('is_active', true)->value('id');
 
-                                if (!$activeYearId) {
-                                    \Filament\Notifications\Notification::make()
+                                if (! $activeYearId) {
+                                    Notification::make()
                                         ->title('Gagal')
                                         ->body('Tidak ada tahun ajaran aktif.')
                                         ->danger()
                                         ->send();
+
                                     return;
                                 }
 
                                 // Get all student IDs from all study groups in active academic year
-                                $studentIds = \App\Models\Student::whereHas('studyGroups', function ($q) use ($activeYearId) {
+                                $studentIds = Student::whereHas('studyGroups', function ($q) use ($activeYearId) {
                                     $q->where('academic_year_id', $activeYearId);
                                 })->pluck('id')->toArray();
 
                                 $ekskul->students()->syncWithoutDetaching($studentIds);
 
-                                \Filament\Notifications\Notification::make()
+                                Notification::make()
                                     ->title('Berhasil')
-                                    ->body('Berhasil menyinkronkan ' . count($studentIds) . ' siswa ke ekskul ini.')
+                                    ->body('Berhasil menyinkronkan '.count($studentIds).' siswa ke ekskul ini.')
                                     ->success()
                                     ->send();
                             }),
@@ -83,14 +87,14 @@ class ExtracurricularStudentRelationManager extends RelationManager
                                     ->join('users', 'students.user_id', '=', 'users.id')
                                     ->select('students.*')
                                     ->whereHas('studyGroups', function ($q) {
-                                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                                        $activeYearId = AcademicYear::where('is_active', true)->value('id');
                                         if ($activeYearId) {
                                             $q->where('academic_year_id', $activeYearId);
                                         }
                                     });
                             })
                             ->recordSelectSearchColumns(['users.name'])
-                            ->recordTitle(fn ($record) => $record->user?->name ?? 'Siswa #' . $record->id),
+                            ->recordTitle(fn ($record) => $record->user?->name ?? 'Siswa #'.$record->id),
                     ]
             )
             ->actions([
@@ -104,7 +108,7 @@ class ExtracurricularStudentRelationManager extends RelationManager
             ]);
     }
 
-    protected function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    protected function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['user', 'studyGroups']);
     }

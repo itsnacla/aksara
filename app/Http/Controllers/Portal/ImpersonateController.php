@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class ImpersonateController extends Controller
 {
@@ -14,7 +15,7 @@ class ImpersonateController extends Controller
      */
     public function login(Request $request, User $user)
     {
-        if (!\Illuminate\Support\Facades\Gate::allows('impersonate', $user)) {
+        if (! Gate::allows('impersonate', $user)) {
             abort(403, 'Hanya Super Admin yang dapat menggunakan fitur Login As.');
         }
 
@@ -38,15 +39,16 @@ class ImpersonateController extends Controller
      */
     public function logout()
     {
-        if (!session()->has('impersonator_id')) {
+        if (! session()->has('impersonator_id')) {
             return redirect()->route('dashboard');
         }
 
         $originalUserId = session('impersonator_id');
         $originalUser = User::find($originalUserId);
 
-        if (!$originalUser) {
+        if (! $originalUser) {
             session()->forget('impersonator_id');
+
             return redirect()->route('login');
         }
 

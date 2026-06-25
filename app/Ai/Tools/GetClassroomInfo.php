@@ -2,7 +2,6 @@
 
 namespace App\Ai\Tools;
 
-use App\Models\Classroom;
 use App\Models\StudyGroup;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -27,7 +26,7 @@ class GetClassroomInfo implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -41,10 +40,10 @@ class GetClassroomInfo implements Tool
         // Security: Guru hanya bisa lihat kelas miliknya
         if (str_contains($roleName, 'guru')) {
             $teacher = $this->user->teacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 return 'Data guru tidak ditemukan.';
             }
-            
+
             if ($studyGroupId) {
                 $query->where('walikelas_id', $teacher->id)->where('id', $studyGroupId);
             } else {
@@ -52,11 +51,11 @@ class GetClassroomInfo implements Tool
             }
         } elseif (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;
-            if (!$student) {
+            if (! $student) {
                 return 'Data siswa tidak ditemukan.';
             }
             $studyGroup = $student->currentStudyGroup();
-            if (!$studyGroup) {
+            if (! $studyGroup) {
                 return 'Siswa belum terdaftar di kelas manapun.';
             }
             $query->where('id', $studyGroup->id);
@@ -67,7 +66,7 @@ class GetClassroomInfo implements Tool
             } elseif ($classroomId) {
                 $query->where('classroom_id', $classroomId);
             } elseif ($className) {
-                $query->whereHas('classroom', fn($q) => $q->where('nama_ruangan', 'like', "%{$className}%"));
+                $query->whereHas('classroom', fn ($q) => $q->where('nama_ruangan', 'like', "%{$className}%"));
             }
         }
 
@@ -86,7 +85,7 @@ class GetClassroomInfo implements Tool
                 'wali_kelas' => $sg->teacher?->user?->name,
                 'jumlah_siswa' => $sg->students->count(),
                 'tahun_ajaran' => $sg->academicYear?->tahun_ajaran,
-                'siswa' => $sg->students->map(fn($s) => [
+                'siswa' => $sg->students->map(fn ($s) => [
                     'nama' => $s->user->name,
                     'nisn' => $s->nisn,
                 ])->toArray(),

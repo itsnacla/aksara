@@ -7,6 +7,7 @@ use App\Models\Extracurricular;
 use App\Models\ExtracurricularGrade;
 use App\Models\Grade;
 use App\Models\LearningObjective;
+use App\Models\Level;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudentGrade;
@@ -27,11 +28,11 @@ class GradesAndReportsSeeder extends Seeder
 
         // Ambil academic year yang aktif
         $this->academicYear = AcademicYear::where('is_active', true)->first();
-        if (!$this->academicYear) {
+        if (! $this->academicYear) {
             $this->academicYear = AcademicYear::first();
         }
 
-        $this->command->info('📚 Seeding Grades and Reports for Academic Year: ' . $this->academicYear->tahun_ajaran);
+        $this->command->info('📚 Seeding Grades and Reports for Academic Year: '.$this->academicYear->tahun_ajaran);
 
         // Seed prerequisite data
         $this->seedLearningObjectives();
@@ -53,7 +54,7 @@ class GradesAndReportsSeeder extends Seeder
         $this->command->info('🎯 Seeding Learning Objectives...');
 
         $subjects = Subject::where('is_graded', true)->get();
-        $levels = \App\Models\Level::all();
+        $levels = Level::all();
 
         $exampleObjectives = [
             'Memahami konsep dasar',
@@ -69,8 +70,8 @@ class GradesAndReportsSeeder extends Seeder
         foreach ($subjects as $subject) {
             foreach ($levels as $level) {
                 for ($i = 1; $i <= 3; $i++) {
-                    $code = substr($subject->kode_mapel, 0, 8) . '-' . substr($level->nama_tingkatan, 0, 3) . $i;
-                    
+                    $code = substr($subject->kode_mapel, 0, 8).'-'.substr($level->nama_tingkatan, 0, 3).$i;
+
                     LearningObjective::firstOrCreate(
                         [
                             'subject_id' => $subject->id,
@@ -103,6 +104,7 @@ class GradesAndReportsSeeder extends Seeder
 
         if ($schedules->isEmpty()) {
             $this->command->warn('⚠ No schedules found, skipping subject grades');
+
             return;
         }
 
@@ -131,7 +133,7 @@ class GradesAndReportsSeeder extends Seeder
                     'study_group_id' => $schedule->study_group_id,
                 ])->first();
 
-                if (!$existingGrade) {
+                if (! $existingGrade) {
                     // Generate nilai dengan distribusi lebih realistis
                     $baseScore = rand(70, 100);
                     Grade::create([
@@ -161,7 +163,7 @@ class GradesAndReportsSeeder extends Seeder
 
         $students = Student::all();
         $learningObjectives = LearningObjective::with('subject')
-            ->whereHas('subject', function($q) {
+            ->whereHas('subject', function ($q) {
                 $q->where('is_graded', true);
             })
             ->where('academic_year_id', $this->academicYear->id)
@@ -169,6 +171,7 @@ class GradesAndReportsSeeder extends Seeder
 
         if ($learningObjectives->isEmpty()) {
             $this->command->warn('⚠ No learning objectives found, skipping student grades');
+
             return;
         }
 
@@ -181,15 +184,15 @@ class GradesAndReportsSeeder extends Seeder
                     'academic_year_id' => $this->academicYear->id,
                 ])->first();
 
-                if (!$existingGrade) {
+                if (! $existingGrade) {
                     // Ambil teacher dari subjek atau ambil yang pertama
                     $teacher = null;
-                    
+
                     if ($objective->subject) {
                         $teacher = $objective->subject->teachers()->first();
                     }
-                    
-                    if (!$teacher) {
+
+                    if (! $teacher) {
                         $teacher = Teacher::first();
                     }
 
@@ -224,6 +227,7 @@ class GradesAndReportsSeeder extends Seeder
 
         if ($extracurriculars->isEmpty()) {
             $this->command->warn('⚠ No extracurriculars found, skipping extracurricular grades');
+
             return;
         }
 
@@ -239,7 +243,7 @@ class GradesAndReportsSeeder extends Seeder
                     'academic_year_id' => $this->academicYear->id,
                 ])->first();
 
-                if (!$existingGrade) {
+                if (! $existingGrade) {
                     $predikat = $this->generateRandomPredikat();
                     ExtracurricularGrade::create([
                         'student_id' => $student->id,
@@ -264,7 +268,7 @@ class GradesAndReportsSeeder extends Seeder
         $this->command->info('📄 Seeding Student Rapors (Attendance & Class Promotion)...');
 
         $students = Student::with('user')->get();
-        $levels = \App\Models\Level::all();
+        $levels = Level::all();
 
         foreach ($students as $student) {
             $existingRapor = StudentRapor::where([
@@ -272,7 +276,7 @@ class GradesAndReportsSeeder extends Seeder
                 'academic_year_id' => $this->academicYear->id,
             ])->first();
 
-            if (!$existingRapor) {
+            if (! $existingRapor) {
                 // Data kehadiran
                 $totalDays = 180; // Hari sekolah dalam setahun
                 $hadir = rand(160, 180);
@@ -285,7 +289,7 @@ class GradesAndReportsSeeder extends Seeder
                 $studyGroup = $student->studyGroups()
                     ->where('academic_year_id', $this->academicYear->id)
                     ->first();
-                
+
                 $kelasSekarang = $studyGroup?->level;
                 $kenaiKanKeTo = null;
 
@@ -294,7 +298,7 @@ class GradesAndReportsSeeder extends Seeder
                     // Kelas 1->2, Kelas 2->3, dst
                     $levelOrder = $levels->pluck('nama_tingkatan')->values();
                     $currentIndex = $levelOrder->search($kelasSekarang->nama_tingkatan);
-                    
+
                     if ($currentIndex !== false && $currentIndex < $levelOrder->count() - 1) {
                         $nextLevelName = $levelOrder[$currentIndex + 1];
                         $nextLevel = $levels->firstWhere('nama_tingkatan', $nextLevelName);

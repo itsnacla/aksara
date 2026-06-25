@@ -2,23 +2,28 @@
 
 namespace App\Services\Academic;
 
-use App\Models\Student;
-use App\Models\SchoolSetting;
-use App\Models\Teacher;
+use App\Ai\Agents\WaliKelasAgent;
 use App\Models\AcademicYear;
 use App\Models\Attendance;
-use App\Models\LearningObjective;
-use App\Models\Grade;
+use App\Models\ChatbotSetting;
+use App\Models\Cocurricular;
 use App\Models\Extracurricular;
-use App\Models\SubjectReportMapping;
-use App\Models\Level;
-use App\Models\StudyGroup;
-use App\Models\StudentRapor;
 use App\Models\ExtracurricularGrade;
+use App\Models\Grade;
+use App\Models\LearningObjective;
+use App\Models\Level;
+use App\Models\SchoolSetting;
+use App\Models\Student;
+use App\Models\StudentRapor;
+use App\Models\StudyGroup;
+use App\Models\SubjectReportMapping;
+use App\Models\Teacher;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class RaporService
 {
-    private function getGroupedSubjects(array $subjectsData): \Illuminate\Support\Collection
+    private function getGroupedSubjects(array $subjectsData): Collection
     {
         return collect($subjectsData)
             ->groupBy('group')
@@ -29,6 +34,7 @@ class RaporService
                 if (stripos((string) $groupName, 'Kelompok B') !== false || stripos((string) $groupName, 'Muatan Lokal') !== false) {
                     return 2;
                 }
+
                 return 3;
             });
     }
@@ -67,24 +73,22 @@ class RaporService
 
     /**
      * Get all data required to render the student's academic report card.
-     * 
-     * @param Student $student
-     * @param int $academicYearId
+     *
      * @return array<string, mixed>
      */
     public function getStudentRaporData(Student $student, int $academicYearId): array
     {
         // Simpler eager loading without nested Closures to keep static analysis complexity minimal
         $student->load([
-            'user', 
-            'parent', 
-            'studyGroups.level.subjects.subjectReportGroup', 
-            'studyGroups.waliKelas.user'
+            'user',
+            'parent',
+            'studyGroups.level.subjects.subjectReportGroup',
+            'studyGroups.waliKelas.user',
         ]);
 
         /** @var StudyGroup|null $rombel */
         $rombel = $student->studyGroups->where('academic_year_id', $academicYearId)->first();
-        
+
         /** @var Level|null $level */
         $level = $rombel?->level;
 
@@ -133,11 +137,11 @@ class RaporService
      */
     private function getCocurricularData(?Level $level, ?AcademicYear $activeYear): array
     {
-        if (!$level) {
+        if (! $level) {
             return [];
         }
 
-        return \App\Models\Cocurricular::where('fase', $level->fase)
+        return Cocurricular::where('fase', $level->fase)
             ->where('tahun_ajaran', $activeYear?->tahun_ajaran)
             ->get()
             ->toArray();
@@ -161,11 +165,11 @@ class RaporService
     private function getP5ProjectAndProfiles(Student $student, int $academicYearId): array
     {
         $p5Group = $student->p5Groups()
-            ->whereHas('project', function($q) use ($academicYearId) {
+            ->whereHas('project', function ($q) use ($academicYearId) {
                 $q->where('p5_projects.academic_year_id', $academicYearId);
             })
             ->first();
-        
+
         $p5Project = $p5Group?->project;
         $graduateProfiles = [];
 
@@ -192,7 +196,7 @@ class RaporService
     private function getSubjectsData(Student $student, int $academicYearId, ?Level $level): array
     {
         $subjectsData = [];
-        if (!$level) {
+        if (! $level) {
             return $subjectsData;
         }
 
@@ -204,10 +208,12 @@ class RaporService
         if ($mappings->isNotEmpty()) {
             foreach ($mappings as $mapping) {
                 $subject = $mapping->subject;
-                if (!$subject) continue;
+                if (! $subject) {
+                    continue;
+                }
 
                 // Skip non-graded subjects
-                if (!$subject->is_graded) {
+                if (! $subject->is_graded) {
                     continue;
                 }
 
@@ -217,12 +223,12 @@ class RaporService
                     ->first();
 
                 // Sembunyikan mata pelajaran Agama yang tidak ada nilainya (berarti bukan agama siswa tersebut)
-                if (!$grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
+                if (! $grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
                     continue;
                 }
 
                 $groupName = $subject->subjectReportGroup?->nama_kelompok;
-                if (!$groupName) {
+                if (! $groupName) {
                     $groupName = $subject->is_umum ? 'Kelompok A' : 'Kelompok B';
                 }
 
@@ -239,7 +245,7 @@ class RaporService
             $subjects = $level->subjects()->with('subjectReportGroup')->get();
             foreach ($subjects as $index => $subject) {
                 // Skip non-graded subjects
-                if (!$subject->is_graded) {
+                if (! $subject->is_graded) {
                     continue;
                 }
 
@@ -249,12 +255,12 @@ class RaporService
                     ->first();
 
                 // Sembunyikan mata pelajaran Agama yang tidak ada nilainya (berarti bukan agama siswa tersebut)
-                if (!$grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
+                if (! $grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
                     continue;
                 }
 
                 $groupName = $subject->subjectReportGroup?->nama_kelompok;
-                if (!$groupName) {
+                if (! $groupName) {
                     $groupName = $subject->is_umum ? 'Kelompok A' : 'Kelompok B';
                 }
 
@@ -273,21 +279,21 @@ class RaporService
             $optimalDesc = '';
             $improvedDesc = '';
 
-            if (!empty($sub['optimal_tp_ids'])) {
+            if (! empty($sub['optimal_tp_ids'])) {
                 $tps = LearningObjective::whereIn('id', $sub['optimal_tp_ids'])->pluck('description')->toArray();
-                if (!empty($tps)) {
-                    $optimalDesc = "Menunjukkan penguasaan yang sangat baik dalam " . implode(', ', $tps) . ".";
+                if (! empty($tps)) {
+                    $optimalDesc = 'Menunjukkan penguasaan yang sangat baik dalam '.implode(', ', $tps).'.';
                 }
             }
 
-            if (!empty($sub['improved_tp_ids'])) {
+            if (! empty($sub['improved_tp_ids'])) {
                 $tps = LearningObjective::whereIn('id', $sub['improved_tp_ids'])->pluck('description')->toArray();
-                if (!empty($tps)) {
-                    $improvedDesc = "Perlu bimbingan dalam " . implode(', ', $tps) . ".";
+                if (! empty($tps)) {
+                    $improvedDesc = 'Perlu bimbingan dalam '.implode(', ', $tps).'.';
                 }
             }
 
-            $sub['deskripsi'] = trim($optimalDesc . ' ' . $improvedDesc) ?: 'Menunjukkan perkembangan kompetensi yang baik dan sesuai dengan kriteria ketuntasan.';
+            $sub['deskripsi'] = trim($optimalDesc.' '.$improvedDesc) ?: 'Menunjukkan perkembangan kompetensi yang baik dan sesuai dengan kriteria ketuntasan.';
         }
         unset($sub);
 
@@ -300,7 +306,7 @@ class RaporService
     private function getAttendanceCount(int $studentId, int $academicYearId, string $status): int
     {
         return Attendance::where('student_id', $studentId)
-            ->whereHas('studyGroup', fn($q) => $q->where('academic_year_id', $academicYearId))
+            ->whereHas('studyGroup', fn ($q) => $q->where('academic_year_id', $academicYearId))
             ->where('status', $status)
             ->count();
     }
@@ -316,9 +322,10 @@ class RaporService
             ->get()
             ->map(function ($grade) {
                 $defaultKeterangan = ExtracurricularGrade::$defaultKeterangan[$grade->predikat] ?? 'Berpartisipasi aktif dan menunjukkan minat tinggi.';
+
                 return [
-                    'nama'     => $grade->extracurricular->nama_ekskul,
-                    'nilai'    => $grade->predikat,
+                    'nama' => $grade->extracurricular->nama_ekskul,
+                    'nilai' => $grade->predikat,
                     'deskripsi' => $grade->keterangan ?: $defaultKeterangan,
                 ];
             })
@@ -330,7 +337,7 @@ class RaporService
      */
     private function getStudentRank(Student $student, int $academicYearId, ?StudyGroup $rombel): int
     {
-        if (!$rombel) {
+        if (! $rombel) {
             return 1;
         }
 
@@ -344,9 +351,10 @@ class RaporService
             $grades = Grade::where('student_id', $s->id)
                 ->where('academic_year_id', $academicYearId)
                 ->get();
-            
+
             if ($grades->isEmpty()) {
                 $studentAverages[$s->id] = 0;
+
                 continue;
             }
 
@@ -370,12 +378,9 @@ class RaporService
 
         return 1;
     }
+
     /**
      * Generate and persist the student report using AI analysis.
-     * 
-     * @param Student $student
-     * @param int $academicYearId
-     * @return StudentRapor
      */
     public function generateStudentRapor(Student $student, int $academicYearId): StudentRapor
     {
@@ -383,14 +388,14 @@ class RaporService
 
         $rombel = $student->studyGroups->where('academic_year_id', $academicYearId)->first();
         $level = $rombel?->level;
-        
+
         $subjectsData = $this->getSubjectsData($student, $academicYearId, $level);
         $attendance = $this->getAttendanceRecap($student, $academicYearId);
         $rank = $this->getStudentRank($student, $academicYearId, $rombel);
-        
+
         $totalStudents = 1;
         if ($rombel) {
-            $totalStudents = Student::whereHas('studyGroups', fn($q) => $q->where('study_groups.id', $rombel->id))->count();
+            $totalStudents = Student::whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $rombel->id))->count();
         }
 
         $gradesCount = 0;
@@ -403,7 +408,7 @@ class RaporService
         }
         $averageGrade = $gradesCount > 0 ? round($gradesSum / $gradesCount, 1) : 0;
 
-        $subjectsSummary = "";
+        $subjectsSummary = '';
         foreach ($subjectsData as $sub) {
             $nilaiStr = $sub['nilai'] !== null ? $sub['nilai'] : 'Belum dinilai';
             $subjectsSummary .= "- {$sub['nama']}: Nilai {$nilaiStr}\n";
@@ -411,27 +416,27 @@ class RaporService
 
         $aiCatatan = null;
         try {
-            $settings = \App\Models\ChatbotSetting::current();
+            $settings = ChatbotSetting::current();
             if ($settings->is_active) {
-                $systemInstruction = "Kamu adalah Wali Kelas yang bijak, perhatian, dan profesional di sekolah dasar (SD). Tugasmu adalah merumuskan Catatan Wali Kelas yang singkat, ramah, dan memotivasi untuk lembar rapor berdasarkan data akademik siswa. Catatan harus ringkas (maksimal 40-50 kata, 2-3 kalimat), menyoroti prestasinya jika bagus, atau memberikan saran perbaikan yang hangat jika nilainya kurang. Jangan gunakan teks pengantar atau penutup tambahan, kembalikan HANYA narasi catatan tersebut.";
-                
-                $userPrompt = "Nama Murid: {$student->user->name}\n" .
-                    "Rata-rata Nilai: {$averageGrade}\n" .
-                    "Peringkat: {$rank} dari {$totalStudents} siswa\n" .
-                    "Kehadiran: Sakit {$attendance['sakit']} hari, Izin {$attendance['izin']} hari, Alpa {$attendance['alpha']} hari\n" .
+                $systemInstruction = 'Kamu adalah Wali Kelas yang bijak, perhatian, dan profesional di sekolah dasar (SD). Tugasmu adalah merumuskan Catatan Wali Kelas yang singkat, ramah, dan memotivasi untuk lembar rapor berdasarkan data akademik siswa. Catatan harus ringkas (maksimal 40-50 kata, 2-3 kalimat), menyoroti prestasinya jika bagus, atau memberikan saran perbaikan yang hangat jika nilainya kurang. Jangan gunakan teks pengantar atau penutup tambahan, kembalikan HANYA narasi catatan tersebut.';
+
+                $userPrompt = "Nama Murid: {$student->user->name}\n".
+                    "Rata-rata Nilai: {$averageGrade}\n".
+                    "Peringkat: {$rank} dari {$totalStudents} siswa\n".
+                    "Kehadiran: Sakit {$attendance['sakit']} hari, Izin {$attendance['izin']} hari, Alpa {$attendance['alpha']} hari\n".
                     "Ringkasan Nilai:\n{$subjectsSummary}";
 
-                $agent = new \App\Ai\Agents\WaliKelasAgent($systemInstruction);
-                
+                $agent = new WaliKelasAgent($systemInstruction);
+
                 $provider = $settings->provider ?: 'gemini';
                 $model = $settings->getModelFor($provider);
 
                 $response = $agent->prompt($userPrompt, provider: $provider, model: $model);
-                
+
                 $aiCatatan = trim(strip_tags((string) $response));
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning("AI Rapor Generation failed: " . $e->getMessage());
+            Log::warning('AI Rapor Generation failed: '.$e->getMessage());
         }
 
         if (empty($aiCatatan)) {
@@ -445,11 +450,11 @@ class RaporService
 
         if ($isGenap) {
             $isNaik = $averageGrade >= 70;
-            
+
             if ($level) {
                 $levelName = $level->nama_tingkatan;
                 if (preg_match('/\d+/', $levelName, $matches)) {
-                    $currentLevelNum = (int)$matches[0];
+                    $currentLevelNum = (int) $matches[0];
                     $nextLevelNum = $currentLevelNum + 1;
                     if ($nextLevelNum <= 6) {
                         $levelWords = [
@@ -457,7 +462,7 @@ class RaporService
                             3 => 'III (Tiga)',
                             4 => 'IV (Empat)',
                             5 => 'V (Lima)',
-                            6 => 'VI (Enam)'
+                            6 => 'VI (Enam)',
                         ];
                         $kenaikanKelasTo = $levelWords[$nextLevelNum] ?? '.......';
                     } else {

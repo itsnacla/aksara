@@ -14,7 +14,7 @@ trait ScopesToTeacherStudents
     {
         $user = Auth::user();
 
-        if (!$user || !$user->teacher) {
+        if (! $user || ! $user->teacher) {
             return collect();
         }
 

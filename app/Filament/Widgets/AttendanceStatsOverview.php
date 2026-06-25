@@ -2,13 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 use App\Models\Attendance;
-use App\Models\Student;
-use App\Models\AcademicYear;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
 
 class AttendanceStatsOverview extends BaseWidget
 {
@@ -16,7 +14,7 @@ class AttendanceStatsOverview extends BaseWidget
 
     protected static ?int $sort = -1;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getColumns(): int
     {
@@ -54,22 +52,22 @@ class AttendanceStatsOverview extends BaseWidget
         $monthColor = $this->getPercentageColor($monthPercentage);
 
         return [
-            Stat::make('Kehadiran Hari Ini', $todayPercentage . '%')
-                ->description($todayPresent . ' dari ' . $todayTotal . ' kehadiran')
+            Stat::make('Kehadiran Hari Ini', $todayPercentage.'%')
+                ->description($todayPresent.' dari '.$todayTotal.' kehadiran')
                 ->descriptionIcon('heroicon-m-calendar')
                 ->icon('heroicon-o-clipboard-document-check')
                 ->color($todayColor)
                 ->chart($this->getDailyAttendanceTrend()),
 
-            Stat::make('Kehadiran Bulan Ini', $monthPercentage . '%')
-                ->description($monthPresent . ' hadir dari ' . $monthTotal . ' total')
+            Stat::make('Kehadiran Bulan Ini', $monthPercentage.'%')
+                ->description($monthPresent.' hadir dari '.$monthTotal.' total')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->icon('heroicon-o-chart-bar-square')
                 ->color($monthColor)
                 ->chart($this->getMonthlyAttendanceTrend()),
 
             Stat::make('Sakit & Izin Hari Ini', ($todaySick + $todayPermission))
-                ->description($todaySick . ' sakit, ' . $todayPermission . ' izin')
+                ->description($todaySick.' sakit, '.$todayPermission.' izin')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->icon('heroicon-o-shield-exclamation')
                 ->color('warning')
@@ -86,9 +84,16 @@ class AttendanceStatsOverview extends BaseWidget
 
     private function getPercentageColor(float $percentage): string
     {
-        if ($percentage >= 90) return 'success';
-        if ($percentage >= 75) return 'warning';
-        if ($percentage > 0) return 'danger';
+        if ($percentage >= 90) {
+            return 'success';
+        }
+        if ($percentage >= 75) {
+            return 'warning';
+        }
+        if ($percentage > 0) {
+            return 'danger';
+        }
+
         return 'gray';
     }
 
@@ -108,6 +113,7 @@ class AttendanceStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [85, 90, 88, 92, 87, 91, 89];
         }
+
         return $data;
     }
 
@@ -127,6 +133,7 @@ class AttendanceStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [88, 91, 87, 93, 90, 92];
         }
+
         return $data;
     }
 
@@ -144,6 +151,7 @@ class AttendanceStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [3, 2, 4, 1, 3, 2, 2];
         }
+
         return $data;
     }
 
@@ -161,6 +169,7 @@ class AttendanceStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [1, 0, 2, 1, 0, 1, 0];
         }
+
         return $data;
     }
 
