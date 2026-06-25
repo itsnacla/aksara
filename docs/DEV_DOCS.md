@@ -29,50 +29,132 @@ Fokus pada fondasi sistem, integrasi eksternal (Kemendikbud/Wilayah), manajemen 
 
 *   **Core Admin & Security (Manajemen Hak Akses)**:
     *   **Filament Resources**: `Users`, `SchoolSettings`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/UserResource/`
+        *   `app/Filament/Resources/SchoolSettingResource/`
+        *   `app/Models/User.php`
+        *   `app/Models/SchoolSetting.php`
+        *   `app/Http/Controllers/Portal/ImpersonateController.php`
     *   **Fitur**: Pengelolaan hak akses dinamis dengan Filament Shield (Roles & Permissions), serta pengaturan identitas sekolah.
 *   **System Integrations (Sinkronisasi Eksternal)**:
     *   **Services**: `RegionService`, `SchoolRegionService`, `KemendikbudService`.
+    *   **Direktori/File Utama**:
+        *   `app/Services/RegionService.php`
+        *   `app/Services/SchoolRegionService.php`
+        *   `app/Services/KemendikbudService.php`
     *   **Fitur**: Menangani sinkronisasi data wilayah geografis dan standarisasi data referensi pendidikan.
 *   **Intelligent Workspace (AI Brain & Chatbot)**:
     *   **Filament Resources**: `ChatbotSettings`.
-    *   **Controllers/Services**: `ChatbotController`, `WaliKelasAgent`, `AksaraKnowledgeBase`.
-    *   **Fitur**: Mengelola RAG Pipeline dengan PG Vector, *chatbot* pintar di *dashboard*, dan mengatur *provider* model AI (Gemini/OpenAI).
+    *   **Controllers/Services/Agents**: `ChatbotController`, `WaliKelasAgent`, `AksaraAssistant`, `DataScientistAssistant`, `AksaraKnowledgeBase`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/ChatbotSettingResource/`
+        *   `app/Http/Controllers/ChatbotController.php`
+        *   `app/Ai/Agents/WaliKelasAgent.php`
+        *   `app/Ai/Agents/AksaraAssistant.php`
+        *   `app/Ai/Agents/DataScientistAssistant.php`
+        *   `app/Ai/AksaraKnowledgeBase.php`
+        *   `app/Models/ChatbotSetting.php`
+    *   **Fitur**: Mengelola RAG Pipeline dengan PG Vector, *chatbot* pintar di *dashboard*, analisis *Data Science* melalui Assistant, dan mengatur *provider* model AI (Gemini/OpenAI).
 
 ### 🏫 B. Nada (Academic Registry, KBM Operations & Attendance)
 Fokus pada tata kelola entitas fisik (manusia & ruangan), data referensi kurikulum, dan operasional harian Kegiatan Belajar Mengajar (KBM).
 
 *   **Academic Master Data (Data Referensi Kurikulum)**:
     *   **Filament Resources**: `AcademicYears`, `Levels`, `Subjects`, `SubjectReportGroup`, `SubjectReportMapping`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/AcademicYearResource/`
+        *   `app/Filament/Resources/LevelResource/`
+        *   `app/Filament/Resources/SubjectResource/`
+        *   `app/Filament/Resources/SubjectReportGroupResource/`
+        *   `app/Filament/Resources/SubjectReportMappingResource/`
+        *   `app/Models/AcademicYear.php`, `app/Models/Level.php`, `app/Models/Subject.php`, `app/Models/SubjectReportGroup.php`, `app/Models/SubjectReportMapping.php`
     *   **Fitur**: Struktur dasar tahun ajaran, tingkat kelas, dan pemetaan mata pelajaran umum vs muatan lokal.
 *   **Registry & SDM (Manajemen Entitas Manusia)**:
     *   **Filament Resources**: `Teachers`, `Staff`, `Students`, `StudentParents`, `BukuInduk`.
-    *   **Controllers/Services**: `BukuIndukService`, `StudentCardController`.
-    *   **Fitur**: Pendataan riwayat hidup siswa (Buku Induk) dan fitur cetak Kartu Pelajar.
+    *   **Controllers/Services**: `BukuIndukService`, `BukuIndukDataBuilder`, `PromotionService`, `StudentCardController`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/TeacherResource/`
+        *   `app/Filament/Resources/StaffResource/`
+        *   `app/Filament/Resources/StudentResource/`
+        *   `app/Filament/Resources/StudentParentResource/`
+        *   `app/Filament/Resources/BukuIndukResource/`
+        *   `app/Services/Academic/BukuIndukService.php`
+        *   `app/Services/Academic/BukuIndukDataBuilder.php`
+        *   `app/Services/Academic/PromotionService.php`
+        *   `app/Http/Controllers/StudentCardController.php`
+        *   `app/Models/Teacher.php`, `app/Models/Staff.php`, `app/Models/Student.php`, `app/Models/StudentParent.php`
+    *   **Fitur**: Pendataan riwayat hidup siswa (Buku Induk), proses kenaikan kelas, dan fitur cetak Kartu Pelajar.
 *   **KBM Operations (Penjadwalan & Rombel)**:
     *   **Filament Resources**: `Classrooms`, `StudyGroups` (Rombel), `DayConfigs`, `TimeSlots`, `Schedules`, `TeacherSchedules`.
-    *   **Fitur**: Algoritma distribusi jadwal mengajar guru dan pemetaan siswa ke dalam rombongan belajar.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/ClassroomResource/`
+        *   `app/Filament/Resources/StudyGroupResource/`
+        *   `app/Filament/Resources/DayConfigResource/`
+        *   `app/Filament/Resources/TimeSlotResource/`
+        *   `app/Filament/Resources/ScheduleResource/`
+        *   `app/Filament/Resources/TeacherScheduleResource/`
+        *   `app/Services/Academic/ScheduleGeneratorService.php`
+        *   `app/Models/Classroom.php`, `app/Models/StudyGroup.php`, `app/Models/DayConfig.php`, `app/Models/TimeSlot.php`, `app/Models/Schedule.php`, `app/Models/TeacherSchedule.php`
+    *   **Fitur**: Algoritma distribusi jadwal mengajar guru (`ScheduleGeneratorService`) dan pemetaan siswa ke dalam rombongan belajar.
 *   **Attendance & Leaves (Kehadiran & Perizinan)**:
     *   **Filament Resources**: `Attendances`, `StudentLeaves`.
-    *   **Fitur**: Sistem presensi mandiri (QR-based Scanner) melalui `Livewire\QrScanStandalone` dan manajemen izin/sakit siswa.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/AttendanceResource/`
+        *   `app/Filament/Resources/StudentLeaveResource/`
+        *   `app/Livewire/QrScanStandalone.php`
+        *   `app/Http/Controllers/Portal/StudentLeaveController.php`
+        *   `app/Events/AttendanceLogged.php`
+        *   `app/Models/Attendance.php`, `app/Models/StudentLeave.php`
+    *   **Fitur**: Sistem presensi mandiri (QR-based Scanner) melalui `Livewire\QrScanStandalone` dan manajemen izin/sakit siswa, yang juga me-*trigger* *Event* notifikasi kehadiran.
 
 ### 📊 C. Septian (Evaluation, P5, Portals & Communication Hub)
 Fokus pada asesmen/evaluasi siswa (termasuk Kurikulum Merdeka P5), pelaporan hasil akhir (Raport), serta portal komunikasi dengan Siswa/Orang Tua.
 
 *   **Asesmen & Evaluasi (Penilaian Formatif/Sumatif)**:
-    *   **Filament Resources**: `GradeInputSettings`, `LearningObjective` (Tujuan Pembelajaran), `Grades`, `StatusPenilaian`.
-    *   **Services/Fitur**: Modul monitoring pengisian nilai (`GradeMonitoring`) agar admin dapat melacak guru yang belum mengisi nilai, serta input nilai harian/ujian.
+    *   **Filament Resources**: `GradeInputSettings`, `LearningObjective` (Tujuan Pembelajaran), `Grades`, `StatusPenilaian`, `GradeMonitoring`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/GradeInputSettingResource/`
+        *   `app/Filament/Resources/LearningObjectiveResource/`
+        *   `app/Filament/Resources/GradeResource/`
+        *   `app/Filament/Resources/StatusPenilaianResource/`
+        *   `app/Filament/Resources/GradeMonitoringResource/`
+        *   `app/Services/Academic/GradeProgressBuilder.php`
+        *   `app/Models/LearningObjective.php`, `app/Models/Grade.php`, `app/Models/StudentGrade.php`
+    *   **Services/Fitur**: Modul *GradeMonitoring* agar admin dapat melacak progres guru yang belum mengisi nilai, pembangun data progres (`GradeProgressBuilder`), serta input nilai harian/ujian.
 *   **Kurikulum Merdeka P5 & Ekstrakurikuler**:
     *   **Filament Resources**: `P5Theme`, `P5Project`, `GraduateProfile` (Profil Pelajar Pancasila), `Extracurriculars`, `ExtracurricularGrade`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/P5ThemeResource/`
+        *   `app/Filament/Resources/P5ProjectResource/`
+        *   `app/Filament/Resources/GraduateProfileResource/`
+        *   `app/Filament/Resources/ExtracurricularResource/`
+        *   `app/Filament/Resources/ExtracurricularGradeResource/`
+        *   `app/Models/P5Theme.php`, `app/Models/P5Project.php`, `app/Models/P5Group.php`, `app/Models/GraduateProfile.php`, `app/Models/GraduateProfileSubdimension.php`, `app/Models/Extracurricular.php`, `app/Models/ExtracurricularGrade.php`, `app/Models/Cocurricular.php`
     *   **Fitur**: Instrumen penilaian karakter siswa berbasis proyek (P5) dan kegiatan ekstrakurikuler.
 *   **Reporting (E-Raport)**:
     *   **Filament Resources**: `PelengkapRapor`, `Rapor`.
     *   **Controllers/Services**: `PrintController`, `RaporService`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/PelengkapRaporResource/`
+        *   `app/Filament/Resources/RaporResource/`
+        *   `app/Http/Controllers/PrintController.php`
+        *   `app/Services/Academic/RaporService.php`
+        *   `app/Models/StudentRapor.php`, `app/Models/EReport.php`
     *   **Fitur**: Kalkulasi nilai akhir secara otomatis, integrasi deskripsi/catatan *AI-generated*, dan cetak PDF Rapor Siswa.
 *   **User Portals & Communication Hub**:
     *   **Controllers**: `PortalController` (Dashboard Portal Siswa & Orang Tua di luar Filament), `ReportController`.
     *   **Filament Resources**: `WhatsAppLogs`.
-    *   **Services**: `WAService`.
-    *   **Fitur**: *WhatsApp Gateway Hub* terpusat (SaaS Branding) untuk mengirim notifikasi/pesan *broadcast* tagihan atau nilai secara legal.
+    *   **Services & Jobs**: `WAService`, `SendWhatsAppAttendanceNotification`, `SendWhatsAppBroadcast`, `SendWhatsAppNotification`.
+    *   **Direktori/File Utama**:
+        *   `app/Http/Controllers/Portal/PortalController.php`
+        *   `app/Http/Controllers/ReportController.php`
+        *   `app/Filament/Resources/WhatsAppLogResource/`
+        *   `app/Services/WAService.php`
+        *   `app/Jobs/SendWhatsAppAttendanceNotification.php`
+        *   `app/Jobs/SendWhatsAppBroadcast.php`
+        *   `app/Jobs/SendWhatsAppNotification.php`
+        *   `app/Models/WhatsAppLog.php`, `app/Models/Notification.php`
+    *   **Fitur**: *WhatsApp Gateway Hub* terpusat (Fonnte) untuk mengirim notifikasi absensi (*realtime* melalui *Jobs*), pesan *broadcast* (tagihan, nilai), serta portal monitoring *realtime* untuk Siswa & Orang Tua.
 
 ---
 
@@ -101,8 +183,8 @@ Kita mengadopsi pendekatan **"Contract-First Development"** agar tim dapat beker
 > *   **Justifikasi**: Ekosistem tunggal (Monolith) ini menghilangkan kompleksitas *networking*, mempermudah otentikasi (Auth), dan memungkinkan AI mengakses relasi Eloquent ORM secara langsung dan efisien. Dukungan **PG Vector** pada PostgreSQL 17 membuat RAG (Retrieval-Augmented Generation) bisa berjalan *Self-Hosted*.
 
 > [!NOTE]
-> **WhatsApp SaaS Hub Branding**:
-> Gateway komunikasi resmi menggunakan identitas terpusat **Tateta** (`tateta.samastanuswantara.com`). Menggunakan verifikasi *Meta Business Platform* pada domain root (pusat) ini memungkinkan Aksara bertindak sebagai SaaS untuk menyokong ribuan nomor/WABA sekolah klien (tenant) secara tersentralisasi tanpa risiko *Banned* algoritmik.
+> **WhatsApp Gateway Integration (Sementara)**:
+> Untuk sementara waktu, gateway komunikasi resmi menggunakan layanan pihak ketiga **Fonnte**. Integrasi dilakukan menggunakan API Fonnte untuk mengirim notifikasi/pesan *broadcast* ke pengguna (tagihan, nilai, dll) tanpa memerlukan setup *Meta Business Platform* mandiri pada tahap awal.
 
 ---
 
