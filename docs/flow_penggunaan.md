@@ -1,108 +1,117 @@
 # Panduan Alur Penggunaan Aplikasi Aksara (Sistem Informasi Akademik)
 
-Dokumen ini menjelaskan alur penggunaan (user flow) dari Sistem Informasi Akademik "Aksara" mulai dari instalasi awal, setup data master, proses akademik harian, hingga pelaporan akhir semester.
+Dokumen ini menjelaskan alur penggunaan (user flow) operasional dari Sistem Informasi Akademik "Aksara" mulai dari instalasi awal, setup data master, proses akademik harian, evaluasi berbasis AI, hingga pelaporan akhir semester dan pengarsipan jangka panjang.
 
 ---
 
 ## 1. Setup Awal & Master Data (Oleh Admin)
 
-Alur pertama kali saat sistem dijalankan. Administrator bertugas untuk menyiapkan pondasi sistem.
+Alur pertama kali saat sistem dijalankan. Administrator bertugas untuk menyiapkan pondasi sistem secara menyeluruh.
 
-1. **Login Admin:**
-   - Admin login melalui halaman `/admin/login` menggunakan kredensial administrator.
-2. **Pengaturan Sekolah (School Settings):**
+1. **Login & Otentikasi Admin:**
+   - Admin login melalui halaman `/admin/login`.
+   - Menggunakan `ImpersonateController`, Admin pusat juga dapat menggunakan fungsi **Login As** (Impersonate) untuk mensimulasikan dan menguji tampilan dari sudut pandang Guru atau Siswa tertentu tanpa perlu mengetahui *password* mereka.
+2. **Pengaturan Sekolah (School Settings) & Sinkronisasi Wilayah:**
    - Masuk ke menu **Pengaturan Sekolah**.
-   - Isi kelengkapan data sekolah seperti Nama Sekolah, NPSN, Alamat Lengkap, Kepala Sekolah, NIP, Logo Sekolah, dan Logo Pemda.
-   - Data ini akan digunakan sebagai kop surat dan identitas di seluruh cetakan (Rapor, Buku Induk, dll).
-3. **Pengaturan Tahun Ajaran & Hari Efektif:**
-   - Masuk ke **Academic Years** (Tahun Ajaran).
-   - Buat Tahun Ajaran dan Semester aktif (misal: 2023/2024 - Ganjil). Set sebagai *Active*.
-   - Atur **Day Configs** untuk menentukan hari efektif pembelajaran.
-4. **Manajemen Pengguna (Akun):**
-   - Admin membuat atau mengimpor data akun Guru, Siswa, dan Orang Tua.
-   - Hak akses akan otomatis terbagi berdasarkan *Role* masing-masing (Filament Shield).
-5. **Data Master Kurikulum:**
-   - **Tingkat Kelas (Levels)** dan **Ruang Kelas (Classrooms/Rombel)** dibuat.
-   - **Mata Pelajaran (Subjects)** dan **Tujuan Pembelajaran (Learning Objectives)** di-input oleh Admin atau Kurikulum.
-   - **Ekstrakurikuler** didefinisikan.
-6. **Pembagian Rombongan Belajar (Rombel):**
-   - Admin/Operator memasukkan Siswa ke dalam Kelas/Rombel yang bersesuaian di tahun ajaran tersebut.
+   - Isi kelengkapan data sekolah seperti Nama Sekolah, NPSN, Alamat Lengkap, Kepala Sekolah, NIP, dan logo.
+   - Sistem akan memanggil `KemendikbudService`, `RegionService`, dan `SchoolRegionService` untuk menstandarisasi referensi kode pos dan data wilayah secara otomatis ke database pusat.
+3. **Konfigurasi AI Brain & RAG Pipeline:**
+   - Masuk ke **Chatbot Settings**.
+   - Admin memasukkan API Key (Gemini/OpenAI) dan mengaktifkan fitur asisten.
+   - Mengisi dokumen panduan operasional sekolah ke dalam **AksaraKnowledgeBase** agar sistem RAG (PG Vector) dapat dilatih dan `AksaraAssistant` bisa merespon pertanyaan wali murid secara kontekstual.
+4. **Pengaturan Tahun Ajaran & Kalender Akademik:**
+   - Masuk ke **Academic Years** (Tahun Ajaran) dan set Tahun Ajaran aktif (misal: 2023/2024 - Ganjil).
+   - Atur **Day Configs** dan **Time Slots** untuk menentukan pemetaan hari efektif dan pembagian jam pelajaran (misal: Jam ke-1: 07.00 - 07.45).
+5. **Manajemen Pengguna & Otorisasi:**
+   - Admin membuat/mengimpor data akun Guru, Staff, Siswa, dan Orang Tua (`StudentParents`).
+   - Hak akses dikontrol penuh menggunakan *Filament Shield* (Roles & Permissions).
+6. **Data Master Kurikulum & P5 (Kurikulum Merdeka):**
+   - Mendefinisikan **Levels** (Tingkat) dan **Classrooms** (Ruang Kelas).
+   - Memasukkan **Subjects** (Mata Pelajaran), **Subject Report Group** (Kelompok Mapel A/B/C), dan **Learning Objectives** (Tujuan Pembelajaran).
+   - Membangun struktur **Profil Pelajar Pancasila** (P5): Menyiapkan `P5Theme`, `P5Project`, `P5Group`, dan `GraduateProfileSubdimension` untuk instrumen penilaian karakter.
+   - Menambahkan daftar **Extracurriculars** (Ekstrakurikuler) dan **Cocurricular** (Kokurikuler).
+7. **Pendaftaran Rombel & Cetak Kartu Pelajar:**
+   - Mendistribusikan Siswa ke dalam **Study Groups** (Rombongan Belajar).
+   - Setelah selesai, Admin/TU dapat mencetak Kartu Pelajar otomatis melalui `StudentCardController` lengkap dengan QR Code mandiri siswa.
 
 ---
 
 ## 2. Persiapan KBM & Penjadwalan (Oleh Admin/Kurikulum)
 
-Setelah data master siap, jadwal kelas harus diatur sebelum pembelajaran dimulai.
+Penjadwalan KBM merupakan tahap kritis untuk memastikan tidak ada jam kosong.
 
-1. **Pembuatan Jadwal Mengajar:**
-   - Masuk ke menu **Jadwal Mengajar (List Schedules)**.
-   - Admin mengatur jadwal setiap guru: mengajar Mata Pelajaran apa, di Kelas mana, pada Hari dan Jam ke berapa.
-   - Terdapat fitur auto-generate atau plotting manual untuk memastikan tidak ada jam kosong atau jadwal bentrok.
+1. **Pembuatan Jadwal Terotomatisasi:**
+   - Masuk ke menu **Schedules** (Jadwal Mengajar).
+   - Fitur `ScheduleGeneratorService` akan membantu plotting jadwal secara dinamis berdasarkan beban mengajar guru (Mata Pelajaran, Kelas, Hari, Time Slot).
+   - Validasi otomatis mencegah bentrok (`TeacherSchedules` conflict checking).
 2. **Pengaturan Wali Kelas:**
-   - Menetapkan guru mana yang menjadi Wali Kelas untuk masing-masing rombel. Wali kelas akan berwenang mencetak rapor untuk kelasnya.
+   - Menugaskan Guru sebagai Wali Kelas di masing-masing Rombel untuk keperluan akses monitoring nilai dan validasi cetak Rapor.
 
 ---
 
-## 3. Operasional Harian (Oleh Guru, Siswa, dan Admin)
+## 3. Operasional Harian & Komunikasi Terpusat (Realtime)
 
-Aktivitas yang terjadi setiap hari kerja selama tahun ajaran berlangsung.
+Aktivitas reguler yang berjalan terus-menerus sepanjang semester.
 
-### Absensi (Kehadiran)
-1. **Guru / Admin:**
-   - Mencatat absensi siswa (Hadir, Sakit, Izin, Alpa) melalui menu **Attendances**.
-   - Opsi lain: Siswa melakukan pemindaian **QR Scan** mandiri jika fitur diaktifkan.
-2. **Siswa:**
-   - Dapat mengajukan izin tidak masuk sekolah dengan mengunggah surat dokter/keterangan melalui fitur **Student Leave** (Izin Siswa) di portal mereka. Admin/Guru akan menyetujui izin tersebut.
+### Absensi & Ekosistem WhatsApp Gateway (Fonnte)
+1. **Pencatatan Kehadiran (Attendances):**
+   - Guru / Admin mencatat absensi manual di kelas.
+   - **QR Scan Mandiri**: Siswa dapat memindai kartu pelajar di gerbang sekolah melalui antarmuka `Livewire\QrScanStandalone`.
+2. **Perizinan Terpadu (Student Leaves):**
+   - Siswa / Orang Tua mengunggah surat dokter melalui menu `StudentLeaveController` di Portal. Admin/Guru me- *review* dan memberi *approval* (Approve/Reject).
+3. **Notifikasi & Broadcast Otomatis:**
+   - Saat absensi tersimpan, sistem merilis event `AttendanceLogged`.
+   - *Background Jobs* (`SendWhatsAppAttendanceNotification`) dipanggil oleh `WAService` untuk mengirimkan chat konfirmasi *realtime* ke WhatsApp Orang Tua (menggunakan provider Fonnte).
+   - Admin juga dapat menggunakan fitur *Broadcast* (`SendWhatsAppBroadcast`) untuk pengumuman sekolah atau tagihan.
 
-### Pembelajaran & Interaksi
-1. **Portal Siswa / Orang Tua:**
-   - Siswa dan Orang Tua dapat login ke portal mereka (Bukan di /admin, tapi di halaman depan aplikasi).
-   - Di *Dashboard*, mereka dapat melihat Rekap Kehadiran, Jadwal Pelajaran Hari ini, dan Nilai secara *Realtime*.
-2. **Fitur Chatbot AI:**
-   - Terdapat Chatbot AI terintegrasi (berdasarkan pengaturan *Chatbot Settings* di admin) yang dapat melayani tanya jawab untuk Siswa dan Orang tua seputar info sekolah atau panduan mandiri.
-
----
-
-## 4. Evaluasi Akademik (Input Nilai oleh Guru)
-
-Memasuki masa Ujian Tengah Semester (UTS) atau Ujian Akhir Semester (UAS).
-
-1. **Input Nilai Akademik:**
-   - Guru mata pelajaran masuk ke menu **Grades** (Nilai).
-   - Memilih Kelas dan Mata Pelajaran yang diampunya.
-   - Memasukkan nilai harian, nilai sumatif, atau formatif beserta deskripsi capaian (*Learning Objective*) untuk setiap siswa.
-2. **Input Nilai Ekstrakurikuler:**
-   - Guru Pembina Ekstrakurikuler masuk ke menu **Extracurricular Grades**.
-   - Memberikan nilai (Sangat Baik, Baik, Cukup) dan deskripsi kegiatan untuk siswa yang mengikuti ekskul tersebut.
-3. **Catatan Wali Kelas:**
-   - Wali kelas memasukkan catatan perkembangan siswa (Sikap, Kerajinan, dll) sebagai bahan untuk pencetakan rapor.
+### Portal Monitoring & Interaksi AI
+1. **Realtime Dashboard Siswa/Ortu:**
+   - Melalui `PortalController`, Siswa dan Orang Tua login ke portal *Front-end*.
+   - Data jadwal harian, nilai terbaru, dan grafik kehadiran dipancarkan secara seketika (*Realtime*) menggunakan WebSocket (Laravel Reverb / Echo).
+2. **AI Assistants Terpadu:**
+   - **Untuk Siswa/Ortu**: Dapat *chatting* dengan `AksaraAssistant` terkait info jadwal, aturan sekolah, atau rekap absensi harian (terhubung dengan PG Vector RAG).
+   - **Untuk Admin/Kepala Sekolah**: `DataScientistAssistant` dapat dipanggil untuk menganalisis statistik kelulusan, rata-rata kehadiran sekolah, atau performa guru secara tekstual (Natural Language SQL querying).
 
 ---
 
-## 5. Pelaporan & Akhir Semester (Oleh Wali Kelas/Admin)
+## 4. Evaluasi Akademik & Kurikulum Merdeka (Input oleh Guru)
 
-Di akhir semester, hasil belajar siswa dibagikan dalam bentuk rapor dan dicatat ke arsip sekolah (Buku Induk).
+Sistem evaluasi membagi tugas antara guru mapel dan wali kelas.
 
-1. **Pengecekan Kelengkapan Data:**
-   - Wali kelas memastikan semua nilai mata pelajaran, ekskul, dan rekap absensi sudah terisi penuh oleh guru-guru.
-2. **Cetak Pelengkap Rapor:**
-   - Digunakan (biasanya untuk siswa kelas awal / siswa baru) untuk mencetak Biodata Diri, Identitas Sekolah, dan Tanda Tangan Kepala Sekolah (berukuran A4).
-   - Akses dari halaman detail siswa -> klik aksi **Cetak Pelengkap Rapor**.
-3. **Cetak Rapor Siswa:**
-   - Wali kelas melakukan generate / **Cetak Rapor**.
-   - Sistem akan mengkompilasi: Data Nilai Akademik, Deskripsi Capaian Pembelajaran, Ekstrakurikuler, dan Rekapitulasi Absensi ke dalam format PDF/Kertas A4.
-   - Rapor ditandatangani dan dibagikan.
-4. **Cetak Buku Induk (Arsip Jangka Panjang):**
-   - Admin atau Petugas Tata Usaha (TU) masuk ke menu **Buku Induk**.
-   - Fitur ini merangkum *seluruh* histori nilai siswa sejak kelas awal hingga akhir dalam satu lembar/buku F4/A4 yang berkesinambungan.
-   - Buku Induk otomatis mengelompokkan nilai siswa per Semester dan Tahun Ajaran secara dinamis tanpa perlu input manual dua kali.
-5. **Kelulusan / Profil Lulusan:**
-   - Saat siswa lulus, Admin mengelola data **Graduate Profile** sebagai pencatatan alumni.
+1. **Input Nilai Akademik (Grades):**
+   - Guru masuk ke menu **Grades**. Di sana ada integrasi `GradeInputSettings` untuk menentukan skala dan bobot penilaian.
+   - Nilai Sumatif/Formatif dan *Learning Objective* spesifik dimasukkan per siswa.
+2. **Monitoring Progress Pengisian Nilai (Grade Monitoring):**
+   - Agar tidak ada nilai yang bolong saat cetak rapor, fitur **Grade Monitoring** menggunakan `GradeProgressBuilder` memvisualisasikan persentase kelengkapan nilai dari seluruh guru secara *live*. Admin dapat langsung mengingatkan guru yang terlambat.
+3. **Validasi & Kunci Nilai:**
+   - Jika waktu pengisian habis, status `StatusPenilaian` akan diubah menjadi *Locked*, sehingga guru tidak bisa lagi mengubah nilai tanpa persetujuan Admin.
+4. **Penilaian Karakter P5 & Ekstrakurikuler:**
+   - Fasilitator P5 masuk ke proyek masing-masing untuk memberikan rubrik penilaian profil pelajar pancasila (`GraduateProfile`).
+   - Guru pembina mengisi `ExtracurricularGrade`.
+5. **Deskripsi Otomatis Wali Kelas:**
+   - Wali kelas bertugas mengecek rekap akhir. Mereka menggunakan AI `WaliKelasAgent` untuk men-*generate* narasi catatan perkembangan siswa yang personal berdasarkan tren nilai dan absensinya secara otomatis.
 
 ---
 
-## Ringkasan Alur (Summary Diagram)
+## 5. Pelaporan, Rapor, & Arsip (Akhir Semester)
 
-`Setup Admin` ➔ `Pembuatan Jadwal & Pembagian Kelas` ➔ `KBM Berjalan (Absensi & Izin)` ➔ `Ujian & Input Nilai (Guru)` ➔ `Cetak Rapor (Wali Kelas)` ➔ `Arsip Buku Induk (TU/Admin)`
+Fase penutupan semester dan manajemen histori data.
 
-*Orang Tua & Siswa secara paralel dapat terus memantau progress kehadiran dan akademik melalui Portal mereka masing-masing sepanjang alur di atas berjalan.*
+1. **Cetak Pelengkap Rapor (`PelengkapRapor`):**
+   - Mencetak halaman depan rapor (Biodata Siswa, Identitas Sekolah) via `PrintController`.
+2. **Generate E-Rapor (`RaporService`):**
+   - Sistem merangkum seluruh tabel (*Academic Grades*, *P5*, *Extracurricular*, *Attendance*, dan *Wali Kelas Notes*) ke dalam file **PDF E-Rapor** formal yang siap dicetak dan ditandatangani.
+3. **Pengarsipan Buku Induk Otomatis (`BukuIndukService`):**
+   - Tidak perlu lagi menyalin nilai Rapor ke Buku Induk fisik secara manual.
+   - `BukuIndukDataBuilder` akan mengumpulkan seluruh histori 6 semester nilai siswa ke dalam format buku besar (*Ledger*) dinamis di menu **Buku Induk**.
+4. **Kenaikan Kelas (PromotionService) & Kelulusan:**
+   - Admin menjalankan proses kenaikan kelas masal menggunakan `PromotionService`. Siswa otomatis berpindah tingkat.
+   - Saat siswa tingkat akhir (misal Kelas 12) lulus, profil mereka diarsipkan ke dalam **Graduate Profile** untuk pencatatan *Tracer Study* alumni.
+
+---
+
+## Ringkasan Ekosistem & Alur Data
+
+`Setup (Integrasi Kemendikbud & AI Brain)` ➔ `Generate Jadwal & QR Siswa` ➔ `KBM (Absensi Standalone + WA Fonnte Gateway)` ➔ `Evaluasi (Grade Progress Monitor + Status Lock)` ➔ `AI WaliKelasAgent (Komentar Rapor)` ➔ `Cetak E-Rapor PDF` ➔ `Sinkronisasi Buku Induk` ➔ `Promotion Kenaikan Kelas`
+
+*Sistem Aksara bukan hanya sekadar database CRUD, melainkan ekosistem pintar (AI-driven) dengan komunikasi realtime (Reverb & WhatsApp) yang menihilkan kerja manual berulang bagi guru maupun tenaga administrasi sekolah.*
