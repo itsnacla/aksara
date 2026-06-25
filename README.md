@@ -6,29 +6,35 @@ Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data p
 
 ## 🚀 Fitur Utama
 
--   **QR Attendance & WA Notification**: Sistem absensi berbasis QR Code yang secara otomatis mengirimkan notifikasi WhatsApp ke orang tua/wali murid secara real-time.
--   **AI-Powered Architecture**: Menggunakan PostgreSQL dengan ekstensi **PG Vector** untuk mempersiapkan fitur AI masa depan seperti pencarian semantik dan analisis data pendidikan yang cerdas.
--   **Hybrid Authentication Flow**: Sistem cerdas yang mendeteksi peran pengguna secara otomatis dan mengarahkan mereka ke dasbor yang sesuai (Filament Panel untuk Admin/Guru vs Custom Portal untuk Siswa/Siswa).
--   **Manajemen Akademik Terintegrasi**: Pengaturan Tahun Ajaran, Semester, dan Tingkatan Kelas yang fleksibel.
--   **RBAC (Role-Based Access Control)**: Menggunakan Filament Shield untuk pembatasan akses yang ketat (Admin, Guru, Staff, Siswa, Wali).
--   **Manajer Relasi Siswa & Wali**: Koneksi otomatis antara data siswa dengan profil orang tua mereka.
--   **Penugasan Wali Kelas**: Sistem penugasan guru ke kelas dengan validasi otomatis.
--   **Antarmuka Premium**: Menggunakan Tailwind CSS 4 dan Filament v3/v5 untuk pengalaman pengguna yang modern dan cepat.
+-   **QR Attendance & WA Gateway (Fonnte)**: Sistem absensi berbasis QR Code (*Kiosk Standalone*) yang otomatis me-*trigger* *Background Jobs* untuk mengirimkan notifikasi WhatsApp *realtime* ke orang tua tanpa membebani *server* utama.
+-   **AI-Powered Ecosystem (PG Vector RAG)**: Aksara mengemas 3 lapis asisten cerdas: `AksaraAssistant` (Chatbot Portal Edukasi), `WaliKelasAgent` (Pembuat narasi Rapor otomatis), dan `DataScientistAssistant` (Analitik performa sekolah).
+-   **Portal Live Dashboard (WebSockets)**: Ekosistem antarmuka (*frontend*) mandiri bagi Siswa dan Wali Murid. Menampilkan pembaruan jadwal akademik, absensi, dan nilai secara seketika (*realtime*) memanfaatkan **Laravel Reverb & Echo**.
+-   **Evaluasi Akademik & Kurikulum Merdeka (P5)**: Mendukung arsitektur Kurikulum Merdeka (Tema & Proyek P5) serta Ekstrakurikuler, dilengkapi fitur **Grade Monitoring** sentral yang menggunakan mekanisme penguncian (*Status Lock*).
+-   **Manajemen Buku Induk Otomatis**: Integrasi `BukuIndukService` yang langsung menghimpun *ledger* (buku besar) nilai 6 semester siswa secara otomatis, dipadukan dengan modul cetak **E-Rapor PDF** pintar.
+-   **Hybrid Authentication & Impersonation**: Sistem pembagian peran (RBAC Filament Shield) adaptif dengan kemampuan **Login As** (`ImpersonateController`), mempermudah *Super Admin* menguji *platform* dari kacamata *user* manapun.
+-   **Antarmuka Premium Cepat**: Dibangun di atas fondasi Filament PHP ~5.0 untuk panel *Backoffice* yang elegan dan Tailwind CSS 4.0 pada *Frontend* Portal.
 
 ---
 
 ## 🌟 Pembaruan & Peningkatan Sistem Terkini
 
--   **Pusat Kendali WhatsApp Gateway Terintegrasi**: Halaman manajemen **WA Notifikasi** mandiri di dalam panel Filament yang mendukung multi-provider (Fonnte & Custom API Gateway) lengkap dengan kustomisasi parameter dan token otorisasi.
--   **Notifikasi Absensi Latar Belakang (Real-time Queued)**: Pengiriman otomatis pesan WhatsApp terformat rapi ke orang tua/wali murid saat siswa memindai kartu presensi (masuk/pulang). Dilengkapi dengan penamaan sekolah dinamis pada *header* dan *branding* elegan (`Powered by Aksara | Tateta`) pada *footer*, diproses asinkron di latar belakang (*Job/Queue*) tanpa membebani kecepatan pemindaian.
--   **Pemindai QR Mandiri Anti-Duplikasi (Kiosk Mode)**: Modul pemindai presensi mandiri yang dapat diakses di tab terpisah untuk mencegah bentrok elemen Livewire. Dilengkapi dengan proteksi ganda berupa **Cooldown Klien (5 detik)** dan **Cooldown Server (10 detik)** guna mengatasi *race condition*, serta memprioritaskan privasi siswa dengan menghapus *fallback* avatar pihak ketiga.
--   **Mesin Siaran Pengumuman (Broadcast Engine)**: Memungkinkan staf atau pengelola sekolah untuk mengirimkan pengumuman penting secara massal ke seluruh orang tua, maupun difilter spesifik berdasarkan **Rombel/Kelas** tertentu.
--   **Alih Sesi Mandiri Premium (Login As / User Impersonation)**: Fitur peniruan identitas pengguna (*impersonation*) 100% native bawaan Filament yang diakses langsung melalui menu profil pengguna (khusus super admin). Dilengkapi pengalihan peran otomatis (Portal `/dashboard` untuk siswa/wali, Panel Admin `/admin` untuk guru/staf), serta tombol pengembalian sesi instan ke admin asli.
--   **Arsitektur Wilayah Terdistribusi (TatetaGeo Microservice)**: Pemindahan mesin pencarian data wilayah Indonesia ke mikroservis eksternal **TatetaGeo** berbasis Laravel 13 & SQLite yang terproteksi API Sanctum, lengkap dengan monitor status kesehatan live di dasbor dan **failover otomatis (dynamic fallback) ke Emsifa CDN** jika server mati.
+-   **Live Grade Progress Tracker**: Kurikulum dan Kepala Sekolah kini bisa melacak (*track*) secara instan guru mana yang belum menyelesaikan pengisian nilai, dipermudah lewat visualisasi *Gauge UI* di *dashboard* admin.
+-   **Integrasi Wilayah Cerdas (TatetaGeo & Kemendikbud)**: Pencarian referensi wilayah & sekolah distandarisasi lewat panggilan *service* terpusat menggunakan mikroservis **TatetaGeo** dan *fallback* mulus ke Emsifa CDN.
+-   **Otomatisasi Kenaikan Kelas & Alumni**: Kehadiran `PromotionService` merampingkan proses rotasi tahun ajaran baru, pendaftaran kelas masal, hingga pengarsipan rekam jejak alumni di modul *Graduate Profile*.
+-   **Cetak Kartu Pelajar (QR Generation)**: Admin maupun Tata Usaha dapat dengan mudah mengekspor kartu ID ber-QR unik siap cetak secara *batch* untuk ribuan siswa (`StudentCardController`).
+-   **Pusat Kendali Penugasan Mengajar Dinamis**: Resolusi bentrok jadwal guru otomatis tertangani di balik layar oleh *Schedule Generator Service*, yang mencocokkan jam mengajar, ruang kelas, dan mata pelajaran tanpa benturan (*clash*).
+-   **Manajemen Cuti & Izin Terpadu**: Pengajuan izin sakit/absen siswa (beserta surat dokter) dapat dikirim *online* melalui portal siswa, dan langsung ditindaklanjuti/divalidasi oleh guru bersangkutan (*Student Leaves*).
 
 ---
 
 ## 🛠️ Tech Stack
+
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Filament](https://img.shields.io/badge/Filament-FACC15?style=for-the-badge&logo=laravel&logoColor=black)
 
 | Komponen            | Teknologi              | Versi    |
 | ------------------- | ---------------------- | -------- |
@@ -42,9 +48,35 @@ Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data p
 
 ---
 
-## 📊 MVC Flow Chart (Basic)
+## 📊 Arsitektur Sistem (Mermaid Diagram)
 
-![flowchat simple v1](image.png)
+```mermaid
+graph TD
+    %% End Users & Interfaces
+    Siswa[Siswa & Orang Tua] -->|Akses Portal Live| Portal[Portal Frontend<br>Blade + Livewire + Tailwind]
+    Guru[Guru & Admin] -->|Akses Backoffice| AdminPanel[Filament Admin Panel]
+    
+    %% Core System
+    Portal --> Core[Laravel 13 Core]
+    AdminPanel --> Core
+    
+    %% Background Tasks & Realtime
+    Core -->|Event Broadcast| Reverb[Laravel Reverb / Echo]
+    Reverb -.->|WebSocket Updates| Portal
+    Core -->|Queued Jobs| Queue[Background Queue]
+    
+    %% External Gateways
+    Queue -->|Push Notification| WA[WhatsApp Gateway<br>Fonnte]
+    Core -->|Sync Wilayah| TatetaGeo[TatetaGeo Microservice]
+    TatetaGeo -.->|Failover| Emsifa[Emsifa CDN]
+    
+    %% Database & AI
+    Core --> DB[(PostgreSQL 16+)]
+    Core --> AIAgent[AI Assistants<br>Aksara, WaliKelas, DataScientist]
+    AIAgent --> RAG[AksaraKnowledgeBase]
+    RAG --> PGVector[(PG Vector)]
+    DB --- PGVector
+```
 
 ---
 
