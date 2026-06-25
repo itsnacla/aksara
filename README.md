@@ -1,13 +1,24 @@
+<div align="center">
+
 # AKSARA
 
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Filament](https://img.shields.io/badge/Filament-FACC15?style=for-the-badge&logo=laravel&logoColor=black)
+
 Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data pendidikan yang dinamis, akurat, dan transparan. Proyek ini menggabungkan kekuatan **Filament PHP** untuk manajemen data tingkat tinggi dengan **Portal Kustom** yang intuitif bagi siswa dan orang tua.
+
+</div>
 
 ---
 
 ## 🚀 Fitur Utama
 
 -   **QR Attendance & WA Gateway (Fonnte)**: Sistem absensi berbasis QR Code (*Kiosk Standalone*) yang otomatis me-*trigger* *Background Jobs* untuk mengirimkan notifikasi WhatsApp *realtime* ke orang tua tanpa membebani *server* utama.
--   **AI-Powered Ecosystem (PG Vector RAG)**: Aksara mengemas 3 lapis asisten cerdas: `AksaraAssistant` (Chatbot Portal Edukasi), `WaliKelasAgent` (Pembuat narasi Rapor otomatis), dan `DataScientistAssistant` (Analitik performa sekolah).
+-   **Native AI-Powered Ecosystem (PG Vector RAG)**: Aksara mengemas 3 lapis asisten cerdas secara *native* dalam ekosistem PHP melalui `laravel/ai` (tanpa microservice Python terpisah): `AksaraAssistant` (Chatbot Portal Edukasi), `WaliKelasAgent` (Pembuat narasi Rapor otomatis), dan `DataScientistAssistant` (Analitik performa sekolah).
 -   **Portal Live Dashboard (WebSockets)**: Ekosistem antarmuka (*frontend*) mandiri bagi Siswa dan Wali Murid. Menampilkan pembaruan jadwal akademik, absensi, dan nilai secara seketika (*realtime*) memanfaatkan **Laravel Reverb & Echo**.
 -   **Evaluasi Akademik & Kurikulum Merdeka (P5)**: Mendukung arsitektur Kurikulum Merdeka (Tema & Proyek P5) serta Ekstrakurikuler, dilengkapi fitur **Grade Monitoring** sentral yang menggunakan mekanisme penguncian (*Status Lock*).
 -   **Manajemen Buku Induk Otomatis**: Integrasi `BukuIndukService` yang langsung menghimpun *ledger* (buku besar) nilai 6 semester siswa secara otomatis, dipadukan dengan modul cetak **E-Rapor PDF** pintar.
@@ -27,29 +38,28 @@ Aksara adalah sistem manajemen sekolah yang dirancang untuk menjadi pusat data p
 
 ---
 
-## 🛠️ Tech Stack
+## 📚 Dokumentasi & Panduan
 
-![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Filament](https://img.shields.io/badge/Filament-FACC15?style=for-the-badge&logo=laravel&logoColor=black)
+Untuk pemahaman sistem yang lebih mendalam, silakan pelajari dokumen internal berikut di dalam direktori `/docs`:
+- [**Panduan Alur Penggunaan (User Flow)**](./docs/flow_penggunaan.md) — Alur operasional sistem mulai dari setup awal, KBM, hingga cetak Rapor.
+- [**Development Roadmap & Architecture**](./docs/DEV_DOCS.md) — Pembagian tugas teknis, arsitektur *Native* AI, dan *workflow* pengembangan.
+
+---
+
+## 🛠️ Tech Stack
 
 | Komponen            | Teknologi              | Versi    |
 | ------------------- | ---------------------- | -------- |
 | **Framework**       | Laravel                | 13.x     |
 | **Admin Panel**     | Filament PHP           | ~5.0     |
-| **Database**        | PostgreSQL (PG Vector) | 16+      |
+| **Database**        | PostgreSQL (PG Vector) | 17       |
+| **AI Engine**       | Native Laravel AI      | ^0.6.7   |
 | **Styling**         | Tailwind CSS           | 4.0      |
 | **RBAC**            | Filament Shield        | ^4.2     |
-| **Runtime**         | PHP                    | 8.4+     |
-| **Dev Tool**        | Laravel IDE Helper     | ^3.7     |
+| **Runtime**         | PHP                    | 8.3+     |
+| **Dev Tool**        | Laravel IDE Helper     |## 📊 Arsitektur & Alur Sistem (Mermaid Diagrams)
 
----
-
-## 📊 Arsitektur Sistem (Mermaid Diagram)
-
+### 1. Arsitektur Komponen Utama
 ```mermaid
 graph TD
     %% End Users & Interfaces
@@ -71,18 +81,140 @@ graph TD
     TatetaGeo -.->|Failover| Emsifa[Emsifa CDN]
     
     %% Database & AI
-    Core --> DB[(PostgreSQL 16+)]
+    Core --> DB[(PostgreSQL 17)]
     Core --> AIAgent[AI Assistants<br>Aksara, WaliKelas, DataScientist]
     AIAgent --> RAG[AksaraKnowledgeBase]
     RAG --> PGVector[(PG Vector)]
     DB --- PGVector
 ```
 
+### 2. Alur Master Data & Sinkronisasi Wilayah (Setup Awal)
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant Core as Aksara Backend
+    participant Geo as TatetaGeo Microservice
+    participant Emsifa as Emsifa CDN (Fallback)
+    participant DB as PostgreSQL
+    
+    Admin->>Core: Simpan Pengaturan Sekolah & Wilayah
+    activate Core
+    Core->>Geo: Request Data Referensi Wilayah
+    
+    alt TatetaGeo Online
+        Geo-->>Core: Return Data Wilayah
+    else TatetaGeo Offline / Timeout
+        Core->>Emsifa: Trigger Auto-Fallback
+        Emsifa-->>Core: Return Data Wilayah (CDN)
+    end
+    
+    Core->>Core: Normalisasi Data via `KemendikbudService`
+    Core->>DB: Simpan Master Wilayah
+    DB-->>Core: Success
+    Core-->>Admin: ✅ Setup Sekolah Berhasil
+    deactivate Core
+```
+
+### 3. Alur Penjadwalan Dinamis & Cetak Kartu Pelajar (Persiapan KBM)
+```mermaid
+sequenceDiagram
+    participant Admin as Admin/Kurikulum
+    participant Core as Aksara Backend
+    participant Sched as ScheduleGeneratorService
+    participant Card as StudentCardController
+    participant DB as Database
+    
+    Admin->>Core: Eksekusi Auto-Generate Jadwal Mengajar
+    activate Core
+    Core->>Sched: Analisis Beban Guru, Kelas, Hari & Waktu
+    activate Sched
+    Sched->>Sched: Resolusi Bentrok (Conflict Checking)
+    Sched-->>Core: Return Jadwal Terdistribusi Optimal
+    deactivate Sched
+    Core->>DB: Simpan Data `TeacherSchedules`
+    Core-->>Admin: ✅ Jadwal Berhasil Disusun
+    deactivate Core
+    
+    Admin->>Core: Daftarkan Siswa ke Rombel (`StudyGroups`)
+    Core->>DB: Relasikan Siswa & Rombel
+    
+    Admin->>Card: Request Cetak Kartu Pelajar (Batch)
+    activate Card
+    Card->>Card: Generate Unique QR Code per Siswa
+    Card-->>Admin: 🖨️ PDF Kartu Pelajar Siap Cetak
+    deactivate Card
+```
+
+### 4. Alur Operasional Harian: Absensi, Perizinan & WhatsApp Realtime
+```mermaid
+sequenceDiagram
+    participant Siswa as Siswa / Orang Tua
+    participant Kiosk as QrScanStandalone
+    participant Portal as PortalController (Siswa)
+    participant Core as Aksara Backend
+    participant Event as Queue / Reverb
+    participant WA as WAService (Fonnte)
+    
+    %% Alur Absensi
+    Siswa->>Kiosk: Scan Kartu Pelajar (QR)
+    Kiosk->>Core: Validasi Presensi Siswa
+    Core->>Event: Fire Event `AttendanceLogged`
+    par Live Dashboard Update
+        Event->>Event: Broadcast via Laravel Reverb
+    and WhatsApp Notification
+        Event->>WA: Trigger `SendWhatsAppAttendanceNotification`
+        WA-)Siswa: 💬 WA: "Kehadiran Berhasil Dicatat"
+    end
+    
+    %% Alur Cuti/Perizinan Terpadu
+    Siswa->>Portal: Upload Surat Dokter (Pengajuan Izin/Sakit)
+    Portal->>Core: Simpan `StudentLeaves` (Status: Pending)
+    
+    Admin->>Core: Review & Approve Surat Izin
+    Core->>Core: Update Kehadiran Siswa -> SAKIT/IZIN
+    Core->>Event: Dispatch Job Notifikasi WA
+    Event->>WA: Eksekusi Pesan Konfirmasi Izin
+    WA-)Siswa: 💬 WA: "Pengajuan Izin Disetujui Sekolah"
+```
+
+### 5. Alur Evaluasi Akademik, AI Rapor & Kenaikan Kelas (Akhir Semester)
+```mermaid
+sequenceDiagram
+    participant Guru as Guru & Wali Kelas
+    participant Admin as Kurikulum
+    participant Core as Aksara Backend
+    participant Agent as AI WaliKelasAgent
+    participant RAG as PG Vector RAG
+    
+    Guru->>Core: Input Nilai Akademik, P5 & Ekstrakurikuler
+    Admin->>Core: Pantau Progress via `GradeProgressBuilder`
+    Admin->>Core: Kunci Penilaian (`StatusPenilaian` = Locked)
+    
+    Guru->>Core: Request Generate Narasi Rapor Wali Kelas
+    activate Core
+    Core->>Agent: Eksekusi Native AI (`laravel/ai`)
+    Agent->>RAG: Retrieval RAG (Histori Siswa & Panduan Nilai)
+    RAG-->>Agent: Kembalikan Konteks Relevan
+    Agent-->>Core: Narasi Rapor Otomatis Tersusun
+    deactivate Core
+    
+    Admin->>Core: Cetak E-Rapor & Buku Induk
+    activate Core
+    Core->>Core: `BukuIndukDataBuilder` Himpun Ledger 6 Semester
+    Core->>Core: `RaporService` Generate E-Rapor (PDF)
+    Core-->>Admin: 🖨️ Dokumen Formal Siap Cetak
+    deactivate Core
+    
+    Admin->>Core: Eksekusi Kenaikan Kelas Masal Tahun Ajaran Baru
+    Core->>Core: `PromotionService` Jalankan Rotasi Siswa
+    Core->>Core: Ekspor Siswa Lulus ke `GraduateProfile` (Alumni)
+```
+
 ---
 
 ## ⚙️ Instalasi & Setup Lengkap
 
-Ikuti langkah-langkah di bawah ini untuk menjalankan Aksara di lingkungan lokal Anda. Pastikan sistem Anda memenuhi **Requirement Minimum: PHP 8.4, Node 20+, & PostgreSQL 16**.
+Ikuti langkah-langkah di bawah ini untuk menjalankan Aksara di lingkungan lokal Anda. Pastikan sistem Anda memenuhi **Requirement Minimum: PHP 8.3+, Node 20+, & PostgreSQL 17**.
 
 ### 1. Kloning & Instalasi
 Dapatkan kode sumber dan instal semua dependensi yang diperlukan:
@@ -147,7 +279,7 @@ php artisan shield:generate --all --panel=admin --no-interaction
 Aksara terintegrasi secara mulus dengan **TatetaGeo**—sebuah layanan *Location Intelligence* berbasis mikroservis terpisah yang menyajikan data wilayah administrasi Indonesia secara lokal dan cepat.
 
 Cukup konfigurasikan variabel berikut pada file `.env` Aksara Anda untuk menghubungkan ke instance TatetaGeo Anda:
-- `TATETA_GEO_URL=http://127.0.0.1:8001` (URL/Port tempat TatetaGeo di-serve)
+- `TATETA_GEO_URL=https://geo.tateta.samastanuswantara.com/api/v1/geo` (URL/Port tempat TatetaGeo di-serve)
 - `TATETA_GEO_TOKEN=` (Token API Sanctum Anda)
 
 > [!TIP]
