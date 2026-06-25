@@ -2,13 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Student;
-use App\Models\Teacher;
 use App\Models\Staff;
+use App\Models\Student;
 use App\Models\Subject;
+use App\Models\Teacher;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-
 use Livewire\Attributes\On;
 
 class AdminStatsOverview extends BaseWidget
@@ -22,7 +21,7 @@ class AdminStatsOverview extends BaseWidget
 
     protected static ?int $sort = -3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getColumns(): int
     {
@@ -42,7 +41,7 @@ class AdminStatsOverview extends BaseWidget
 
         return [
             Stat::make('Total Siswa', $totalStudents)
-                ->description($activeStudents . ' siswa aktif')
+                ->description($activeStudents.' siswa aktif')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->icon('heroicon-o-academic-cap')
                 ->color('primary')
@@ -84,6 +83,7 @@ class AdminStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [2, 3, 5, 4, 6, 7, 8];
         }
+
         return $data;
     }
 
@@ -98,6 +98,7 @@ class AdminStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [3, 4, 3, 5, 4, 6, 5];
         }
+
         return $data;
     }
 
@@ -112,6 +113,7 @@ class AdminStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [1, 2, 2, 3, 3, 4, 4];
         }
+
         return $data;
     }
 
@@ -126,6 +128,7 @@ class AdminStatsOverview extends BaseWidget
         if (array_sum($data) === 0) {
             return [4, 5, 6, 5, 7, 6, 8];
         }
+
         return $data;
     }
 

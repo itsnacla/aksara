@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
 use App\Models\SchoolSetting;
+use App\Models\Student;
 use Illuminate\Http\Request;
 
 class StudentCardController extends Controller
@@ -11,9 +11,10 @@ class StudentCardController extends Controller
     public function print(Student $student)
     {
         $school = SchoolSetting::current();
+
         return view('portal.students.print-card', [
             'students' => collect([$student]),
-            'school' => $school
+            'school' => $school,
         ]);
     }
 
@@ -25,7 +26,7 @@ class StudentCardController extends Controller
 
         return view('portal.students.print-card', [
             'students' => $students,
-            'school' => $school
+            'school' => $school,
         ]);
     }
 
@@ -38,16 +39,16 @@ class StudentCardController extends Controller
 
         return view('portal.students.print-card', [
             'students' => $students,
-            'school' => $school
+            'school' => $school,
         ]);
     }
 
     public function allPrint(Request $request)
     {
         $query = Student::query()->with('user');
-        
+
         if ($request->has('academic_year_id')) {
-            $query->whereHas('studyGroups', fn($q) => $q->where('academic_year_id', $request->academic_year_id));
+            $query->whereHas('studyGroups', fn ($q) => $q->where('academic_year_id', $request->academic_year_id));
         }
 
         $students = $query->get();
@@ -55,7 +56,7 @@ class StudentCardController extends Controller
 
         return view('portal.students.print-card', [
             'students' => $students,
-            'school' => $school
+            'school' => $school,
         ]);
     }
 }

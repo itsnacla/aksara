@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -36,7 +39,7 @@ class Extracurricular extends Model
         static::saved(function ($model) {
             // When an extracurricular is saved and it is "wajib", ensure all active students are enrolled.
             if ($model->kategori === 'wajib') {
-                $studentIds = \App\Models\Student::where('status', 'aktif')->pluck('id');
+                $studentIds = Student::where('status', 'aktif')->pluck('id');
                 if ($studentIds->isNotEmpty()) {
                     $model->students()->syncWithoutDetaching($studentIds);
                 }
@@ -44,17 +47,17 @@ class Extracurricular extends Model
         });
     }
 
-    public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function students(): BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'extracurricular_student')->withTimestamps();
     }
 
-    public function grades(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function grades(): HasMany
     {
         return $this->hasMany(ExtracurricularGrade::class);
     }
 
-    public function coordinator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function coordinator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'coordinator_user_id');
     }

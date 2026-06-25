@@ -5,7 +5,6 @@ namespace App\Filament\Resources\ChatbotSettings\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Schema;
 
@@ -15,17 +14,17 @@ class ChatbotSettingForm
     {
         // Daftar semua provider yang didukung laravel/ai untuk text generation
         $allProviders = [
-            'gemini'     => ['name' => 'Google Gemini'],
-            'openai'     => ['name' => 'OpenAI'],
-            'anthropic'  => ['name' => 'Anthropic (Claude)'],
-            'groq'       => ['name' => 'Groq'],
-            'deepseek'   => ['name' => 'DeepSeek'],
-            'xai'        => ['name' => 'xAI (Grok)'],
-            'mistral'    => ['name' => 'Mistral AI'],
+            'gemini' => ['name' => 'Google Gemini'],
+            'openai' => ['name' => 'OpenAI'],
+            'anthropic' => ['name' => 'Anthropic (Claude)'],
+            'groq' => ['name' => 'Groq'],
+            'deepseek' => ['name' => 'DeepSeek'],
+            'xai' => ['name' => 'xAI (Grok)'],
+            'mistral' => ['name' => 'Mistral AI'],
             'openrouter' => ['name' => 'OpenRouter'],
-            'ollama'     => ['name' => 'Ollama (Local)'],
-            'azure'      => ['name' => 'Azure OpenAI'],
-            'bedrock'    => ['name' => 'AWS Bedrock'],
+            'ollama' => ['name' => 'Ollama (Local)'],
+            'azure' => ['name' => 'Azure OpenAI'],
+            'bedrock' => ['name' => 'AWS Bedrock'],
         ];
 
         $components = [
@@ -37,7 +36,7 @@ class ChatbotSettingForm
 
                     Select::make('primary_provider')
                         ->label('Provider AI Utama')
-                        ->options(collect($allProviders)->mapWithKeys(fn($p, $k) => [$k => $p['name']])->toArray())
+                        ->options(collect($allProviders)->mapWithKeys(fn ($p, $k) => [$k => $p['name']])->toArray())
                         ->required()
                         ->native(false)
                         ->live(), // Membuat field ini reaktif
@@ -63,7 +62,7 @@ class ChatbotSettingForm
 
                     TextInput::make("settings.{$key}.model")
                         ->label('Default Model')
-                        ->placeholder(match($key) {
+                        ->placeholder(match ($key) {
                             'gemini' => 'gemini-2.0-flash',
                             'openai' => 'gpt-4o-mini',
                             'groq' => 'llama-3.3-70b-versatile',
@@ -79,8 +78,7 @@ class ChatbotSettingForm
                         ->visible(in_array($key, ['openai', 'anthropic', 'gemini', 'groq', 'deepseek', 'xai', 'openrouter', 'ollama'])),
                 ])
                 ->columns(2)
-                ->visible(fn ($get) => 
-                    $get('primary_provider') === $key || 
+                ->visible(fn ($get) => $get('primary_provider') === $key ||
                     str_contains((string) ($get('fallback_providers') ?? ''), $key)
                 );
         }

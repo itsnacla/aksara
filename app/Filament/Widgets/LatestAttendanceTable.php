@@ -2,9 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Attendance;
 use App\Filament\Resources\Attendances\AttendanceResource;
 use App\Filament\Widgets\Concerns\ScopesToTeacherStudents;
+use App\Models\Attendance;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,7 +22,7 @@ class LatestAttendanceTable extends BaseWidget
 
         if ($isGuru) {
             $studentIds = $this->getTeacherStudentIds();
-            if (!in_array($event['studentId'] ?? null, $studentIds)) {
+            if (! in_array($event['studentId'] ?? null, $studentIds)) {
                 return;
             }
         }
@@ -40,7 +40,7 @@ class LatestAttendanceTable extends BaseWidget
 
     protected static ?int $sort = 5;
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'default' => 'full',
         'md' => 1,
     ];

@@ -99,7 +99,7 @@ class EditUser extends EditRecord
         $newRole = $data['selected_role'] ?? null;
         $oldRole = $user->roles->first()?->name;
 
-        if (!$newRole) {
+        if (! $newRole) {
             return;
         }
 

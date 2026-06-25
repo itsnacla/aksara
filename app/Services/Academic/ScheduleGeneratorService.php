@@ -51,7 +51,7 @@ class ScheduleGeneratorService
     {
         $subjects = Subject::where(function ($q) use ($studyGroup) {
             $q->whereHas('levels', fn ($sq) => $sq->where('levels.id', $studyGroup->level_id))
-              ->orDoesntHave('levels');
+                ->orDoesntHave('levels');
         })->get();
 
         $toProcess = [];
@@ -72,7 +72,7 @@ class ScheduleGeneratorService
                 ->where('subject_id', $subject->id)->get()
                 ->sum(function ($s) {
                     $start = TimeSlot::find($s->start_time_slot_id);
-                    $end   = TimeSlot::find($s->end_time_slot_id);
+                    $end = TimeSlot::find($s->end_time_slot_id);
 
                     return ($start && $end) ? abs($end->urutan - $start->urutan) + 1 : 0;
                 });
@@ -82,12 +82,12 @@ class ScheduleGeneratorService
                 $isSpecialist = $teacherId != $studyGroup->walikelas_id;
 
                 $toProcess[] = [
-                    'model'           => $subject,
-                    'teacher_id'      => $teacherId,
-                    'remaining'       => $remaining,
+                    'model' => $subject,
+                    'teacher_id' => $teacherId,
+                    'remaining' => $remaining,
                     'is_one_day_finish' => $subject->is_one_day_finish,
-                    'priority'        => $subject->scheduling_priority,
-                    'is_specialist'   => $isSpecialist,
+                    'priority' => $subject->scheduling_priority,
+                    'is_specialist' => $isSpecialist,
                 ];
             }
         }
@@ -140,12 +140,12 @@ class ScheduleGeneratorService
 
             if (! $isBusy) {
                 Schedule::create([
-                    'study_group_id'     => $rombelId,
-                    'subject_id'         => $item['model']->id,
-                    'teacher_id'         => $item['teacher_id'],
-                    'hari'               => $config->day,
+                    'study_group_id' => $rombelId,
+                    'subject_id' => $item['model']->id,
+                    'teacher_id' => $item['teacher_id'],
+                    'hari' => $config->day,
                     'start_time_slot_id' => $config->mandatory_time_slot_id,
-                    'end_time_slot_id'   => $config->mandatory_time_slot_id,
+                    'end_time_slot_id' => $config->mandatory_time_slot_id,
                 ]);
                 $item['remaining']--;
             }
@@ -184,9 +184,9 @@ class ScheduleGeneratorService
                         continue;
                     }
 
-                    $duration       = $item['remaining'];
+                    $duration = $item['remaining'];
                     $availableSlots = [];
-                    $offset         = 0;
+                    $offset = 0;
 
                     while (count($availableSlots) < $duration) {
                         $nextSlot = $allSlots->where('urutan', $slot->urutan + $offset)->first();
@@ -207,12 +207,12 @@ class ScheduleGeneratorService
 
                     if (count($availableSlots) === $duration) {
                         Schedule::create([
-                            'study_group_id'     => $rombelId,
-                            'subject_id'         => $item['model']->id,
-                            'teacher_id'         => $item['teacher_id'],
-                            'hari'               => $day,
+                            'study_group_id' => $rombelId,
+                            'subject_id' => $item['model']->id,
+                            'teacher_id' => $item['teacher_id'],
+                            'hari' => $day,
                             'start_time_slot_id' => $slot->id,
-                            'end_time_slot_id'   => $availableSlots[count($availableSlots) - 1]->id,
+                            'end_time_slot_id' => $availableSlots[count($availableSlots) - 1]->id,
                         ]);
                         $item['remaining'] -= count($availableSlots);
                         break;
@@ -270,7 +270,7 @@ class ScheduleGeneratorService
                             }
 
                             $availableSlots = [];
-                            $offset         = 0;
+                            $offset = 0;
                             while (count($availableSlots) < $targetDuration) {
                                 $nextSlot = $allSlots->where('urutan', $slot->urutan + $offset)->first();
                                 $offset++;
@@ -290,12 +290,12 @@ class ScheduleGeneratorService
 
                             if (count($availableSlots) === $targetDuration) {
                                 Schedule::create([
-                                    'study_group_id'     => $rombelId,
-                                    'subject_id'         => $item['model']->id,
-                                    'teacher_id'         => $item['teacher_id'],
-                                    'hari'               => $day,
+                                    'study_group_id' => $rombelId,
+                                    'subject_id' => $item['model']->id,
+                                    'teacher_id' => $item['teacher_id'],
+                                    'hari' => $day,
                                     'start_time_slot_id' => $slot->id,
-                                    'end_time_slot_id'   => $availableSlots[count($availableSlots) - 1]->id,
+                                    'end_time_slot_id' => $availableSlots[count($availableSlots) - 1]->id,
                                 ]);
                                 $item['remaining'] -= count($availableSlots);
                                 $subjectsScheduledToday[] = $item['model']->id;
@@ -319,7 +319,7 @@ class ScheduleGeneratorService
         $busySchedules = Schedule::with('subject')->where('hari', $day)
             ->where(function ($q) use ($slot) {
                 $q->whereHas('startTimeSlot', fn ($sq) => $sq->where('urutan', '<=', $slot->urutan))
-                  ->whereHas('endTimeSlot', fn ($sq) => $sq->where('urutan', '>=', $slot->urutan));
+                    ->whereHas('endTimeSlot', fn ($sq) => $sq->where('urutan', '>=', $slot->urutan));
             })
             ->where('study_group_id', $rombelId)
             ->get();
@@ -335,7 +335,7 @@ class ScheduleGeneratorService
                     $allBusyAreReligions = $busySchedules->every(function ($sch) {
                         return str_contains(strtolower($sch->subject->nama_mapel), 'pendidikan agama');
                     });
-                    
+
                     if ($allBusyAreReligions) {
                         $canOverlap = true;
                     }
@@ -351,7 +351,7 @@ class ScheduleGeneratorService
             $busyTeacher = Schedule::where('hari', $day)
                 ->where(function ($q) use ($slot) {
                     $q->whereHas('startTimeSlot', fn ($sq) => $sq->where('urutan', '<=', $slot->urutan))
-                      ->whereHas('endTimeSlot', fn ($sq) => $sq->where('urutan', '>=', $slot->urutan));
+                        ->whereHas('endTimeSlot', fn ($sq) => $sq->where('urutan', '>=', $slot->urutan));
                 })
                 ->where('teacher_id', $teacherId)
                 ->exists();

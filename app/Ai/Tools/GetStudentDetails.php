@@ -36,14 +36,18 @@ class GetStudentDetails implements Tool
         if ($nisn) {
             $query->where('nisn', $nisn);
         } elseif ($name) {
-            $query->whereHas('user', fn($q) => $q->where('name', 'like', "%{$name}%"));
+            $query->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$name}%"));
         } elseif (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;
-            if (!$student) return 'Data siswa tidak ditemukan.';
+            if (! $student) {
+                return 'Data siswa tidak ditemukan.';
+            }
             $query->where('id', $student->id);
         } elseif (str_contains($roleName, 'orang_tua') || str_contains($roleName, 'wali')) {
             $parent = $this->user->parent;
-            if (!$parent) return 'Data orang tua tidak ditemukan.';
+            if (! $parent) {
+                return 'Data orang tua tidak ditemukan.';
+            }
             $childIds = $parent->students->pluck('id')->toArray();
             $query->whereIn('id', $childIds);
         } else {
@@ -52,7 +56,7 @@ class GetStudentDetails implements Tool
 
         $student = $query->first();
 
-        if (!$student) {
+        if (! $student) {
             return 'Siswa tidak ditemukan.';
         }
 

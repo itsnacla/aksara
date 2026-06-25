@@ -10,7 +10,7 @@ class CustomRequestPasswordReset extends BaseRequestPasswordReset
      * Override the default view.
      */
     protected string $view = 'filament.pages.auth.request-password-reset';
-    
+
     /**
      * Override the default layout.
      */

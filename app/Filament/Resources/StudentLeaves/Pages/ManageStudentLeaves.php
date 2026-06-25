@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\StudentLeaves\Pages;
 
 use App\Filament\Resources\StudentLeaves\StudentLeaveResource;
+use App\Models\Student;
+use App\Models\StudentLeave;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 
@@ -15,7 +17,7 @@ class ManageStudentLeaves extends ManageRecords
         return [
             CreateAction::make()
                 ->mutateFormDataUsing(function (array $data): array {
-                    $student = \App\Models\Student::find($data['student_id']);
+                    $student = Student::find($data['student_id']);
                     if ($student) {
                         $data['parent_id'] = $student->parent_id;
                         $data['study_group_id'] = $student->currentStudyGroup()?->id;
@@ -23,9 +25,10 @@ class ManageStudentLeaves extends ManageRecords
                     if ($data['status'] === 'approved') {
                         $data['approved_by'] = auth()->id();
                     }
+
                     return $data;
                 })
-                ->after(function (\App\Models\StudentLeave $record) {
+                ->after(function (StudentLeave $record) {
                     if ($record->status === 'approved') {
                         StudentLeaveResource::syncToAttendance($record);
                     }

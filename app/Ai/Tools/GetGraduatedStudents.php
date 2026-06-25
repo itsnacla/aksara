@@ -26,7 +26,7 @@ class GetGraduatedStudents implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -36,7 +36,7 @@ class GetGraduatedStudents implements Tool
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
 
         // Only admin/staff dapat akses graduated students
-        if (!str_contains($roleName, 'admin') && !str_contains($roleName, 'staff')) {
+        if (! str_contains($roleName, 'admin') && ! str_contains($roleName, 'staff')) {
             return 'Anda tidak memiliki akses untuk melihat data siswa lulus.';
         }
 
@@ -49,7 +49,7 @@ class GetGraduatedStudents implements Tool
         }
 
         if ($levelId) {
-            $query->whereHas('studyGroups', fn($q) => $q->where('level_id', $levelId));
+            $query->whereHas('studyGroups', fn ($q) => $q->where('level_id', $levelId));
         }
 
         $graduates = $query->orderByDesc('updated_at')->limit($limit)->get();
@@ -101,6 +101,7 @@ class GetGraduatedStudents implements Tool
                 'orang_tua' => $student->parent?->user?->name,
             ];
         }
+
         return $result;
     }
 
@@ -114,6 +115,7 @@ class GetGraduatedStudents implements Tool
                 'jumlah' => count($grads),
             ];
         }
+
         return $stats;
     }
 }

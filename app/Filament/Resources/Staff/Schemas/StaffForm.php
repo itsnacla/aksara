@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Staff\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Schema;
 
@@ -37,7 +39,7 @@ class StaffForm
                             ->dehydrated(fn (?string $state) => filled($state))
                             ->maxLength(255)
                             ->helperText(fn (string $operation): string => $operation === 'edit' ? 'Kosongkan jika tidak ingin mengubah password' : ''),
-                        \Filament\Forms\Components\Toggle::make('user_is_active')
+                        Toggle::make('user_is_active')
                             ->label('Akun Aktif')
                             ->default(true)
                             ->helperText('Jika dinonaktifkan, staf ini tidak bisa login.'),
@@ -50,7 +52,7 @@ class StaffForm
                         TextInput::make('jabatan')
                             ->label('Jabatan')
                             ->required(),
-                        \Filament\Forms\Components\Select::make('status')
+                        Select::make('status')
                             ->label('Status Kepegawaian')
                             ->options([
                                 'aktif' => 'Aktif',

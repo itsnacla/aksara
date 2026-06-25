@@ -2,18 +2,23 @@
 
 namespace App\Filament\Resources\P5Project\RelationManagers;
 
+use App\Models\AcademicYear;
 use App\Models\P5Group;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Schemas\Schema;
+use App\Models\Student;
+use App\Models\StudyGroup;
+use App\Models\Teacher;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class P5GroupRelationManager extends RelationManager
 {
@@ -28,9 +33,9 @@ class P5GroupRelationManager extends RelationManager
                 Select::make('study_group_id')
                     ->relationship('studyGroup', 'nama_rombel', function ($query, RelationManager $livewire) {
                         $project = $livewire->getOwnerRecord();
-                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+                        $activeYearId = AcademicYear::where('is_active', true)->value('id');
                         $levelIds = $project ? $project->levels()->pluck('levels.id')->toArray() : [];
-                        
+
                         // Exclude Rombels already used by this project
                         $usedStudyGroupIds = P5Group::where('p5_project_id', $project?->id)
                             ->whereNotNull('study_group_id')
@@ -52,7 +57,7 @@ class P5GroupRelationManager extends RelationManager
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
                         if ($state) {
-                            $rombel = \App\Models\StudyGroup::find($state);
+                            $rombel = StudyGroup::find($state);
                             if ($rombel) {
                                 $set('name', $rombel->nama_rombel);
                                 if ($rombel->walikelas_id) {
@@ -74,7 +79,7 @@ class P5GroupRelationManager extends RelationManager
                     ->maxLength(255),
 
                 Select::make('teacher_id')
-                    ->options(\App\Models\Teacher::with('user')->get()->pluck('nama_lengkap', 'id'))
+                    ->options(Teacher::with('user')->get()->pluck('nama_lengkap', 'id'))
                     ->label('Koordinator / Fasilitator')
                     ->required()
                     ->searchable(),
@@ -94,10 +99,11 @@ class P5GroupRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name)
                     ->getSearchResultsUsing(function (string $search, callable $get) {
                         $rombelId = $get('study_group_id');
-                        $query = \App\Models\Student::with('user');
+                        $query = Student::with('user');
                         if ($rombelId) {
                             $query->whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $rombelId));
                         }
+
                         return $query->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
                             ->limit(50)
                             ->get()
@@ -153,7 +159,7 @@ class P5GroupRelationManager extends RelationManager
             ]);
     }
 
-    protected function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    protected function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['teacher.user', 'studyGroup']);
     }

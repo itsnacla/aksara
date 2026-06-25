@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\WhatsAppLogs\Pages;
 
 use App\Filament\Resources\WhatsAppLogs\WhatsAppLogResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 
 class ManageWhatsAppLogs extends ManageRecords

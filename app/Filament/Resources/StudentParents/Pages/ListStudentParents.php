@@ -4,8 +4,8 @@ namespace App\Filament\Resources\StudentParents\Pages;
 
 use App\Filament\Resources\StudentParents\StudentParentResource;
 use App\Models\User;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Hash;
 
 class ListStudentParents extends ListRecords

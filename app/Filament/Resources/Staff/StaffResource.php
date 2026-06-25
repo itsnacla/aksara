@@ -2,11 +2,7 @@
 
 namespace App\Filament\Resources\Staff;
 
-
-use App\Filament\Resources\Staff\Pages\CreateStaff;
-use App\Filament\Resources\Staff\Pages\EditStaff;
 use App\Filament\Resources\Staff\Pages\ListStaff;
-use App\Filament\Resources\Staff\Pages\ViewStaff;
 use App\Filament\Resources\Staff\Schemas\StaffForm;
 use App\Filament\Resources\Staff\Schemas\StaffInfolist;
 use App\Filament\Resources\Staff\Tables\StaffTable;
@@ -14,8 +10,9 @@ use App\Models\Staff;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class StaffResource extends Resource
@@ -36,7 +33,7 @@ class StaffResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Staf';
 
-    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    public static function getRecordTitle(?Model $record): ?string
     {
         return $record?->user?->name;
     }
@@ -56,7 +53,7 @@ class StaffResource extends Resource
         return StaffTable::configure($table);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with('user');
     }

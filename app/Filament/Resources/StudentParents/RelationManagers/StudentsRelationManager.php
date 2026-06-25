@@ -2,12 +2,11 @@
 
 namespace App\Filament\Resources\StudentParents\RelationManagers;
 
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
 
 class StudentsRelationManager extends RelationManager
 {

@@ -2,18 +2,17 @@
 
 namespace App\Filament\Resources\SchoolSettings\Schemas;
 
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Schema;
-use App\Services\SchoolRegionService;
 use App\Services\KemendikbudService;
+use App\Services\RegionService;
+use App\Services\SchoolRegionService;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class SchoolSettingForm
 {
@@ -46,22 +45,24 @@ class SchoolSettingForm
                                     ->icon('heroicon-m-arrow-path')
                                     ->tooltip('Tarik data dari Kemendikbud')
                                     ->action(function ($state, $set) {
-                                        if (!$state) {
+                                        if (! $state) {
                                             Notification::make()
                                                 ->title('NPSN Kosong')
                                                 ->warning()
                                                 ->send();
+
                                             return;
                                         }
 
                                         $data = KemendikbudService::fetchByNpsn($state);
 
-                                        if (!$data['success']) {
+                                        if (! $data['success']) {
                                             Notification::make()
                                                 ->title('Gagal Menarik Data')
                                                 ->body($data['message'])
                                                 ->danger()
                                                 ->send();
+
                                             return;
                                         }
 
@@ -72,17 +73,17 @@ class SchoolSettingForm
                                         $set('address', $data['address']);
                                         $set('email', $data['email']);
                                         $set('website', $data['website']);
-                                        
+
                                         // Mapping Region Names to IDs with careful state setting
                                         $provinceId = SchoolRegionService::findProvinceIdByName($data['province']) ?? $data['province'];
                                         $set('province', $provinceId);
-                                        
+
                                         $cityId = SchoolRegionService::findRegencyIdByName($provinceId, $data['city']) ?? $data['city'];
                                         $set('city', $cityId);
-                                        
+
                                         $districtId = SchoolRegionService::findDistrictIdByName($cityId, $data['district']) ?? $data['district'];
                                         $set('district', $districtId);
-                                        
+
                                         $villageId = SchoolRegionService::findVillageIdByName($districtId, $data['village']) ?? $data['village'];
                                         $set('village', $villageId);
 
@@ -142,7 +143,7 @@ class SchoolSettingForm
                             ->afterStateUpdated(fn ($set) => $set('village', null)),
                         Select::make('village')
                             ->label('Kelurahan/Desa')
-                            ->options(fn (callable $get) => \App\Services\RegionService::getVillages($get('district'), $get('city')))
+                            ->options(fn (callable $get) => RegionService::getVillages($get('district'), $get('city')))
                             ->searchable()
                             ->required(),
                     ])

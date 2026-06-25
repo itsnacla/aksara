@@ -2,10 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\ChatbotSetting;
+use Filament\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Actions\Action;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,9 +34,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Dynamic AI Configuration from Database (General Mode)
         try {
-            if (class_exists(\App\Models\ChatbotSetting::class)) {
-                $settings = \App\Models\ChatbotSetting::current();
-                
+            if (class_exists(ChatbotSetting::class)) {
+                $settings = ChatbotSetting::current();
+
                 if ($settings->settings) {
                     foreach ($settings->settings as $provider => $values) {
                         if (isset($values['key'])) {

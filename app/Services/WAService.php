@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Jobs\SendWhatsAppNotification;
 use App\Models\SchoolSetting;
+use App\Models\WhatsAppLog;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -15,8 +17,9 @@ class WAService
     {
         $settings = SchoolSetting::current();
 
-        if (!$settings->is_wa_enabled || !$settings->wa_gateway_token) {
+        if (! $settings->is_wa_enabled || ! $settings->wa_gateway_token) {
             Log::warning('WA Service: Sending skipped (Disabled or missing token).');
+
             return false;
         }
 
@@ -27,7 +30,7 @@ class WAService
             $provider = $settings->wa_gateway_provider;
             $url = $provider === 'custom' ? $settings->wa_gateway_url : 'https://api.fonnte.com/send';
             $token = $settings->wa_gateway_token;
-            
+
             $phoneParam = $provider === 'custom' ? $settings->wa_gateway_phone_param : 'target';
             $messageParam = $provider === 'custom' ? $settings->wa_gateway_message_param : 'message';
 
@@ -47,8 +50,8 @@ class WAService
             ])->post($url, $payload);
 
             $status = $response->successful() ? 'success' : 'failed';
-            
-            \App\Models\WhatsAppLog::create([
+
+            WhatsAppLog::create([
                 'phone' => $phone,
                 'message' => $message,
                 'status' => $status,
@@ -59,17 +62,19 @@ class WAService
                 return true;
             }
 
-            Log::error('WA Service Error: ' . $response->body());
+            Log::error('WA Service Error: '.$response->body());
+
             return false;
 
         } catch (\Exception $e) {
-            \App\Models\WhatsAppLog::create([
+            WhatsAppLog::create([
                 'phone' => $phone,
                 'message' => $message,
                 'status' => 'failed',
                 'response' => $e->getMessage(),
             ]);
-            Log::error('WA Service Exception: ' . $e->getMessage());
+            Log::error('WA Service Exception: '.$e->getMessage());
+
             return false;
         }
     }
@@ -79,7 +84,7 @@ class WAService
      */
     public static function sendMessageAsync(string $phone, string $message): void
     {
-        \App\Jobs\SendWhatsAppNotification::dispatch($phone, $message);
+        SendWhatsAppNotification::dispatch($phone, $message);
     }
 
     /**
@@ -88,11 +93,11 @@ class WAService
     protected static function formatPhoneNumber(string $phone): string
     {
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        
+
         if (str_starts_with($phone, '0')) {
-            $phone = '62' . substr($phone, 1);
+            $phone = '62'.substr($phone, 1);
         } elseif (str_starts_with($phone, '8')) {
-            $phone = '62' . $phone;
+            $phone = '62'.$phone;
         }
 
         return $phone;

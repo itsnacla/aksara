@@ -25,12 +25,12 @@ class StudyGroup extends Model
     protected static function booted()
     {
         static::creating(function ($model) {
-            if (!$model->academic_year_id) {
-                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            if (! $model->academic_year_id) {
+                $model->academic_year_id = AcademicYear::where('is_active', true)->first()?->id;
             }
             $level = Level::find($model->level_id)?->nama_tingkatan ?? 'N/A';
             $room = Classroom::find($model->classroom_id)?->nama_ruangan ?? 'N/A';
-            
+
             $model->nama_rombel = "{$level} - {$room}";
         });
     }

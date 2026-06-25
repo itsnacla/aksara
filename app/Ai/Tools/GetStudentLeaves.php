@@ -26,7 +26,7 @@ class GetStudentLeaves implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
@@ -37,13 +37,17 @@ class GetStudentLeaves implements Tool
 
         if (str_contains($roleName, 'siswa')) {
             $student = $this->user->student;
-            if (!$student) return 'Data siswa tidak ditemukan.';
+            if (! $student) {
+                return 'Data siswa tidak ditemukan.';
+            }
             $query->where('student_id', $student->id);
         } elseif (str_contains($roleName, 'orang_tua') || str_contains($roleName, 'wali')) {
             $parent = $this->user->parent;
-            if (!$parent) return 'Data orang tua tidak ditemukan.';
+            if (! $parent) {
+                return 'Data orang tua tidak ditemukan.';
+            }
             $childIds = $parent->students->pluck('id')->toArray();
-            
+
             if ($studentId && in_array($studentId, $childIds)) {
                 $query->where('student_id', $studentId);
             } else {

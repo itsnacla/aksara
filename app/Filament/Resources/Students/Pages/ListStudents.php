@@ -3,21 +3,23 @@
 namespace App\Filament\Resources\Students\Pages;
 
 use App\Filament\Resources\Students\StudentResource;
-use App\Models\User;
+use App\Models\AcademicYear;
 use App\Models\Student;
 use App\Models\StudentParent;
 use App\Models\StudyGroup;
-use Filament\Resources\Pages\ListRecords;
-use Filament\Actions\CreateAction;
+use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Filament\Notifications\Notification;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ListStudents extends ListRecords
 {
@@ -33,11 +35,11 @@ class ListStudents extends ListRecords
                 ->form([
                     Select::make('academic_year_id')
                         ->label('Pilih Tahun Ajaran')
-                        ->options(fn () => \App\Models\AcademicYear::query()
+                        ->options(fn () => AcademicYear::query()
                             ->get()
-                            ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)])
+                            ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - ".ucfirst($year->semester)])
                         )
-                        ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id)
+                        ->default(fn () => AcademicYear::where('is_active', true)->first()?->id)
                         ->required(),
                 ])
                 ->action(function (array $data, ListStudents $livewire) {
@@ -49,14 +51,14 @@ class ListStudents extends ListRecords
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
                 ->modalHeading('Import Berkas Data Siswa & Wali')
-                ->modalDescription(new HtmlString('Unggah berkas lembar kerja data induk siswa. Sistem akan memindai kolom, memvalidasi format, serta menghasilkan akun Siswa dan akun Orang Tua secara otomatis bila dikosongkan.<div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;"><a href="' . route('download.template', ['type' => 'student', 'format' => 'xlsx']) . '" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #10b981; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xlsx)</a><a href="' . route('download.template', ['type' => 'student', 'format' => 'xls']) . '" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #059669; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xls)</a><a href="' . route('download.template', ['type' => 'student', 'format' => 'csv']) . '" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #4b5563; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template CSV</a></div>'))
+                ->modalDescription(new HtmlString('Unggah berkas lembar kerja data induk siswa. Sistem akan memindai kolom, memvalidasi format, serta menghasilkan akun Siswa dan akun Orang Tua secara otomatis bila dikosongkan.<div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;"><a href="'.route('download.template', ['type' => 'student', 'format' => 'xlsx']).'" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #10b981; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xlsx)</a><a href="'.route('download.template', ['type' => 'student', 'format' => 'xls']).'" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #059669; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template Excel (.xls)</a><a href="'.route('download.template', ['type' => 'student', 'format' => 'csv']).'" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background-color: #4b5563; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);"><svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> Unduh Template CSV</a></div>'))
                 ->modalSubmitActionLabel('Mulai Proses Impor')
                 ->modalWidth('7xl')
                 ->form([
                     Select::make('fallback_study_group_id')
                         ->label('Rombel / Kelas Tujuan (Opsional)')
                         ->options(fn () => StudyGroup::with('academicYear')->whereHas('academicYear', fn ($q) => $q->where('is_active', true))->get()->mapWithKeys(fn ($sg) => [
-                            $sg->id => "{$sg->nama_rombel} ({$sg->academicYear->tahun_ajaran})"
+                            $sg->id => "{$sg->nama_rombel} ({$sg->academicYear->tahun_ajaran})",
                         ]))
                         ->searchable()
                         ->helperText('Jika kolom nama_rombel di CSV kosong, siswa akan otomatis dimasukkan ke Rombel ini.'),
@@ -67,8 +69,9 @@ class ListStudents extends ListRecords
                         ->required()
                         ->live()
                         ->afterStateUpdated(function ($state, callable $set) {
-                            if (!$state) {
+                            if (! $state) {
                                 $set('parsed_json', '[]');
+
                                 return;
                             }
 
@@ -80,12 +83,12 @@ class ListStudents extends ListRecords
                                 if (file_exists($file)) {
                                     $path = $file;
                                 } elseif (Storage::exists($file)) {
-                                    $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                                    $diskDriver = config('filesystems.disks.'.config('filesystems.default').'.driver');
                                     if (in_array($diskDriver, ['local', 'public'])) {
                                         $path = Storage::path($file);
                                     } else {
-                                        $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
-                                        if (!file_exists(dirname($tmpPath))) {
+                                        $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
+                                        if (! file_exists(dirname($tmpPath))) {
                                             mkdir(dirname($tmpPath), 0755, true);
                                         }
                                         file_put_contents($tmpPath, Storage::get($file));
@@ -93,7 +96,7 @@ class ListStudents extends ListRecords
                                         $isTempDownloaded = true;
                                     }
                                 } else {
-                                    $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                                    $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
                                     if (file_exists($tmpPath)) {
                                         $path = $tmpPath;
                                     }
@@ -102,22 +105,27 @@ class ListStudents extends ListRecords
                                 $path = $file->getRealPath();
                             }
 
-                            if (!$path || !file_exists($path)) {
+                            if (! $path || ! file_exists($path)) {
                                 return;
                             }
 
                             try {
-                                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
+                                $spreadsheet = IOFactory::load($path);
                                 $allRows = $spreadsheet->getActiveSheet()->toArray();
                             } catch (\Exception $e) {
-                                if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                                if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                                    @unlink($path);
+                                }
+
                                 return;
                             }
-                            if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                            if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                                @unlink($path);
+                            }
 
                             $rows = [];
                             foreach ($allRows as $r) {
-                                if (array_filter($r, fn($cell) => trim((string)$cell) !== '') !== []) {
+                                if (array_filter($r, fn ($cell) => trim((string) $cell) !== '') !== []) {
                                     $rows[] = $r;
                                 }
                             }
@@ -130,7 +138,7 @@ class ListStudents extends ListRecords
                             $required = ['user_name', 'nisn', 'gender'];
                             $missing = array_diff($required, $headers);
 
-                            if (!empty($missing)) {
+                            if (! empty($missing)) {
                                 return;
                             }
 
@@ -152,7 +160,7 @@ class ListStudents extends ListRecords
                                 $name = trim($data['user_name'] ?? '');
                                 $nisn = trim($data['nisn'] ?? '');
                                 if (is_numeric($nisn) && str_contains(strtolower($nisn), 'e')) {
-                                    $nisn = number_format((float)$nisn, 0, '', '');
+                                    $nisn = number_format((float) $nisn, 0, '', '');
                                 }
 
                                 if ($name && $nisn) {
@@ -166,17 +174,17 @@ class ListStudents extends ListRecords
 
                                     $validRows++;
                                     $username = trim($data['user_username'] ?? '');
-                                    if (!$username) {
+                                    if (! $username) {
                                         $cleanName = explode(',', $name)[0];
                                         $cleanName = preg_replace('/\b(dr|drs|drg|prof|hj|h|ir)\b\.?/i', '', $cleanName);
                                         $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cleanName));
-                                        if (!$baseUsername) {
-                                            $baseUsername = 'siswa' . rand(100, 999);
+                                        if (! $baseUsername) {
+                                            $baseUsername = 'siswa'.rand(100, 999);
                                         }
                                         $username = $baseUsername;
                                         $suffix = 1;
                                         while (User::where('username', $username)->exists() || in_array($username, $simulatedUsernames)) {
-                                            $username = $baseUsername . $suffix;
+                                            $username = $baseUsername.$suffix;
                                             $suffix++;
                                         }
                                     }
@@ -204,7 +212,7 @@ class ListStudents extends ListRecords
 
                             $set('parsed_json', json_encode($payload));
                         }),
-                    \Filament\Infolists\Components\TextEntry::make('preview')
+                    TextEntry::make('preview')
                         ->label('Pratinjau Tabel Hasil Parsing')
                         ->state(function (callable $get) {
                             $json = $get('parsed_json');
@@ -212,6 +220,7 @@ class ListStudents extends ListRecords
                             if (empty($data) || empty($data['rows'])) {
                                 return new HtmlString('<div class="text-sm text-gray-400 italic p-4 border border-dashed rounded-lg text-center bg-gray-50 dark:bg-white/5">Pilih berkas untuk memuat tabel pratinjau otomatis...</div>');
                             }
+
                             return view('filament.components.import-preview-table', [
                                 'type' => 'student',
                                 'rows' => $data['rows'],
@@ -229,12 +238,12 @@ class ListStudents extends ListRecords
                         if (file_exists($file)) {
                             $path = $file;
                         } elseif (Storage::exists($file)) {
-                            $diskDriver = config('filesystems.disks.' . config('filesystems.default') . '.driver');
+                            $diskDriver = config('filesystems.disks.'.config('filesystems.default').'.driver');
                             if (in_array($diskDriver, ['local', 'public'])) {
                                 $path = Storage::path($file);
                             } else {
-                                $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
-                                if (!file_exists(dirname($tmpPath))) {
+                                $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
+                                if (! file_exists(dirname($tmpPath))) {
                                     mkdir(dirname($tmpPath), 0755, true);
                                 }
                                 file_put_contents($tmpPath, Storage::get($file));
@@ -242,7 +251,7 @@ class ListStudents extends ListRecords
                                 $isTempDownloaded = true;
                             }
                         } else {
-                            $tmpPath = storage_path('app/livewire-tmp/' . basename($file));
+                            $tmpPath = storage_path('app/livewire-tmp/'.basename($file));
                             if (file_exists($tmpPath)) {
                                 $path = $tmpPath;
                             }
@@ -251,32 +260,38 @@ class ListStudents extends ListRecords
                         $path = $file->getRealPath();
                     }
 
-                    if (!$path || !file_exists($path)) {
+                    if (! $path || ! file_exists($path)) {
                         Notification::make()
                             ->title('Gagal membaca berkas')
                             ->body('Berkas tidak ditemukan pada penyimpanan sementara.')
                             ->danger()
                             ->send();
+
                         return;
                     }
 
                     try {
-                        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
+                        $spreadsheet = IOFactory::load($path);
                         $allRows = $spreadsheet->getActiveSheet()->toArray();
                     } catch (\Exception $e) {
-                        if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                        if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                            @unlink($path);
+                        }
                         Notification::make()
                             ->title('Format berkas tidak didukung')
                             ->body('Pastikan berkas berformat CSV atau Excel (.xlsx/.xls) yang valid.')
                             ->danger()
                             ->send();
+
                         return;
                     }
-                    if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) @unlink($path);
+                    if (isset($isTempDownloaded) && $isTempDownloaded && file_exists($path)) {
+                        @unlink($path);
+                    }
 
                     $rows = [];
                     foreach ($allRows as $r) {
-                        if (array_filter($r, fn($cell) => trim((string)$cell) !== '') !== []) {
+                        if (array_filter($r, fn ($cell) => trim((string) $cell) !== '') !== []) {
                             $rows[] = $r;
                         }
                     }
@@ -287,6 +302,7 @@ class ListStudents extends ListRecords
                             ->body('Tidak ada baris data yang dapat diimpor.')
                             ->warning()
                             ->send();
+
                         return;
                     }
 
@@ -308,16 +324,17 @@ class ListStudents extends ListRecords
                         $name = trim($rowData['user_name'] ?? '');
                         $nisn = trim($rowData['nisn'] ?? '');
                         if (is_numeric($nisn) && str_contains(strtolower($nisn), 'e')) {
-                            $nisn = number_format((float)$nisn, 0, '', '');
+                            $nisn = number_format((float) $nisn, 0, '', '');
                         }
 
-                        if (!$name || !$nisn) {
+                        if (! $name || ! $nisn) {
                             continue;
                         }
 
                         // Check duplicate NISN
                         if (Student::where('nisn', $nisn)->exists() || in_array($nisn, $insertedNisns)) {
                             $skippedCount++;
+
                             continue;
                         }
                         $insertedNisns[] = $nisn;
@@ -326,16 +343,18 @@ class ListStudents extends ListRecords
                         $cleanName = explode(',', $name)[0];
                         $cleanName = preg_replace('/\b(dr|drs|drg|prof|hj|h|ir)\b\.?/i', '', $cleanName);
                         $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $cleanName));
-                        if (!$baseUsername) { $baseUsername = 'siswa' . rand(100, 999); }
-                        
+                        if (! $baseUsername) {
+                            $baseUsername = 'siswa'.rand(100, 999);
+                        }
+
                         $username = $baseUsername;
                         $suffix = 1;
                         while (User::where('username', $username)->exists() || in_array($username, $insertedUsernames)) {
-                            $username = $baseUsername . $suffix;
+                            $username = $baseUsername.$suffix;
                             $suffix++;
                         }
                         $insertedUsernames[] = $username;
-                        $email = $username . '@aksara.samastanuswantara.com';
+                        $email = $username.'@aksara.samastanuswantara.com';
 
                         $studentUser = User::create([
                             'name' => $name,
@@ -347,13 +366,13 @@ class ListStudents extends ListRecords
 
                         // 2. Generate Parent Credentials
                         $parentName = trim($rowData['parent_father_name'] ?? '') ?: (trim($rowData['parent_mother_name'] ?? '') ?: "Wali {$name}");
-                        $parentUsername = 'wali_' . $username;
-                        $parentEmail = 'wali_' . $email;
+                        $parentUsername = 'wali_'.$username;
+                        $parentEmail = 'wali_'.$email;
 
                         // Ensure parent credentials are also unique
                         if (User::where('username', $parentUsername)->orWhere('email', $parentEmail)->exists()) {
                             $parentUsername .= rand(10, 99);
-                            $parentEmail = $parentUsername . '@aksara.samastanuswantara.com';
+                            $parentEmail = $parentUsername.'@aksara.samastanuswantara.com';
                         }
 
                         $parentUser = User::create([
@@ -398,13 +417,13 @@ class ListStudents extends ListRecords
 
                         // 4. Map Study Group (Rombel)
                         $rombelId = null;
-                        if (!empty($rowData['nama_rombel'])) {
-                            $sg = StudyGroup::where('nama_rombel', 'ilike', '%' . trim($rowData['nama_rombel']) . '%')->first();
+                        if (! empty($rowData['nama_rombel'])) {
+                            $sg = StudyGroup::where('nama_rombel', 'ilike', '%'.trim($rowData['nama_rombel']).'%')->first();
                             if ($sg) {
                                 $rombelId = $sg->id;
                             }
                         }
-                        if (!$rombelId && !empty($data['fallback_study_group_id'])) {
+                        if (! $rombelId && ! empty($data['fallback_study_group_id'])) {
                             $rombelId = $data['fallback_study_group_id'];
                         }
 
@@ -417,8 +436,8 @@ class ListStudents extends ListRecords
 
                     Notification::make()
                         ->title("Proses Impor Selesai: {$importedCount} Siswa Ditambahkan")
-                        ->body($skippedCount > 0 
-                            ? "Sebanyak <b>{$skippedCount} baris data dilewati</b> karena NISN sudah terdaftar." 
+                        ->body($skippedCount > 0
+                            ? "Sebanyak <b>{$skippedCount} baris data dilewati</b> karena NISN sudah terdaftar."
                             : "Akun siswa dan wali berhasil diparsing otomatis dengan sandi default 'password'")
                         ->success()
                         ->send();

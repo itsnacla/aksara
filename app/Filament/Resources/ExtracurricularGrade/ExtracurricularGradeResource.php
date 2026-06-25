@@ -5,21 +5,25 @@ namespace App\Filament\Resources\ExtracurricularGrade;
 use App\Filament\Resources\ExtracurricularGrade\Pages\BatchInputExtracurricularGrade;
 use App\Filament\Resources\ExtracurricularGrade\Pages\ManageExtracurricularGrades;
 use App\Models\AcademicYear;
+use App\Models\Extracurricular;
 use App\Models\ExtracurricularGrade;
 use App\Models\Student;
+use App\Models\StudyGroup;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class ExtracurricularGradeResource extends Resource
@@ -45,7 +49,7 @@ class ExtracurricularGradeResource extends Resource
                 ->label('Ekstrakurikuler')
                 ->relationship('extracurricular', 'nama_ekskul', modifyQueryUsing: function ($query) {
                     $user = auth()->user();
-                    if ($user && !$user->hasAnyRole(['super_admin', 'staff'])) {
+                    if ($user && ! $user->hasAnyRole(['super_admin', 'staff'])) {
                         $query->where('coordinator_user_id', $user->id);
                     }
                 })
@@ -53,27 +57,28 @@ class ExtracurricularGradeResource extends Resource
                 ->preload()
                 ->required()
                 ->live()
-                ->afterStateUpdated(fn(callable $set) => $set('student_id', null)),
+                ->afterStateUpdated(fn (callable $set) => $set('student_id', null)),
 
             Select::make('student_id')
                 ->label('Siswa')
                 ->options(function (callable $get) {
                     $ekstrakurikulerId = $get('extracurricular_id');
-                    if (!$ekstrakurikulerId) {
+                    if (! $ekstrakurikulerId) {
                         return [];
                     }
-                    return Student::whereHas('extracurriculars', fn($q) => $q->where('extracurriculars.id', $ekstrakurikulerId))
+
+                    return Student::whereHas('extracurriculars', fn ($q) => $q->where('extracurriculars.id', $ekstrakurikulerId))
                         ->with('user')
                         ->get()
-                        ->mapWithKeys(fn($s) => [$s->id => "{$s->nisn} - {$s->user->name}"])
+                        ->mapWithKeys(fn ($s) => [$s->id => "{$s->nisn} - {$s->user->name}"])
                         ->toArray();
                 })
                 ->searchable()
                 ->required()
                 ->live(),
 
-            \Filament\Forms\Components\Hidden::make('academic_year_id')
-                ->default(fn() => AcademicYear::where('is_active', true)->value('id')),
+            Hidden::make('academic_year_id')
+                ->default(fn () => AcademicYear::where('is_active', true)->value('id')),
 
             Select::make('predikat')
                 ->label('Predikat')
@@ -86,12 +91,12 @@ class ExtracurricularGradeResource extends Resource
                     callable $set,
                     callable $get
                 ) {
-                    if ($state && !$get('keterangan')) {
+                    if ($state && ! $get('keterangan')) {
                         $set('keterangan', ExtracurricularGrade::$defaultKeterangan[$state] ?? '');
                     }
                 }),
 
-            \Filament\Forms\Components\Textarea::make('keterangan')
+            Textarea::make('keterangan')
                 ->label('Keterangan')
                 ->rows(3)
                 ->placeholder('Deskripsi singkat partisipasi dan perkembangan siswa dalam ekskul ini')
@@ -121,19 +126,19 @@ class ExtracurricularGradeResource extends Resource
                 TextColumn::make('predikat')
                     ->label('Predikat')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'A' => 'success',
                         'B' => 'info',
                         'C' => 'warning',
                         'D' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => ExtracurricularGrade::$predikatOptions[$state] ?? $state),
+                    ->formatStateUsing(fn (string $state): string => ExtracurricularGrade::$predikatOptions[$state] ?? $state),
 
                 TextColumn::make('keterangan')
                     ->label('Keterangan')
                     ->limit(60)
-                    ->tooltip(fn($record) => $record->keterangan)
+                    ->tooltip(fn ($record) => $record->keterangan)
                     ->placeholder('-'),
 
                 TextColumn::make('academicYear.tahun_ajaran')
@@ -147,22 +152,22 @@ class ExtracurricularGradeResource extends Resource
                 SelectFilter::make('academic_year_id')
                     ->label('Tahun Ajaran')
                     ->relationship('academicYear', 'tahun_ajaran')
-                    ->default(fn() => AcademicYear::where('is_active', true)->value('id')),
+                    ->default(fn () => AcademicYear::where('is_active', true)->value('id')),
 
                 SelectFilter::make('extracurricular_id')
                     ->label('Ekstrakurikuler')
                     ->relationship('extracurricular', 'nama_ekskul', modifyQueryUsing: function ($query) {
                         $user = auth()->user();
-                        if ($user && !$user->hasAnyRole(['super_admin', 'staff'])) {
+                        if ($user && ! $user->hasAnyRole(['super_admin', 'staff'])) {
                             $query->where('coordinator_user_id', $user->id);
                         }
                     }),
 
                 SelectFilter::make('study_group_id')
                     ->label('Rombel')
-                    ->options(fn() => \App\Models\StudyGroup::where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))->pluck('nama_rombel', 'id'))
+                    ->options(fn () => StudyGroup::where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))->pluck('nama_rombel', 'id'))
                     ->query(function ($query, array $data) {
-                        if (!empty($data['value'])) {
+                        if (! empty($data['value'])) {
                             $query->whereHas('student.studyGroups', function ($q) use ($data) {
                                 $q->where('study_groups.id', $data['value']);
                             });
@@ -196,12 +201,12 @@ class ExtracurricularGradeResource extends Resource
         return auth()->user()?->can('Create:ExtracurricularGrade') ?? false;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return auth()->user()?->can('Update:ExtracurricularGrade') ?? false;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return auth()->user()?->can('Delete:ExtracurricularGrade') ?? false;
     }
@@ -214,32 +219,38 @@ class ExtracurricularGradeResource extends Resource
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
+        if (! $user) {
+            return false;
+        }
 
         // Shield permission check (configurable via Filament Shield UI)
-        if (!static::canViewAny()) return false;
+        if (! static::canViewAny()) {
+            return false;
+        }
 
         // super_admin & staff: full access
-        if ($user->hasAnyRole(['super_admin', 'staff'])) return true;
+        if ($user->hasAnyRole(['super_admin', 'staff'])) {
+            return true;
+        }
 
         // guru: hanya koordinator ekskul yang bisa akses
         if ($user->hasRole('guru')) {
-            return \App\Models\Extracurricular::where('coordinator_user_id', $user->id)->exists();
+            return Extracurricular::where('coordinator_user_id', $user->id)->exists();
         }
 
         // Role lain yang di-grant via Shield: ikuti Shield permission
         return true;
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
             ->with(['extracurricular', 'student.user', 'student.studyGroups', 'academicYear'])
-            ->whereHas('academicYear', fn($q) => $q->where('is_active', true));
+            ->whereHas('academicYear', fn ($q) => $q->where('is_active', true));
 
         $user = auth()->user();
-        if ($user && !$user->hasAnyRole(['super_admin', 'staff'])) {
-            $query->whereHas('extracurricular', fn($q) => $q->where('coordinator_user_id', $user->id));
+        if ($user && ! $user->hasAnyRole(['super_admin', 'staff'])) {
+            $query->whereHas('extracurricular', fn ($q) => $q->where('coordinator_user_id', $user->id));
         }
 
         return $query;
@@ -248,7 +259,7 @@ class ExtracurricularGradeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'       => ManageExtracurricularGrades::route('/'),
+            'index' => ManageExtracurricularGrades::route('/'),
             'batch-input' => BatchInputExtracurricularGrade::route('/batch-input'),
         ];
     }

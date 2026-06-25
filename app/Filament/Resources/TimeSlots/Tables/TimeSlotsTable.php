@@ -2,10 +2,15 @@
 
 namespace App\Filament\Resources\TimeSlots\Tables;
 
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
-use Filament\Tables\Table;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 
 class TimeSlotsTable
 {
@@ -40,16 +45,16 @@ class TimeSlotsTable
                     ->relationship('levels', 'nama_tingkatan'),
             ])
             ->actions([
-                \Filament\Actions\ViewAction::make()
+                ViewAction::make()
                     ->modal(),
-                \Filament\Actions\EditAction::make()
+                EditAction::make()
                     ->modal(),
-                \Filament\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->modal(),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

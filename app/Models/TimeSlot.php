@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $nama_jam
- * @property \Illuminate\Support\Carbon $waktu_mulai
- * @property \Illuminate\Support\Carbon $waktu_selesai
+ * @property Carbon $waktu_mulai
+ * @property Carbon $waktu_selesai
  * @property bool $is_istirahat
  * @property int $urutan
  */

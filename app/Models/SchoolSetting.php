@@ -71,10 +71,13 @@ class SchoolSetting extends Model
      */
     public function getWebsiteAttribute($value)
     {
-        if (!$value) return null;
-        if (!str_starts_with($value, 'http')) {
-            return 'https://' . $value;
+        if (! $value) {
+            return null;
         }
+        if (! str_starts_with($value, 'http')) {
+            return 'https://'.$value;
+        }
+
         return $value;
     }
 

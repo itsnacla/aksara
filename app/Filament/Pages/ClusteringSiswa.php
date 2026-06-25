@@ -2,21 +2,24 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
+use App\Ai\Agents\DataScientistAssistant;
 use App\Models\StudyGroup;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Pages\Page;
 use Filament\Schemas\Schema;
-use Filament\Forms\Components\Select;
+use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Ai;
-use Illuminate\Support\HtmlString;
 
 class ClusteringSiswa extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static ?string $title = 'Clustering Kemampuan Belajar Siswa';
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+
     protected string $view = 'filament.pages.clustering-siswa';
 
     public static function canAccess(): bool
@@ -30,7 +33,9 @@ class ClusteringSiswa extends Page implements HasForms
     }
 
     public ?array $data = [];
+
     public ?array $aiResult = null;
+
     public bool $isAnalyzing = false;
 
     public function mount(): void
@@ -45,13 +50,13 @@ class ClusteringSiswa extends Page implements HasForms
                 Select::make('study_group_id')
                     ->label('Pilih Rombongan Belajar (Kelas)')
                     ->options(function () {
-                        $query = StudyGroup::query()->whereHas('academicYear', function($q) {
+                        $query = StudyGroup::query()->whereHas('academicYear', function ($q) {
                             $q->where('is_active', true);
                         });
-                        
+
                         $user = auth()->user();
                         $isWaliKelas = $user->hasRole('guru') && $user->teacher
-                            && !$user->teacher->is_kepalasekolah && !$user->hasRole('super_admin');
+                            && ! $user->teacher->is_kepalasekolah && ! $user->hasRole('super_admin');
                         if ($isWaliKelas) {
                             $query->whereIn('id', $user->teacher->studyGroups()->pluck('id')->toArray());
                         }
@@ -60,7 +65,7 @@ class ClusteringSiswa extends Page implements HasForms
                     })
                     ->searchable()
                     ->required()
-                    ->columnSpanFull()
+                    ->columnSpanFull(),
             ])
             ->statePath('data');
     }
@@ -74,8 +79,9 @@ class ClusteringSiswa extends Page implements HasForms
         $studyGroupId = $this->data['study_group_id'];
         $studyGroup = StudyGroup::with(['students.grades.subject', 'students.user'])->find($studyGroupId);
 
-        if (!$studyGroup) {
+        if (! $studyGroup) {
             $this->isAnalyzing = false;
+
             return;
         }
 
@@ -84,22 +90,22 @@ class ClusteringSiswa extends Page implements HasForms
             $subjectGrades = [];
             foreach ($student->grades as $grade) {
                 $mapel = $grade->subject->nama_mapel ?? 'Lainnya';
-                if (!isset($subjectGrades[$mapel])) {
+                if (! isset($subjectGrades[$mapel])) {
                     $subjectGrades[$mapel] = [];
                 }
                 $subjectGrades[$mapel][] = ($grade->nilai_tugas + $grade->nilai_uts + $grade->nilai_uas) / 3;
             }
-            
+
             $averages = [];
             foreach ($subjectGrades as $mapel => $scores) {
                 if (count($scores) > 0) {
                     $averages[$mapel] = round(array_sum($scores) / count($scores), 1);
                 }
             }
-            
+
             $studentData[] = [
                 'nama' => $student->user->name,
-                'rata_rata_mapel' => $averages
+                'rata_rata_mapel' => $averages,
             ];
         }
 
@@ -134,10 +140,10 @@ $jsonData
 EOT;
 
         try {
-            $agent = new \App\Ai\Agents\DataScientistAssistant();
+            $agent = new DataScientistAssistant;
             $response = $agent->prompt($prompt);
             $jsonString = (string) $response;
-            
+
             // Clean markdown json ticks if AI included them
             $jsonString = preg_replace('/```json\s*/', '', $jsonString);
             $jsonString = preg_replace('/```/', '', $jsonString);
@@ -145,11 +151,11 @@ EOT;
 
             $this->aiResult = json_decode($jsonString, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                \Illuminate\Support\Facades\Log::error('AI JSON Parse Error', ['raw_response' => $jsonString]);
+                Log::error('AI JSON Parse Error', ['raw_response' => $jsonString]);
                 $this->aiResult = ['error' => 'AI tidak mengembalikan format JSON yang valid. Silakan coba lagi.'];
             }
         } catch (\Exception $e) {
-            $this->aiResult = ['error' => 'Gagal terhubung ke AI: ' . $e->getMessage()];
+            $this->aiResult = ['error' => 'Gagal terhubung ke AI: '.$e->getMessage()];
         }
 
         $this->isAnalyzing = false;

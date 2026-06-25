@@ -3,11 +3,15 @@
 namespace App\Filament\Resources\BukuInduk\Pages;
 
 use App\Filament\Resources\BukuInduk\BukuIndukResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Models\AcademicYear;
+use App\Models\Student;
+use App\Models\StudyGroup;
+use App\Services\Academic\BukuIndukService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use App\Models\StudyGroup;
-use App\Models\Student;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\Log;
 
 class ListBukuInduk extends ListRecords
 {
@@ -33,29 +37,31 @@ class ListBukuInduk extends ListRecords
                 ])
                 ->action(function (array $data) {
                     $studyGroupId = $data['study_group_id'];
-                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                    
-                    if (!$activeYearId) {
-                        \Filament\Notifications\Notification::make()
+                    $activeYearId = AcademicYear::where('is_active', true)->value('id');
+
+                    if (! $activeYearId) {
+                        Notification::make()
                             ->title('Tahun ajaran aktif tidak ditemukan')
                             ->danger()
                             ->send();
+
                         return;
                     }
 
                     $students = Student::with(['studyGroups.level'])
                         ->whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
                         ->get();
-                    
+
                     if ($students->isEmpty()) {
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Rombel terpilih tidak memiliki siswa')
                             ->danger()
                             ->send();
+
                         return;
                     }
 
-                    $bukuIndukService = new \App\Services\Academic\BukuIndukService();
+                    $bukuIndukService = new BukuIndukService;
                     $successCount = 0;
 
                     /** @var Student $student */
@@ -64,11 +70,11 @@ class ListBukuInduk extends ListRecords
                             $bukuIndukService->generateStudentBukuInduk($student, $activeYearId);
                             $successCount++;
                         } catch (\Exception $e) {
-                            \Illuminate\Support\Facades\Log::error("Batch AI Buku Induk failed for Student ID {$student->id}: " . $e->getMessage());
+                            Log::error("Batch AI Buku Induk failed for Student ID {$student->id}: ".$e->getMessage());
                         }
                     }
 
-                    \Filament\Notifications\Notification::make()
+                    Notification::make()
                         ->title("Buku Induk berhasil digenerate untuk {$successCount} siswa di Rombel")
                         ->success()
                         ->send();
@@ -89,35 +95,37 @@ class ListBukuInduk extends ListRecords
                 ])
                 ->action(function (array $data, ListBukuInduk $livewire) {
                     $studyGroupId = $data['study_group_id'];
-                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                    
-                    if (!$activeYearId) {
-                        \Filament\Notifications\Notification::make()
+                    $activeYearId = AcademicYear::where('is_active', true)->value('id');
+
+                    if (! $activeYearId) {
+                        Notification::make()
                             ->title('Tahun ajaran aktif tidak ditemukan')
                             ->danger()
                             ->send();
+
                         return;
                     }
-                    
+
                     $studentIds = Student::whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
                         ->pluck('id')
                         ->implode(',');
-                        
+
                     if (empty($studentIds)) {
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Gagal Cetak Massal')
                             ->body('Rombel terpilih tidak memiliki siswa!')
                             ->danger()
                             ->send();
+
                         return;
                     }
-                    
+
                     $url = route('print.buku-induk-bulk', [
                         'student_ids' => $studentIds,
                     ]);
-                    
+
                     $livewire->js("window.open('{$url}', '_blank');");
-                })
+                }),
         ];
     }
 }

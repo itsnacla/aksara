@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources\P5Project;
 
-use App\Filament\Resources\P5Project\Pages;
 use App\Filament\Resources\P5Project\Schemas\P5ProjectForm;
 use App\Filament\Resources\P5Project\Tables\P5ProjectTable;
+use App\Models\AcademicYear;
 use App\Models\P5Project;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class P5ProjectResource extends Resource
 {
@@ -40,16 +41,16 @@ class P5ProjectResource extends Resource
         return P5ProjectTable::configure($table);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // Filter by active academic year
-        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+        $activeYearId = AcademicYear::where('is_active', true)->value('id');
         if ($activeYearId) {
             $query->where('academic_year_id', $activeYearId);
         }
-        
+
         return $query;
     }
 

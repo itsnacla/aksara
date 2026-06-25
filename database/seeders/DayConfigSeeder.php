@@ -2,19 +2,21 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\DayConfig;
 use App\Models\AcademicYear;
+use App\Models\DayConfig;
+use App\Models\Level;
 use App\Models\Subject;
 use App\Models\TimeSlot;
-use App\Models\Level;
+use Illuminate\Database\Seeder;
 
 class DayConfigSeeder extends Seeder
 {
     public function run(): void
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
-        if (!$activeYear) return;
+        if (! $activeYear) {
+            return;
+        }
 
         $upacaraMapel = Subject::where('nama_mapel', 'Upacara')->first();
         $jam1 = TimeSlot::where('urutan', 1)->first();
@@ -22,7 +24,7 @@ class DayConfigSeeder extends Seeder
         $jam5 = TimeSlot::where('urutan', 6)->first(); // Jam Kelima
         $jam6 = TimeSlot::where('urutan', 7)->first(); // Jam Keenam
         $jam8 = TimeSlot::where('urutan', 9)->first(); // Jam Kedelapan
-        
+
         $levels12 = Level::whereIn('nama_tingkatan', ['Kelas 1', 'Kelas 2'])->pluck('id')->toArray();
         $levels16 = Level::whereIn('nama_tingkatan', ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'])->pluck('id')->toArray();
         $levels36 = Level::whereIn('nama_tingkatan', ['Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'])->pluck('id')->toArray();

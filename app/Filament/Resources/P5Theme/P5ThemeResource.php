@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources\P5Theme;
 
-use App\Filament\Resources\P5Theme\Pages;
 use App\Filament\Resources\P5Theme\Schemas\P5ThemeForm;
 use App\Filament\Resources\P5Theme\Tables\P5ThemeTable;
+use App\Models\AcademicYear;
 use App\Models\P5Theme;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class P5ThemeResource extends Resource
 {
@@ -40,16 +41,16 @@ class P5ThemeResource extends Resource
         return P5ThemeTable::configure($table);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // Filter by active academic year
-        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+        $activeYearId = AcademicYear::where('is_active', true)->value('id');
         if ($activeYearId) {
             $query->where('academic_year_id', $activeYearId);
         }
-        
+
         return $query;
     }
 

@@ -35,7 +35,7 @@ class Subject extends Model
         static::creating(function ($model) {
             if (empty($model->kode_mapel)) {
                 $name = $model->nama_mapel;
-                
+
                 $mappings = [
                     'Ilmu Pengetahuan Alam dan Sosial' => 'IPAS',
                     'Ilmu Pengetahuan Alam' => 'IPA',
@@ -46,7 +46,7 @@ class Subject extends Model
                     'Pendidikan Pancasila' => 'PPKN',
                     'Pendidikan Agama' => 'PAI',
                 ];
-                
+
                 $prefix = '';
                 foreach ($mappings as $key => $val) {
                     if (stripos($name, $key) !== false) {
@@ -54,15 +54,15 @@ class Subject extends Model
                         break;
                     }
                 }
-                
+
                 if (empty($prefix)) {
                     $prefix = str_ireplace(['Pendidikan', 'Bahasa'], ['Pend.', 'Bhs.'], $name);
                 }
-                
-                $latest = static::where('kode_mapel', 'like', $prefix . '%')->orderBy('kode_mapel', 'desc')->first();
-                $number = $latest ? (int)filter_var($latest->kode_mapel, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
-                
-                $model->kode_mapel = $prefix . ' ' . str_pad($number, 2, '0', STR_PAD_LEFT);
+
+                $latest = static::where('kode_mapel', 'like', $prefix.'%')->orderBy('kode_mapel', 'desc')->first();
+                $number = $latest ? (int) filter_var($latest->kode_mapel, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
+
+                $model->kode_mapel = $prefix.' '.str_pad($number, 2, '0', STR_PAD_LEFT);
             }
         });
     }

@@ -2,22 +2,22 @@
 
 namespace App\Filament\Resources\StudyGroups\RelationManagers;
 
-use Filament\Schemas\Schema;
+use App\Filament\Resources\Students\Schemas\StudentInfoList;
+use App\Models\Student;
+use Filament\Actions\AttachAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DetachAction;
+use Filament\Actions\DetachBulkAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Actions\ViewAction;
-use Filament\Actions\AttachAction;
-use Filament\Actions\DetachAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DetachBulkAction;
+use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
 
 class StudentsRelationManager extends RelationManager
 {
@@ -51,7 +51,7 @@ class StudentsRelationManager extends RelationManager
 
     public function infolist(Schema $schema): Schema
     {
-        return \App\Filament\Resources\Students\Schemas\StudentInfoList::configure($schema);
+        return StudentInfoList::configure($schema);
     }
 
     public function table(Table $table): Table
@@ -93,12 +93,12 @@ class StudentsRelationManager extends RelationManager
                     ->label('Tambah Siswa ke Rombel')
                     ->modalHeading('Pilih Siswa')
                     ->recordSelect(
-                        fn (AttachAction $action, RelationManager $livewire) => 
-                        Select::make('recordId')
+                        fn (AttachAction $action, RelationManager $livewire) => Select::make('recordId')
                             ->label('Pilih Siswa')
                             ->options(function () use ($livewire) {
                                 $rombel = $livewire->getOwnerRecord();
-                                return \App\Models\Student::query()
+
+                                return Student::query()
                                     ->with('user')
                                     ->where('status', 'aktif')
                                     ->whereDoesntHave('studyGroups', function ($q) use ($rombel) {
@@ -106,7 +106,7 @@ class StudentsRelationManager extends RelationManager
                                     })
                                     ->get()
                                     ->mapWithKeys(fn ($student) => [
-                                        $student->id => "{$student->nisn} - " . ($student->user->name ?? 'Unknown')
+                                        $student->id => "{$student->nisn} - ".($student->user->name ?? 'Unknown'),
                                     ]);
                             })
                             ->searchable()

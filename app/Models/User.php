@@ -6,8 +6,10 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\LazyLoadingViolationException;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -18,7 +20,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property string|null $photo
  * @property bool $is_active
- * @property \Illuminate\Support\Carbon|null $created_at
+ * @property Carbon|null $created_at
  */
 #[Fillable([
     'name',
@@ -30,8 +32,8 @@ use Spatie\Permission\Traits\HasRoles;
 ])]
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, Notifiable, HasRoles;
-    
+    use HasFactory, HasRoles, Notifiable;
+
     protected $guard_name = 'web';
 
     protected $hidden = [
@@ -85,16 +87,16 @@ class User extends Authenticatable implements FilamentUser
         try {
             if ($this->relationLoaded('teacher') && $this->teacher) {
                 return $this->teacher->nama_lengkap;
-            } elseif (!$this->relationLoaded('teacher')) {
+            } elseif (! $this->relationLoaded('teacher')) {
                 // If preventLazyLoading is active, this will catch the exception
                 if ($this->teacher) {
                     return $this->teacher->nama_lengkap;
                 }
             }
-        } catch (\Illuminate\Database\LazyLoadingViolationException $e) {
+        } catch (LazyLoadingViolationException $e) {
             // fallback to name if lazy loading is prevented
         }
-        
+
         return $this->name;
     }
 }

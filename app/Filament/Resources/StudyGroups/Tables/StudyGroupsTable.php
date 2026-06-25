@@ -2,23 +2,28 @@
 
 namespace App\Filament\Resources\StudyGroups\Tables;
 
-use App\Models\StudyGroup;
 use App\Models\AcademicYear;
-use App\Models\Level;
 use App\Models\Classroom;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Schemas\Components\Grid;
+use App\Models\Level;
+use App\Models\StudyGroup;
+use App\Models\Teacher;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Radio;
-use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class StudyGroupsTable
 {
@@ -41,13 +46,13 @@ class StudyGroupsTable
                 ->weight('bold')
                 ->color('primary')
                 ->wrap(),
-            
+
             TextColumn::make('waliKelas.nama_lengkap')
                 ->label('Wali Kelas')
                 ->searchable(['user.name'])
                 ->icon('heroicon-m-user-circle')
                 ->color('gray')
-                ->description(fn ($record) => "NIP/ID: " . ($record->waliKelas?->nip ?? '-'))
+                ->description(fn ($record) => 'NIP/ID: '.($record->waliKelas?->nip ?? '-'))
                 ->sortable(false)
                 ->formatStateUsing(fn ($record) => $record->waliKelas?->nama_lengkap ?? '-'),
 
@@ -66,7 +71,7 @@ class StudyGroupsTable
             SelectFilter::make('academic_year_id')
                 ->label('Filter Tahun Ajaran')
                 ->options(fn () => AcademicYear::all()->mapWithKeys(fn ($year) => [
-                    $year->id => "Tahun Ajaran {$year->tahun_ajaran}"
+                    $year->id => "Tahun Ajaran {$year->tahun_ajaran}",
                 ]))
                 ->default(fn () => AcademicYear::where('is_active', true)->first()?->id),
         ];
@@ -91,13 +96,17 @@ class StudyGroupsTable
 
                     if ($hasStudents || $hasSchedules) {
                         $relatedItems = [];
-                        if ($hasStudents) $relatedItems[] = 'Siswa';
-                        if ($hasSchedules) $relatedItems[] = 'Jadwal';
+                        if ($hasStudents) {
+                            $relatedItems[] = 'Siswa';
+                        }
+                        if ($hasSchedules) {
+                            $relatedItems[] = 'Jadwal';
+                        }
 
                         Notification::make()
                             ->title('Tidak Dapat Menghapus Rombel')
                             ->danger()
-                            ->body('Rombel ini masih memiliki data terkait: ' . implode(', ', $relatedItems) . '. Lepaskan atau hapus data terkait terlebih dahulu.')
+                            ->body('Rombel ini masih memiliki data terkait: '.implode(', ', $relatedItems).'. Lepaskan atau hapus data terkait terlebih dahulu.')
                             ->persistent()
                             ->send();
 
@@ -110,9 +119,9 @@ class StudyGroupsTable
     protected static function getBulkActions(): array
     {
         return [
-            \Filament\Actions\BulkActionGroup::make([
-                \Filament\Actions\DeleteBulkAction::make()
-                    ->before(function (\Filament\Actions\DeleteBulkAction $action, \Illuminate\Database\Eloquent\Collection $records) {
+            BulkActionGroup::make([
+                DeleteBulkAction::make()
+                    ->before(function (DeleteBulkAction $action, Collection $records) {
                         foreach ($records as $record) {
                             if ($record->students()->exists() || $record->schedules()->exists()) {
                                 Notification::make()
@@ -143,7 +152,7 @@ class StudyGroupsTable
                 $studentOptions = $record->students->mapWithKeys(fn ($s) => [$s->id => "{$s->nisn} - {$s->user->name}"]);
                 $studentIds = $record->students->pluck('id')->toArray();
 
-                $checklist = \Filament\Forms\Components\CheckboxList::make('selected_students')
+                $checklist = CheckboxList::make('selected_students')
                     ->label('Pilih Siswa yang Lulus / Naik Kelas')
                     ->options($studentOptions)
                     ->default($studentIds)
@@ -155,7 +164,7 @@ class StudyGroupsTable
                     return [
                         $checklist,
                         TextEntry::make('info')
-                            ->label("Siswa yang dipilih akan diubah statusnya menjadi Lulus.")
+                            ->label('Siswa yang dipilih akan diubah statusnya menjadi Lulus.'),
                     ];
                 }
 
@@ -175,7 +184,7 @@ class StudyGroupsTable
                         ->options(function ($record) {
                             return AcademicYear::where('id', '>', $record->academic_year_id)
                                 ->get()
-                                ->mapWithKeys(fn ($y) => [$y->id => "Tahun Ajaran {$y->tahun_ajaran} - " . ucfirst($y->semester)]);
+                                ->mapWithKeys(fn ($y) => [$y->id => "Tahun Ajaran {$y->tahun_ajaran} - ".ucfirst($y->semester)]);
                         })
                         ->default(function ($record) {
                             return AcademicYear::where('id', '>', $record->academic_year_id)->first()?->id;
@@ -187,14 +196,16 @@ class StudyGroupsTable
                     Select::make('target_study_group_id')
                         ->label('Pilih Rombel Tujuan')
                         ->options(function (callable $get, $record) {
-                            if ($get('mode') !== 'existing') return [];
-                            
+                            if ($get('mode') !== 'existing') {
+                                return [];
+                            }
+
                             return StudyGroup::where('id', '!=', $record->id)
                                 ->where('academic_year_id', $get('target_academic_year_id'))
                                 ->with(['level'])
                                 ->get()
                                 ->mapWithKeys(fn ($group) => [
-                                    $group->id => "{$group->nama_rombel} ({$group->level->nama_tingkatan})"
+                                    $group->id => "{$group->nama_rombel} ({$group->level->nama_tingkatan})",
                                 ]);
                         })
                         ->hidden(fn (callable $get) => $get('mode') !== 'existing')
@@ -206,8 +217,9 @@ class StudyGroupsTable
                             Select::make('new_level_id')
                                 ->label('Tingkatan Baru')
                                 ->options(Level::all()->pluck('nama_tingkatan', 'id'))
-                                ->default(function($record) {
+                                ->default(function ($record) {
                                     $nextLevel = Level::where('id', '>', $record->level_id)->first();
+
                                     return $nextLevel ? $nextLevel->id : $record->level_id;
                                 })
                                 ->required(fn (callable $get) => $get('mode') === 'create'),
@@ -215,12 +227,14 @@ class StudyGroupsTable
                                 ->label('Wali Kelas Baru')
                                 ->options(function (callable $get) {
                                     $academicYearId = $get('target_academic_year_id');
-                                    if (!$academicYearId) return [];
+                                    if (! $academicYearId) {
+                                        return [];
+                                    }
 
-                                    return \App\Models\Teacher::with('user')
+                                    return Teacher::with('user')
                                         ->where('is_walikelas', true)
                                         ->where('status', 'aktif')
-                                        ->whereHas('user', fn($q) => $q->where('is_active', true))
+                                        ->whereHas('user', fn ($q) => $q->where('is_active', true))
                                         ->whereDoesntHave('studyGroups', function ($query) use ($academicYearId) {
                                             $query->where('academic_year_id', $academicYearId);
                                         })
@@ -234,9 +248,14 @@ class StudyGroupsTable
                             TextInput::make('new_classroom_name')
                                 ->label('Nama Ruangan Tujuan')
                                 ->placeholder('Contoh: Ruang 3A')
-                                ->default(function($record) {
-                                    if (!$record->classroom) return '';
-                                    return preg_replace_callback('/\d+/', function($m) { return $m[0] + 1; }, $record->classroom->nama_ruangan);
+                                ->default(function ($record) {
+                                    if (! $record->classroom) {
+                                        return '';
+                                    }
+
+                                    return preg_replace_callback('/\d+/', function ($m) {
+                                        return $m[0] + 1;
+                                    }, $record->classroom->nama_ruangan);
                                 })
                                 ->helperText('Sistem menebak ruangan berikutnya.')
                                 ->required(fn (callable $get) => $get('mode') === 'create')
@@ -260,6 +279,7 @@ class StudyGroupsTable
                         ->success()
                         ->body("Berhasil meluluskan {$processCount} siswa dari rombel {$record->nama_rombel}.")
                         ->send();
+
                     return;
                 }
 
@@ -267,7 +287,7 @@ class StudyGroupsTable
 
                 if ($data['mode'] === 'create') {
                     $classroom = Classroom::firstOrCreate([
-                        'nama_ruangan' => $data['new_classroom_name']
+                        'nama_ruangan' => $data['new_classroom_name'],
                     ]);
 
                     $newGroup = StudyGroup::create([
@@ -280,7 +300,7 @@ class StudyGroupsTable
                 } else {
                     $targetGroupId = $data['target_study_group_id'];
                 }
-                
+
                 foreach ($studentsToProcess as $student) {
                     $student->studyGroups()->syncWithoutDetaching([$targetGroupId]);
                     $student->update(['status' => 'aktif']);

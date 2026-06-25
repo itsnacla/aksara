@@ -2,8 +2,9 @@
 
 namespace App\Ai\Tools;
 
-use App\Models\Grade;
 use App\Models\Attendance;
+use App\Models\Grade;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -21,29 +22,35 @@ class AnalyzeDropoutRisk implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) return 'Error: User context missing.';
+        if (! $this->user) {
+            return 'Error: User context missing.';
+        }
 
         $studentName = $request['student_name'] ?? null;
-        if (!$studentName) return 'Error: student_name is required.';
+        if (! $studentName) {
+            return 'Error: student_name is required.';
+        }
 
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
-        if (!in_array(strtolower($roleName), ['admin', 'super_admin', 'guru', 'staff'])) {
+        if (! in_array(strtolower($roleName), ['admin', 'super_admin', 'guru', 'staff'])) {
             return 'Akses ditolak. Fitur Early Warning System hanya untuk Guru dan Admin.';
         }
 
-        $student = \App\Models\Student::with('user')->whereHas('user', function($q) use ($studentName) {
-            $q->where('name', 'like', '%' . $studentName . '%');
+        $student = Student::with('user')->whereHas('user', function ($q) use ($studentName) {
+            $q->where('name', 'like', '%'.$studentName.'%');
         })->first();
-        if (!$student) return 'Siswa dengan nama ' . $studentName . ' tidak ditemukan di database.';
+        if (! $student) {
+            return 'Siswa dengan nama '.$studentName.' tidak ditemukan di database.';
+        }
 
-        if (!$this->hasAccessToStudent(strtolower($roleName), $student)) {
+        if (! $this->hasAccessToStudent(strtolower($roleName), $student)) {
             return 'Akses ditolak. Siswa ini tidak berada di kelas perwalian Anda.';
         }
 
         return $this->buildAnalysisData($student);
     }
 
-    private function hasAccessToStudent(string $roleName, \App\Models\Student $student): bool
+    private function hasAccessToStudent(string $roleName, Student $student): bool
     {
         if (str_contains($roleName, 'guru') && $this->user->teacher) {
             $rombelIds = $this->user->teacher->studyGroups()->pluck('id')->toArray();
@@ -52,13 +59,14 @@ class AnalyzeDropoutRisk implements Tool
                 return false;
             }
         }
+
         return true;
     }
 
-    private function buildAnalysisData(\App\Models\Student $student): string
+    private function buildAnalysisData(Student $student): string
     {
         $studentId = $student->id;
-        $grades = Grade::with('subject')->where('student_id', $studentId)->latest()->take(50)->get()->map(fn($g) => [
+        $grades = Grade::with('subject')->where('student_id', $studentId)->latest()->take(50)->get()->map(fn ($g) => [
             'mapel' => $g->subject->nama_mapel ?? 'N/A',
             'tugas' => $g->nilai_tugas,
             'uts' => $g->nilai_uts,
@@ -74,7 +82,7 @@ class AnalyzeDropoutRisk implements Tool
             'student_name' => $student->user->name,
             'grades_history' => $grades,
             'attendance_summary' => $attendance,
-            'instruction_to_ai' => 'Tugas Anda: Bertindak sebagai Data Scientist. Analisis data di atas dan berikan prediksi persentase risiko dropout/tinggal kelas (Rendah/Menengah/Tinggi) serta rekomendasi pencegahannya dalam format markdown yang rapi. Gunakan bahasa Indonesia.'
+            'instruction_to_ai' => 'Tugas Anda: Bertindak sebagai Data Scientist. Analisis data di atas dan berikan prediksi persentase risiko dropout/tinggal kelas (Rendah/Menengah/Tinggi) serta rekomendasi pencegahannya dalam format markdown yang rapi. Gunakan bahasa Indonesia.',
         ], JSON_PRETTY_PRINT);
     }
 

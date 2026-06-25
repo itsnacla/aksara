@@ -2,30 +2,27 @@
 
 namespace App\Filament\Pages;
 
+use App\Jobs\SendWhatsAppBroadcast;
 use App\Models\SchoolSetting;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Pages\Page;
-use Filament\Schemas\Schema;
-use Filament\Notifications\Notification;
 use App\Models\StudentParent;
 use App\Models\StudyGroup;
-use App\Jobs\SendWhatsAppBroadcast;
-use UnitEnum;
 use BackedEnum;
-
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use UnitEnum;
 
 class ManageWhatsApp extends Page implements HasForms
 {
-    use InteractsWithForms, HasPageShield;
+    use HasPageShield, InteractsWithForms;
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
@@ -42,7 +39,9 @@ class ManageWhatsApp extends Page implements HasForms
     protected static ?int $navigationSort = 3;
 
     public ?array $data = [];
+
     public ?array $broadcastData = [];
+
     public string $activeTab = 'settings';
 
     public function mount(): void
@@ -96,7 +95,7 @@ class ManageWhatsApp extends Page implements HasForms
                             ])
                             ->required()
                             ->live(),
-                        
+
                         TextInput::make('wa_gateway_url')
                             ->label('API Endpoint URL')
                             ->placeholder('https://api.fonnte.com/send')
@@ -145,7 +144,7 @@ class ManageWhatsApp extends Page implements HasForms
                             ->required()
                             ->live()
                             ->default('all'),
-                        
+
                         Select::make('study_group_id')
                             ->label('Pilih Rombel')
                             ->options(StudyGroup::pluck('nama_rombel', 'id'))
@@ -179,13 +178,14 @@ class ManageWhatsApp extends Page implements HasForms
         $settings = SchoolSetting::current();
 
         // 1. Check if WA is enabled
-        if (!$settings->is_wa_enabled) {
+        if (! $settings->is_wa_enabled) {
             Notification::make()
                 ->title('Gagal: Layanan WA belum aktif')
                 ->body('Silakan aktifkan layanan di tab Pengaturan Gateway terlebih dahulu.')
                 ->danger()
                 ->persistent()
                 ->send();
+
             return;
         }
 
@@ -209,6 +209,7 @@ class ManageWhatsApp extends Page implements HasForms
                 ->body('Tidak ada orang tua dengan nomor WhatsApp valid pada target yang dipilih.')
                 ->warning()
                 ->send();
+
             return;
         }
 
@@ -218,7 +219,7 @@ class ManageWhatsApp extends Page implements HasForms
         foreach ($parents as $parent) {
             SendWhatsAppBroadcast::dispatch($parent->no_whatsapp, $data['message'])
                 ->delay(now()->addSeconds($delaySeconds));
-            
+
             $delaySeconds += 5; // Increment delay by 5 seconds per recipient
             $count++;
         }

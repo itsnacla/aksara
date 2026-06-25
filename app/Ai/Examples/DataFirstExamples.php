@@ -4,26 +4,25 @@ namespace App\Ai\Examples;
 
 /**
  * AKSARA AI - DATA-FIRST EXAMPLES
- * 
+ *
  * Ini adalah contoh-contoh bagaimana AI sekarang bekerja dengan approach "data-first"
  * BUKAN mengarahkan ke UI, tapi langsung memberikan data yang diminta.
  */
-
 class DataFirstExamples
 {
     /**
      * EXAMPLE 1: Admin menanya "Siapa yang bolos minggu ini?"
-     * 
+     *
      * OLD (WRONG):
      *   AI: "Silakan buka /admin → Attendances untuk melihat data bolos siswa"
-     * 
+     *
      * NEW (CORRECT):
      *   1. AI detect: "bolos" → matching pattern "absent"
      *   2. AI call: GetAbsentStudents(['period' => 'week'])
      *   3. AI format result sebagai tabel:
-     * 
+     *
      *      📋 BOLOS MINGGU INI
-     *      
+     *
      *      | Kelas | Jumlah | Nama Siswa | Tanggal |
      *      |-------|--------|-----------|---------|
      *      | X-A   | 2      | Adi, Budi | 20-05   |
@@ -46,17 +45,17 @@ class DataFirstExamples
 
     /**
      * EXAMPLE 2: Guru menanya "Jadwal hari ini apa aja?"
-     * 
+     *
      * OLD (WRONG):
      *   AI: "Silakan buka /admin → Schedules untuk melihat jadwal Anda"
-     * 
+     *
      * NEW (CORRECT):
      *   1. AI detect: "jadwal", "hari ini"
      *   2. AI call: GetTodaySchedule()
      *   3. AI format hasil:
-     * 
+     *
      *      🗓️ JADWAL HARI INI (Senin, 26-05-2025)
-     *      
+     *
      *      | Jam | Mapel | Kelas | Ruangan |
      *      |-----|-------|-------|---------|
      *      | 07:00-08:30 | Matematika | X-A | R.10 |
@@ -79,17 +78,17 @@ class DataFirstExamples
 
     /**
      * EXAMPLE 3: Admin menanya "Siswa mana yang sudah lulus?"
-     * 
+     *
      * OLD (WRONG):
      *   AI: "Buka /admin → Students dan filter status 'Lulus'"
-     * 
+     *
      * NEW (CORRECT):
      *   1. AI detect: "lulus" = graduated
      *   2. AI call: GetGraduatedStudents()
      *   3. AI format:
-     * 
+     *
      *      🎓 SISWA YANG LULUS
-     *      
+     *
      *      | Nama | NISN | Kelas Terakhir | Tahun Lulus |
      *      |------|------|----------------|------------|
      *      | Adi Pratama | 1234567890 | XII-IPA-1 | 2025 |
@@ -111,17 +110,17 @@ class DataFirstExamples
 
     /**
      * EXAMPLE 4: Guru menanya "Siapa yang paling pintar di kelas saya?"
-     * 
+     *
      * OLD (WRONG):
      *   AI: "Lihat Grades dan hitung rata-rata di /admin → Grades"
-     * 
+     *
      * NEW (CORRECT):
      *   1. AI detect: "paling pintar" = top_performers
      *   2. AI call: GetStudentAnalytics(['type' => 'top_performers', 'study_group_id' => teacher.class_id])
      *   3. AI format:
-     * 
+     *
      *      ⭐ TOP PERFORMER KELAS
-     *      
+     *
      *      | Ranking | Nama | NISN | Rata-rata Nilai |
      *      |---------|------|------|-----------------|
      *      | 1 | Citra Dewi | 9876543210 | 92.50 |
@@ -144,17 +143,17 @@ class DataFirstExamples
 
     /**
      * EXAMPLE 5: Admin menanya "Cari siswa bernama Adi"
-     * 
+     *
      * OLD (WRONG):
      *   AI: "Silakan gunakan fitur search di /admin → Students"
-     * 
+     *
      * NEW (CORRECT):
      *   1. AI detect: "cari", "Adi"
      *   2. AI call: SearchStudentByFilter(['name' => 'Adi', 'limit' => 10])
      *   3. AI format:
-     * 
+     *
      *      🔍 HASIL PENCARIAN: "Adi"
-     *      
+     *
      *      | Nama | NISN | Kelas | Level |
      *      |------|------|-------|-------|
      *      | Adi Pratama | 1234567890 | X-A | Kelas 10 |
@@ -177,18 +176,18 @@ class DataFirstExamples
 
     /**
      * EXAMPLE 6: Orang tua menanya "Berapa nilai anak saya?"
-     * 
+     *
      * OLD (WRONG):
      *   AI: "Buka /dashboard → Nilai untuk melihat nilai anak"
-     * 
+     *
      * NEW (CORRECT):
      *   1. AI detect: "nilai anak"
      *   2. AI auto-identify: User is parent → get child_id from context
      *   3. AI call: GetAcademicData(['student_id' => child_id])
      *   4. AI format:
-     * 
+     *
      *      📊 NILAI ANAK ANDA
-     *      
+     *
      *      | Mapel | Tugas | UTS | UAS | Rata-rata |
      *      |-------|-------|-----|-----|-----------|
      *      | Matematika | 85 | 80 | 82 | 82.33 |
@@ -211,18 +210,18 @@ class DataFirstExamples
 
     /**
      * EXAMPLE 7: Siswa menanya "Jadwal saya hari ini?"
-     * 
+     *
      * OLD (WRONG):
      *   AI: "Silakan buka /dashboard → Jadwal untuk melihat jadwal pelajaran Anda"
-     * 
+     *
      * NEW (CORRECT):
      *   1. AI detect: "jadwal", "hari ini"
      *   2. AI auto-identify: User is student → get study_group from current enrollment
      *   3. AI call: GetTodaySchedule() [auto-filter by student class]
      *   4. AI format:
-     * 
+     *
      *      JADWAL KU HARI INI
-     *      
+     *
      *      | Jam | Mapel | Guru | Ruangan |
      *      |-----|-------|------|---------|
      *      | 07:00-08:30 | Matematika | Pak Ahmad | R.10 |
@@ -245,7 +244,7 @@ class DataFirstExamples
 
     /**
      * KEY PRINCIPLES FOR ALL EXAMPLES:
-     * 
+     *
      * ✅ DO:
      *   - Parse user message untuk extract intent
      *   - Matching ke tool yang paling relevan
@@ -254,7 +253,7 @@ class DataFirstExamples
      *   - Include emoji yang appropriate
      *   - Auto-filter berdasarkan role/context
      *   - Direct answer, no UI navigation
-     * 
+     *
      * ❌ DON'T:
      *   - Mengarahkan ke UI/navbar
      *   - Menebak data tanpa call tool

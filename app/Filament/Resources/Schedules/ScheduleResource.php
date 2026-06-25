@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Schedules;
 
-use App\Filament\Resources\Schedules\Pages\CreateSchedule;
-use App\Filament\Resources\Schedules\Pages\EditSchedule;
 use App\Filament\Resources\Schedules\Pages\ListSchedules;
 use App\Filament\Resources\Schedules\Schemas\ScheduleForm;
 use App\Filament\Resources\Schedules\Tables\SchedulesTable;
@@ -12,8 +10,8 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
-use Filament\Support\Icons\Heroicon;
 
 class ScheduleResource extends Resource
 {
@@ -33,7 +31,7 @@ class ScheduleResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Jadwal';
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
             ->with(['startTimeSlot', 'endTimeSlot', 'subject', 'teacher.user', 'studyGroup.classroom']);

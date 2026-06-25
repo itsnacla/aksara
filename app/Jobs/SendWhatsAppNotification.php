@@ -14,6 +14,7 @@ class SendWhatsAppNotification implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public string $phone;
+
     public string $message;
 
     /**

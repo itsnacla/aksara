@@ -30,13 +30,13 @@ class TestWACommand extends Command
         $message = $this->argument('message');
 
         $this->info("Sending message to $phone...");
-        
+
         $result = WAService::sendMessage($phone, $message);
 
         if ($result) {
-            $this->info("Message sent successfully!");
+            $this->info('Message sent successfully!');
         } else {
-            $this->error("Failed to send message. Check storage/logs/laravel.log for details.");
+            $this->error('Failed to send message. Check storage/logs/laravel.log for details.');
             $this->warn("Make sure 'is_wa_enabled' is true and 'wa_gateway_token' is filled in School Settings.");
         }
     }

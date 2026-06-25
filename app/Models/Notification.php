@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -14,8 +15,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $message
  * @property bool $is_sent
  * @property bool $is_read
- * @property \Illuminate\Support\Carbon|null $sent_at
- * @property \Illuminate\Support\Carbon|null $read_at
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $read_at
  */
 #[Fillable([
     'student_id',

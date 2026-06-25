@@ -2,19 +2,30 @@
 
 namespace App\Filament\Resources\Attendances;
 
-use App\Filament\Resources\Attendances\Pages\CreateAttendance;
-use App\Filament\Resources\Attendances\Pages\EditAttendance;
 use App\Filament\Resources\Attendances\Pages\ListAttendances;
+use App\Models\AcademicYear;
 use App\Models\Attendance;
+use App\Models\Student;
+use App\Models\StudyGroup;
 use BackedEnum;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Forms\Components\Select;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class AttendanceResource extends Resource
@@ -42,16 +53,17 @@ class AttendanceResource extends Resource
                 ->label('Rombel')
                 ->relationship('studyGroup', 'nama_rombel', fn ($query) => $query->whereHas('academicYear', fn ($q) => $q->where('is_active', true)))
                 ->live()
-                ->afterStateUpdated(fn (\Filament\Schemas\Components\Utilities\Set $set) => $set('student_id', null))
+                ->afterStateUpdated(fn (Set $set) => $set('student_id', null))
                 ->required(),
             Select::make('student_id')
                 ->label('Siswa')
-                ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                ->options(function (Get $get) {
                     $studyGroupId = $get('study_group_id');
-                    if (!$studyGroupId) {
+                    if (! $studyGroupId) {
                         return [];
                     }
-                    return \App\Models\Student::with('user')
+
+                    return Student::with('user')
                         ->where('status', 'aktif')
                         ->whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
                         ->get()
@@ -106,51 +118,55 @@ class AttendanceResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                \Filament\Tables\Filters\Filter::make('rombel_filter')
+                Filter::make('rombel_filter')
                     ->form([
                         Select::make('academic_year_id')
                             ->label('Tahun Ajaran')
-                            ->options(fn () => \App\Models\AcademicYear::all()->mapWithKeys(fn ($year) => [
-                                $year->id => "Tahun Ajaran {$year->tahun_ajaran} (" . ucfirst($year->semester) . ")"
+                            ->options(fn () => AcademicYear::all()->mapWithKeys(fn ($year) => [
+                                $year->id => "Tahun Ajaran {$year->tahun_ajaran} (".ucfirst($year->semester).')',
                             ]))
-                            ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id)
+                            ->default(fn () => AcademicYear::where('is_active', true)->first()?->id)
                             ->live(),
                         Select::make('study_group_id')
                             ->label('Rombel')
-                            ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                            ->options(function (Get $get) {
                                 $academicYearId = $get('academic_year_id');
-                                if (!$academicYearId) return \App\Models\StudyGroup::pluck('nama_rombel', 'id');
-                                return \App\Models\StudyGroup::where('academic_year_id', $academicYearId)->pluck('nama_rombel', 'id');
+                                if (! $academicYearId) {
+                                    return StudyGroup::pluck('nama_rombel', 'id');
+                                }
+
+                                return StudyGroup::where('academic_year_id', $academicYearId)->pluck('nama_rombel', 'id');
                             })
                             ->searchable(),
                     ])
-                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                    ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['academic_year_id'] ?? null,
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $value): \Illuminate\Database\Eloquent\Builder => $query->whereHas('studyGroup', fn ($q) => $q->where('academic_year_id', $value))
+                                fn (Builder $query, $value): Builder => $query->whereHas('studyGroup', fn ($q) => $q->where('academic_year_id', $value))
                             )
                             ->when(
                                 $data['study_group_id'] ?? null,
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $value): \Illuminate\Database\Eloquent\Builder => $query->where('study_group_id', $value)
+                                fn (Builder $query, $value): Builder => $query->where('study_group_id', $value)
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['academic_year_id'] ?? null) {
-                            $year = \App\Models\AcademicYear::find($data['academic_year_id']);
+                            $year = AcademicYear::find($data['academic_year_id']);
                             if ($year) {
-                                $indicators[] = \Filament\Tables\Filters\Indicator::make('Tahun Ajaran: ' . $year->tahun_ajaran)
+                                $indicators[] = Indicator::make('Tahun Ajaran: '.$year->tahun_ajaran)
                                     ->removeField('academic_year_id');
                             }
                         }
                         if ($data['study_group_id'] ?? null) {
-                            $rombel = \App\Models\StudyGroup::find($data['study_group_id']);
+                            $rombel = StudyGroup::find($data['study_group_id']);
                             if ($rombel) {
-                                $indicators[] = \Filament\Tables\Filters\Indicator::make('Rombel: ' . $rombel->nama_rombel)
+                                $indicators[] = Indicator::make('Rombel: '.$rombel->nama_rombel)
                                     ->removeField('study_group_id');
                             }
                         }
+
                         return $indicators;
                     }),
                 SelectFilter::make('status')
@@ -160,45 +176,45 @@ class AttendanceResource extends Resource
                         'izin' => 'Izin',
                         'alpha' => 'Alpha',
                     ]),
-                \Filament\Tables\Filters\Filter::make('tanggal')
+                Filter::make('tanggal')
                     ->form([
                         DatePicker::make('from')->label('Mulai Tanggal'),
                         DatePicker::make('until')->label('Sampai Tanggal'),
                     ])
-                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                    ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['from'],
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('tanggal', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal', '>=', $date),
                             )
                             ->when(
                                 $data['until'],
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('tanggal', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal', '<=', $date),
                             );
                     }),
             ])
             ->actions([
-                \Filament\Actions\ViewAction::make()->modal(),
-                \Filament\Actions\EditAction::make()->modal(),
-                \Filament\Actions\DeleteAction::make(),
+                ViewAction::make()->modal(),
+                EditAction::make()->modal(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with(['student.user', 'studyGroup']);
-        
+
         $user = auth()->user();
         if ($user && $user->hasRole('guru') && $user->teacher) {
             $teacherId = $user->teacher->id;
             $query->where(function ($q) use ($teacherId) {
                 $q->whereHas('studyGroup', fn ($sq) => $sq->where('walikelas_id', $teacherId))
-                  ->orWhereHas('schedule', fn ($sq) => $sq->where('teacher_id', $teacherId));
+                    ->orWhereHas('schedule', fn ($sq) => $sq->where('teacher_id', $teacherId));
             });
         }
 

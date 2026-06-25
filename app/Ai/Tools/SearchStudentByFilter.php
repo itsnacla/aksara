@@ -26,14 +26,14 @@ class SearchStudentByFilter implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
         $roleName = $this->user->roles->first()?->name ?? 'siswa';
 
         // Hanya admin, staff, atau guru yang bisa search student
-        if (!str_contains($roleName, 'admin') && !str_contains($roleName, 'staff') && !str_contains($roleName, 'guru')) {
+        if (! str_contains($roleName, 'admin') && ! str_contains($roleName, 'staff') && ! str_contains($roleName, 'guru')) {
             return 'Anda tidak memiliki akses untuk melakukan pencarian siswa.';
         }
 
@@ -46,7 +46,7 @@ class SearchStudentByFilter implements Tool
         $query = Student::query()->with(['user', 'studyGroups.level', 'parent.user']);
 
         if ($name) {
-            $query->whereHas('user', fn($q) => $q->where('name', 'like', "%{$name}%"));
+            $query->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$name}%"));
         }
 
         if ($nisn) {
@@ -54,11 +54,11 @@ class SearchStudentByFilter implements Tool
         }
 
         if ($studyGroupId) {
-            $query->whereHas('studyGroups', fn($q) => $q->where('study_groups.id', $studyGroupId));
+            $query->whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId));
         }
 
         if ($levelId) {
-            $query->whereHas('studyGroups', fn($q) => $q->where('level_id', $levelId));
+            $query->whereHas('studyGroups', fn ($q) => $q->where('level_id', $levelId));
         }
 
         // Security for guru: hanya bisa search siswa di kelas yang diwalikan
@@ -66,11 +66,11 @@ class SearchStudentByFilter implements Tool
             $teacher = $this->user->teacher;
             if ($teacher && $teacher->wali_kelas_id) {
                 // Guru hanya bisa search di kelas perwalian-nya
-                if (!$studyGroupId) {
+                if (! $studyGroupId) {
                     // Jika tidak ada filter kelas, gunakan kelas perwalian guru
                     $studyGroupId = $teacher->wali_kelas_id;
                 }
-                $query->whereHas('studyGroups', fn($q) => $q->where('study_groups.id', $studyGroupId));
+                $query->whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId));
             }
         }
 
@@ -82,6 +82,7 @@ class SearchStudentByFilter implements Tool
 
         $result = $students->map(function ($student) {
             $studyGroup = $student->currentStudyGroup();
+
             return [
                 'id' => $student->id,
                 'nama' => $student->user->name,

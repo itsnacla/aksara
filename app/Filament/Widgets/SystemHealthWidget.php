@@ -2,13 +2,12 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\ChatbotSetting;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Mail;
 
 class SystemHealthWidget extends BaseWidget
 {
@@ -72,7 +71,11 @@ class SystemHealthWidget extends BaseWidget
     private function getInfraStatus(): Stat
     {
         $storage = 'Writable';
-        try { Storage::put('health_test.txt', '1'); } catch (\Exception $e) { $storage = 'Error'; }
+        try {
+            Storage::put('health_test.txt', '1');
+        } catch (\Exception $e) {
+            $storage = 'Error';
+        }
 
         return Stat::make('Infrastructure', 'Operational')
             ->description("Storage: {$storage} | Cache: OK")
@@ -102,16 +105,17 @@ class SystemHealthWidget extends BaseWidget
     private function getRegionalApiStatus(): Stat
     {
         $baseUrl = env('TATETA_GEO_URL', 'http://127.0.0.1:8001/api/v1/geo');
-        
+
         try {
             // Parse host and port to correctly call the health check endpoint at tateta-geo root
             $urlParts = parse_url($baseUrl);
-            $host = ($urlParts['scheme'] ?? 'http') . '://' . ($urlParts['host'] ?? '127.0.0.1') . (isset($urlParts['port']) ? ':' . $urlParts['port'] : '');
-            
+            $host = ($urlParts['scheme'] ?? 'http').'://'.($urlParts['host'] ?? '127.0.0.1').(isset($urlParts['port']) ? ':'.$urlParts['port'] : '');
+
             $response = Http::timeout(2)->get("{$host}/api/health");
-                
+
             if ($response->successful() && $response->json('status') === 'healthy') {
                 $dbStatus = $response->json('database') === 'connected' ? 'Database: OK' : 'Database: Offline';
+
                 return Stat::make('Regional API', 'Online')
                     ->description("TatetaGeo ({$dbStatus})")
                     ->descriptionIcon('heroicon-m-globe-alt')
@@ -134,6 +138,7 @@ class SystemHealthWidget extends BaseWidget
         try {
             $response = Http::withHeaders(['Authorization' => $apiKey])->post('https://api.fonnte.com/device');
             $status = $response->json()['status'] ?? false;
+
             return Stat::make('WA Gateway', $status ? 'Connected' : 'Disconnected')
                 ->description($status ? 'Device Active' : 'Check Fonnte Token')
                 ->descriptionIcon('heroicon-m-chat-bubble-left-right')
@@ -146,10 +151,10 @@ class SystemHealthWidget extends BaseWidget
     private function getAiStatus(): Stat
     {
         try {
-            $settings = \App\Models\ChatbotSetting::current();
+            $settings = ChatbotSetting::current();
             $isActive = $settings->is_active;
             $rawProvider = $settings->primary_provider;
-            
+
             // Format provider name beautifully
             $provider = match (strtolower($rawProvider)) {
                 'google', 'gemini' => 'GEMINI',
@@ -172,6 +177,7 @@ class SystemHealthWidget extends BaseWidget
     private function getMailStatus(): Stat
     {
         $driver = config('mail.default');
+
         return Stat::make('Mail Service', strtoupper($driver))
             ->description('SMTP / API Configured')
             ->descriptionIcon('heroicon-m-envelope')
@@ -181,9 +187,9 @@ class SystemHealthWidget extends BaseWidget
     private function getServerStats(): Stat
     {
         $memUsage = round(memory_get_usage(true) / 1024 / 1024, 2);
-        $diskFree = round(disk_free_space("/") / 1024 / 1024 / 1024, 2);
+        $diskFree = round(disk_free_space('/') / 1024 / 1024 / 1024, 2);
 
-        return Stat::make('Server Performance', "PHP " . PHP_VERSION)
+        return Stat::make('Server Performance', 'PHP '.PHP_VERSION)
             ->description("RAM: {$memUsage}MB | Disk: {$diskFree}GB Free")
             ->descriptionIcon('heroicon-m-cpu-chip')
             ->color('gray');

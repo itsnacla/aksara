@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ExtracurricularGrade\Pages;
 
 use App\Filament\Resources\ExtracurricularGrade\ExtracurricularGradeResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 
@@ -13,7 +14,7 @@ class ManageExtracurricularGrades extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('batch_input')
+            Action::make('batch_input')
                 ->label('Batch Input Nilai')
                 ->icon('heroicon-o-table-cells')
                 ->color('success')

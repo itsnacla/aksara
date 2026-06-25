@@ -3,16 +3,16 @@
 namespace App\Filament\Resources\AcademicYears\Tables;
 
 use App\Models\AcademicYear;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Table;
 use Filament\Notifications\Notification;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class AcademicYearsTable
 {
@@ -32,10 +32,10 @@ class AcademicYearsTable
                         $year = (int) date('Y');
 
                         if ($month >= 7) {
-                            $targetTahun = $year . '/' . ($year + 1);
+                            $targetTahun = $year.'/'.($year + 1);
                             $targetSemester = 'ganjil';
                         } else {
-                            $targetTahun = ($year - 1) . '/' . $year;
+                            $targetTahun = ($year - 1).'/'.$year;
                             $targetSemester = 'genap';
                         }
 
@@ -47,7 +47,7 @@ class AcademicYearsTable
                         // If it already existed, we still want to ensure the semester is synced to the calendar if that's what's requested
                         $academicYear->update([
                             'semester' => $targetSemester,
-                            'is_active' => true
+                            'is_active' => true,
                         ]);
 
                         Notification::make()
@@ -55,9 +55,9 @@ class AcademicYearsTable
                             ->success()
                             ->body("Tahun Ajaran {$targetTahun} ({$targetSemester}) sekarang menjadi aktif.")
                             ->send();
-                            
+
                         $livewire->dispatch('active-academic-year-changed');
-                    })
+                    }),
             ])
             ->columns([
                 TextColumn::make('tahun_ajaran')
@@ -85,12 +85,12 @@ class AcademicYearsTable
                     ->hidden(fn ($record) => $record->is_active)
                     ->action(function ($record, $livewire) {
                         $record->update(['is_active' => true]);
-                        
+
                         Notification::make()
                             ->title('Tahun Ajaran Diaktifkan')
                             ->success()
                             ->send();
-                            
+
                         $livewire->dispatch('active-academic-year-changed');
                     }),
                 Action::make('switch_semester')
@@ -109,13 +109,13 @@ class AcademicYearsTable
                             'attendance_date' => null,
                             'pelengkap_rapor_date' => null,
                         ]);
-                        
+
                         Notification::make()
                             ->title('Semester Berhasil Dipindah')
                             ->success()
-                            ->body("Sekarang berada di semester " . ucfirst($newSemester))
+                            ->body('Sekarang berada di semester '.ucfirst($newSemester))
                             ->send();
-                            
+
                         $livewire->dispatch('active-academic-year-changed');
                     }),
                 ViewAction::make()->modal(),
@@ -131,15 +131,23 @@ class AcademicYearsTable
 
                         if ($hasGrades || $hasReports || $hasSchedules || $hasClassrooms) {
                             $relatedItems = [];
-                            if ($hasGrades) $relatedItems[] = 'Nilai';
-                            if ($hasReports) $relatedItems[] = 'Rapor';
-                            if ($hasSchedules) $relatedItems[] = 'Jadwal';
-                            if ($hasClassrooms) $relatedItems[] = 'Kelas';
+                            if ($hasGrades) {
+                                $relatedItems[] = 'Nilai';
+                            }
+                            if ($hasReports) {
+                                $relatedItems[] = 'Rapor';
+                            }
+                            if ($hasSchedules) {
+                                $relatedItems[] = 'Jadwal';
+                            }
+                            if ($hasClassrooms) {
+                                $relatedItems[] = 'Kelas';
+                            }
 
                             Notification::make()
                                 ->title('Tidak Dapat Menghapus Tahun Ajaran')
                                 ->danger()
-                                ->body('Tahun ajaran ini masih memiliki data terkait: ' . implode(', ', $relatedItems) . '. Hapus data terkait terlebih dahulu.')
+                                ->body('Tahun ajaran ini masih memiliki data terkait: '.implode(', ', $relatedItems).'. Hapus data terkait terlebih dahulu.')
                                 ->persistent()
                                 ->send();
 

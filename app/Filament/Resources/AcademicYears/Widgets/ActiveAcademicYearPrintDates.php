@@ -6,8 +6,8 @@ use App\Models\AcademicYear;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
 use Filament\Widgets\Widget;
 use Livewire\Attributes\On;
 
@@ -16,7 +16,8 @@ class ActiveAcademicYearPrintDates extends Widget implements HasForms
     use InteractsWithForms;
 
     protected string $view = 'filament.widgets.active-academic-year-print-dates';
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     public ?array $data = [];
 
@@ -78,7 +79,7 @@ class ActiveAcademicYearPrintDates extends Widget implements HasForms
             $activeYear->update($this->form->getState());
             Notification::make()
                 ->title('Tersimpan')
-                ->body('Pengaturan tanggal cetak untuk tahun ajaran ' . $activeYear->tahun_ajaran . ' berhasil disimpan.')
+                ->body('Pengaturan tanggal cetak untuk tahun ajaran '.$activeYear->tahun_ajaran.' berhasil disimpan.')
                 ->success()
                 ->send();
         } else {

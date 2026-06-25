@@ -2,21 +2,20 @@
 
 namespace App\Filament\Resources\Students\Schemas;
 
-use App\Models\User;
 use App\Models\AcademicYear;
-use App\Models\StudyGroup;
 use App\Models\StudentParent;
+use App\Models\StudyGroup;
 use App\Services\RegionService;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
@@ -95,8 +94,8 @@ class StudentForm
                                 Select::make('parent_id')
                                     ->label('Pilih Akun Wali Murid yang Sudah Ada')
                                     ->options(fn () => StudentParent::with('user')->get()->pluck('user.name', 'id'))
-                                    ->required(fn (Get $get, string $operation) => $operation === 'edit' || !$get('create_new_parent'))
-                                    ->visible(fn (Get $get, string $operation) => $operation === 'edit' || !$get('create_new_parent'))
+                                    ->required(fn (Get $get, string $operation) => $operation === 'edit' || ! $get('create_new_parent'))
+                                    ->visible(fn (Get $get, string $operation) => $operation === 'edit' || ! $get('create_new_parent'))
                                     ->searchable()
                                     ->columnSpanFull(),
 
@@ -143,12 +142,15 @@ class StudentForm
                                 ->multiple()
                                 ->options(function () {
                                     $activeYear = AcademicYear::where('is_active', true)->first();
-                                    if (!$activeYear) return [];
+                                    if (! $activeYear) {
+                                        return [];
+                                    }
+
                                     return StudyGroup::where('academic_year_id', $activeYear->id)
                                         ->with('level')
                                         ->get()
-                                        ->groupBy(fn($sg) => $sg->level->nama_tingkatan ?? 'Lainnya')
-                                        ->map(fn($group) => $group->pluck('nama_rombel', 'id'))
+                                        ->groupBy(fn ($sg) => $sg->level->nama_tingkatan ?? 'Lainnya')
+                                        ->map(fn ($group) => $group->pluck('nama_rombel', 'id'))
                                         ->toArray();
                                 })
                                 ->required()
@@ -234,8 +236,8 @@ class StudentForm
                             ->label('Alamat Lengkap')
                             ->rows(2)
                             ->columnSpanFull()
-                            ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                            ->required(fn (Get $get) => !$get('lives_with_parent')),
+                            ->visible(fn (Get $get) => ! $get('lives_with_parent'))
+                            ->required(fn (Get $get) => ! $get('lives_with_parent')),
                         Grid::make(4)->schema([
                             Select::make('province')
                                 ->label('Provinsi')
@@ -247,8 +249,8 @@ class StudentForm
                                     $set('district', null);
                                     $set('village', null);
                                 })
-                                ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                                ->required(fn (Get $get) => !$get('lives_with_parent')),
+                                ->visible(fn (Get $get) => ! $get('lives_with_parent'))
+                                ->required(fn (Get $get) => ! $get('lives_with_parent')),
                             Select::make('city')
                                 ->label('Kota')
                                 ->options(fn (Get $get) => RegionService::getRegencies($get('province')))
@@ -258,22 +260,22 @@ class StudentForm
                                     $set('district', null);
                                     $set('village', null);
                                 })
-                                ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                                ->required(fn (Get $get) => !$get('lives_with_parent')),
+                                ->visible(fn (Get $get) => ! $get('lives_with_parent'))
+                                ->required(fn (Get $get) => ! $get('lives_with_parent')),
                             Select::make('district')
                                 ->label('Kecamatan')
                                 ->options(fn (Get $get) => RegionService::getDistricts($get('city')))
                                 ->searchable()
                                 ->live()
                                 ->afterStateUpdated(fn ($set) => $set('village', null))
-                                ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                                ->required(fn (Get $get) => !$get('lives_with_parent')),
+                                ->visible(fn (Get $get) => ! $get('lives_with_parent'))
+                                ->required(fn (Get $get) => ! $get('lives_with_parent')),
                             Select::make('village')
                                 ->label('Desa')
                                 ->options(fn (Get $get) => RegionService::getVillages($get('district'), $get('city')))
                                 ->searchable()
-                                ->visible(fn (Get $get) => !$get('lives_with_parent'))
-                                ->required(fn (Get $get) => !$get('lives_with_parent')),
+                                ->visible(fn (Get $get) => ! $get('lives_with_parent'))
+                                ->required(fn (Get $get) => ! $get('lives_with_parent')),
                         ]),
                     ]),
             ]);
@@ -353,7 +355,7 @@ class StudentForm
                             TextInput::make('ayah_pendidikan')->label('Pendidikan Terakhir'),
                             TextInput::make('ayah_pekerjaan')->label('Pekerjaan'),
                             TextInput::make('ayah_penghasilan')->label('Penghasilan Bulanan'),
-                            
+
                             TextInput::make('ibu_nama')->label('Nama Lengkap Ibu (Sesuai Ijazah)'),
                             TextInput::make('ibu_nik')->label('NIK Ibu'),
                             TextInput::make('ibu_pendidikan')->label('Pendidikan Terakhir'),

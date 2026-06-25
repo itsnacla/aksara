@@ -3,14 +3,19 @@
 namespace App\Filament\Resources\PelengkapRapor;
 
 use App\Filament\Resources\PelengkapRapor\Pages\ListPelengkapRapor;
+use App\Models\AcademicYear;
 use App\Models\Student;
-use Filament\Resources\Resource;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
+use App\Models\StudyGroup;
+use App\Services\Academic\BukuIndukService;
 use Filament\Actions\Action;
-use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class PelengkapRaporResource extends Resource
@@ -48,14 +53,15 @@ class PelengkapRaporResource extends Resource
         // Guru (Wali Kelas / Mapel)
         if ($user && $user->hasRole('guru') && $user->teacher) {
             $teacherId = $user->teacher->id;
+
             return $query->whereHas('studyGroups', function ($q) use ($teacherId) {
                 $q->where('walikelas_id', $teacherId)
-                  ->orWhereExists(function ($subquery) use ($teacherId) {
-                      $subquery->select(\DB::raw(1))
-                          ->from('schedules')
-                          ->where('schedules.teacher_id', $teacherId)
-                          ->whereColumn('schedules.study_group_id', 'study_groups.id');
-                  });
+                    ->orWhereExists(function ($subquery) use ($teacherId) {
+                        $subquery->select(\DB::raw(1))
+                            ->from('schedules')
+                            ->where('schedules.teacher_id', $teacherId)
+                            ->whereColumn('schedules.study_group_id', 'study_groups.id');
+                    });
             });
         }
 
@@ -82,13 +88,13 @@ class PelengkapRaporResource extends Resource
                     ->sortable(),
                 TextColumn::make('gender')
                     ->label('JK')
-                    ->formatStateUsing(fn($state) => $state === 'L' ? 'Laki-laki' : ($state === 'P' ? 'Perempuan' : '-'))
+                    ->formatStateUsing(fn ($state) => $state === 'L' ? 'Laki-laki' : ($state === 'P' ? 'Perempuan' : '-'))
                     ->sortable(),
                 TextColumn::make('studyGroups.nama_rombel')
                     ->label('Rombongan Belajar')
                     ->badge()
                     ->color('success'),
-                \Filament\Tables\Columns\IconColumn::make('is_buku_induk_generated')
+                IconColumn::make('is_buku_induk_generated')
                     ->label('Status Buku Induk')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
@@ -97,34 +103,36 @@ class PelengkapRaporResource extends Resource
                     ->falseColor('gray'),
             ])
             ->filters([
-                \Filament\Tables\Filters\SelectFilter::make('academic_year')
+                SelectFilter::make('academic_year')
                     ->label('Tahun Ajaran')
                     ->options(
-                        fn() => \App\Models\AcademicYear::query()
+                        fn () => AcademicYear::query()
                             ->get()
-                            ->mapWithKeys(fn($year) => [$year->id => "{$year->tahun_ajaran} - " . ucfirst($year->semester)])
+                            ->mapWithKeys(fn ($year) => [$year->id => "{$year->tahun_ajaran} - ".ucfirst($year->semester)])
                     )
                     ->query(function ($query, array $data) {
                         if (empty($data['value'])) {
                             return $query;
                         }
+
                         return $query->whereHas('studyGroups', function ($q) use ($data) {
                             $q->where('study_groups.academic_year_id', $data['value']);
                         });
                     })
-                    ->default(fn() => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
-                \Filament\Tables\Filters\SelectFilter::make('studyGroups')
+                    ->default(fn () => AcademicYear::where('is_active', true)->first()?->id),
+                SelectFilter::make('studyGroups')
                     ->label('Filter Rombel')
                     ->relationship('studyGroups', 'nama_rombel', function ($query, $livewire) {
                         $academicYearId = $livewire->tableFilters['academic_year']['value'] ?? null;
-                        $academicYearId = $academicYearId ?: \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+                        $academicYearId = $academicYearId ?: AcademicYear::where('is_active', true)->first()?->id;
                         if ($academicYearId) {
                             return $query->where('academic_year_id', $academicYearId);
                         }
+
                         return $query;
                     })
-                    ->default(fn() => \App\Models\StudyGroup::whereHas('academicYear', fn($q) => $q->where('is_active', true))
-                        ->whereHas('level', fn($q) => $q->where('nama_tingkatan', 'like', '%Kelas 1%'))
+                    ->default(fn () => StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true))
+                        ->whereHas('level', fn ($q) => $q->where('nama_tingkatan', 'like', '%Kelas 1%'))
                         ->first()?->id),
             ])
             ->actions([
@@ -133,31 +141,32 @@ class PelengkapRaporResource extends Resource
                     ->icon('heroicon-o-cpu-chip')
                     ->color('success')
                     ->action(function (Student $record) {
-                        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                        if (!$activeYearId) {
-                            \Filament\Notifications\Notification::make()
+                        $activeYearId = AcademicYear::where('is_active', true)->value('id');
+                        if (! $activeYearId) {
+                            Notification::make()
                                 ->title('Tahun ajaran aktif tidak ditemukan')
                                 ->danger()
                                 ->send();
+
                             return;
                         }
 
-                        $bukuIndukService = new \App\Services\Academic\BukuIndukService();
+                        $bukuIndukService = new BukuIndukService;
                         $bukuIndukService->generateStudentBukuInduk($record, $activeYearId);
 
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Buku Induk berhasil digenerate!')
                             ->success()
                             ->send();
                     })
-                    ->visible(fn(Student $record) => !$record->is_buku_induk_generated),
+                    ->visible(fn (Student $record) => ! $record->is_buku_induk_generated),
                 Action::make('cetak_pelengkap')
                     ->label('Cetak Pelengkap')
                     ->icon('heroicon-o-printer')
                     ->color('info')
-                    ->url(fn(Student $record): string => route('print.pelengkap-rapor', $record))
+                    ->url(fn (Student $record): string => route('print.pelengkap-rapor', $record))
                     ->openUrlInNewTab()
-                    ->visible(fn(Student $record) => (bool) $record->is_buku_induk_generated),
+                    ->visible(fn (Student $record) => (bool) $record->is_buku_induk_generated),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

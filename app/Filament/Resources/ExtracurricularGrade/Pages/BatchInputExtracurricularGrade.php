@@ -15,10 +15,12 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
-use Livewire\Attributes\Url;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 class BatchInputExtracurricularGrade extends Page implements HasForms
@@ -51,7 +53,7 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
         $this->batchForm->fill([
             'extracurricular_id' => $this->extracurricular_id,
         ]);
-        
+
         if ($this->extracurricular_id) {
             $this->loadAllStudents();
             $this->fillCurrentPage();
@@ -96,9 +98,10 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
                             ->options(function () {
                                 $query = Extracurricular::orderBy('nama_ekskul');
                                 $user = auth()->user();
-                                if ($user && !$user->hasAnyRole(['super_admin', 'staff'])) {
+                                if ($user && ! $user->hasAnyRole(['super_admin', 'staff'])) {
                                     $query->where('coordinator_user_id', $user->id);
                                 }
+
                                 return $query->pluck('nama_ekskul', 'id');
                             })
                             ->searchable()
@@ -132,7 +135,7 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
                                     ->live()
                                     ->afterStateUpdated(function (
                                         ?string $state,
-                                        \Filament\Schemas\Components\Utilities\Set $set
+                                        Set $set
                                     ) {
                                         if ($state) {
                                             $set('keterangan', ExtracurricularGrade::$defaultKeterangan[$state] ?? '');
@@ -149,11 +152,11 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
                             ->deletable(false)
                             ->reorderable(false),
                     ])
-                    ->visible(fn () => !empty($this->allGrades)),
+                    ->visible(fn () => ! empty($this->allGrades)),
             ]);
     }
 
-    private function getStudentsQuery(): \Illuminate\Support\Collection
+    private function getStudentsQuery(): Collection
     {
         $query = Student::whereHas(
             'extracurriculars',
@@ -165,15 +168,15 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
         }
 
         return $query->with([
-                'user',
-                'studyGroups' => fn ($q) => $q->whereHas('academicYear', fn ($ay) => $ay->where('is_active', true)),
-            ])
+            'user',
+            'studyGroups' => fn ($q) => $q->whereHas('academicYear', fn ($ay) => $ay->where('is_active', true)),
+        ])
             ->get()
             ->sortBy('user.name')
             ->values();
     }
 
-    private function getExistingGrades(int $academicYearId): \Illuminate\Support\Collection
+    private function getExistingGrades(int $academicYearId): Collection
     {
         return ExtracurricularGrade::where('extracurricular_id', $this->extracurricular_id)
             ->where('academic_year_id', $academicYearId)
@@ -183,8 +186,9 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
 
     private function loadAllStudents(): void
     {
-        if (!$this->extracurricular_id) {
+        if (! $this->extracurricular_id) {
             $this->allGrades = [];
+
             return;
         }
 
@@ -194,23 +198,23 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
         $existing = $this->getExistingGrades($academicYearId);
 
         if ($this->missing_only) {
-            $students = $students->filter(fn ($student) => !isset($existing[$student->id]))->values();
+            $students = $students->filter(fn ($student) => ! isset($existing[$student->id]))->values();
         }
 
         $this->allGrades = $students->map(function ($student) use ($existing) {
             $predikat = $existing[$student->id]->predikat ?? 'B';
             $keterangan = $existing[$student->id]->keterangan ?? null;
-            
+
             if (empty($keterangan)) {
                 $keterangan = ExtracurricularGrade::$defaultKeterangan[$predikat] ?? '';
             }
 
             return [
-                'student_id'   => $student->id,
+                'student_id' => $student->id,
                 'student_name' => $student->user?->name ?? 'Unknown',
-                'rombel'       => $student->studyGroups->first()?->nama_rombel ?? '-',
-                'predikat'     => $predikat,
-                'keterangan'   => $keterangan,
+                'rombel' => $student->studyGroups->first()?->nama_rombel ?? '-',
+                'predikat' => $predikat,
+                'keterangan' => $keterangan,
             ];
         })->toArray();
     }
@@ -236,14 +240,14 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
 
         $this->batchForm->fill([
             'extracurricular_id' => $this->extracurricular_id,
-            'pageItems'          => $pageItems,
+            'pageItems' => $pageItems,
         ]);
     }
 
     public function getPaginator(): LengthAwarePaginator
     {
         $offset = ($this->getPage() - 1) * $this->perPage;
-        $items  = array_values(array_slice($this->allGrades, $offset, $this->perPage));
+        $items = array_values(array_slice($this->allGrades, $offset, $this->perPage));
 
         return new LengthAwarePaginator(
             $items,
@@ -259,6 +263,7 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
         if (empty($this->allGrades)) {
             return 0;
         }
+
         return (int) ceil(count($this->allGrades) / $this->perPage);
     }
 
@@ -273,22 +278,24 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
 
         $academicYearId = AcademicYear::where('is_active', true)->value('id');
 
-        if (!$academicYearId || !$this->extracurricular_id) {
+        if (! $academicYearId || ! $this->extracurricular_id) {
             Notification::make()->title('Gagal')->body('Tidak ada tahun ajaran aktif.')->danger()->send();
+
             return;
         }
 
         $user = auth()->user();
-        if ($user && !$user->hasAnyRole(['super_admin', 'staff'])) {
+        if ($user && ! $user->hasAnyRole(['super_admin', 'staff'])) {
             $isCoordinator = Extracurricular::where('id', $this->extracurricular_id)
                 ->where('coordinator_user_id', $user->id)
                 ->exists();
-            if (!$isCoordinator) {
+            if (! $isCoordinator) {
                 Notification::make()
                     ->title('Tidak diizinkan')
                     ->body('Hanya koordinator ekstrakurikuler yang bisa menginput nilai untuk ekskul ini.')
                     ->danger()
                     ->send();
+
                 return;
             }
         }
@@ -302,11 +309,11 @@ class BatchInputExtracurricularGrade extends Page implements HasForms
             ExtracurricularGrade::updateOrCreate(
                 [
                     'extracurricular_id' => $this->extracurricular_id,
-                    'student_id'         => $item['student_id'],
-                    'academic_year_id'   => $academicYearId,
+                    'student_id' => $item['student_id'],
+                    'academic_year_id' => $academicYearId,
                 ],
                 [
-                    'predikat'   => $item['predikat'],
+                    'predikat' => $item['predikat'],
                     'keterangan' => $item['keterangan'] ?: null,
                 ]
             );

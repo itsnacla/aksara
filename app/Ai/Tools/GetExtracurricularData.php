@@ -27,7 +27,7 @@ class GetExtracurricularData implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 

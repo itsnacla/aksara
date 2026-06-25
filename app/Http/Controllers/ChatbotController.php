@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use App\Models\Grade;
+use App\Ai\Agents\AksaraAssistant;
+use App\Ai\AksaraKnowledgeBase;
+use App\Events\MessageSent;
 use App\Models\Attendance;
-use App\Models\Schedule;
-use App\Models\Classroom;
 use App\Models\EReport;
 use App\Models\Extracurricular;
-use App\Ai\AksaraKnowledgeBase;
+use App\Models\Grade;
+use App\Models\Schedule;
+use App\Models\StudyGroup;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ChatbotController extends Controller
 {
@@ -33,9 +38,9 @@ class ChatbotController extends Controller
         try {
             // Enrich user message with knowledge base context if relevant
             $enrichedMessage = $this->enrichMessageWithKnowledge($userMessage, $role);
-            
-            $agent = new \App\Ai\Agents\AksaraAssistant($user);
-            
+
+            $agent = new AksaraAssistant($user);
+
             if ($conversationId) {
                 $response = $agent->continue($conversationId, as: $user)->prompt($enrichedMessage);
             } else {
@@ -54,20 +59,20 @@ class ChatbotController extends Controller
             ]);
 
             // Dispatch event for real-time update via Reverb
-            event(new \App\Events\MessageSent($conversationId, $reply));
+            event(new MessageSent($conversationId, $reply));
 
             return response()->json([
                 'reply' => $reply,
                 'conversation_id' => $conversationId,
             ]);
         } catch (\Exception $e) {
-            Log::error('Chatbot AI SDK error: ' . $e->getMessage(), [
+            Log::error('Chatbot AI SDK error: '.$e->getMessage(), [
                 'user_id' => $user?->id,
                 'role' => $role,
                 'exception' => (string) $e,
             ]);
             $reply = $this->getFallbackResponse($userMessage, $role);
-            
+
             return response()->json([
                 'reply' => $reply,
             ]);
@@ -97,18 +102,18 @@ class ChatbotController extends Controller
     public function history(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return response()->json([]);
         }
 
-        $conversations = \Illuminate\Support\Facades\DB::table(config('ai.conversations.tables.conversations', 'agent_conversations'))
+        $conversations = DB::table(config('ai.conversations.tables.conversations', 'agent_conversations'))
             ->where('user_id', $user->id)
             ->orderBy('updated_at', 'desc')
             ->get(['id', 'title', 'updated_at']);
 
         $messagesTable = config('ai.conversations.tables.messages', 'agent_conversation_messages');
-        
-        $firstMessages = \Illuminate\Support\Facades\DB::table($messagesTable)
+
+        $firstMessages = DB::table($messagesTable)
             ->whereIn('conversation_id', $conversations->pluck('id'))
             ->where('role', 'user')
             ->orderBy('created_at', 'asc')
@@ -118,13 +123,14 @@ class ChatbotController extends Controller
         $conversations->transform(function ($conv) use ($firstMessages) {
             if (empty($conv->title)) {
                 $firstMsg = $firstMessages->get($conv->id)?->first();
-                if ($firstMsg && !empty($firstMsg->content)) {
+                if ($firstMsg && ! empty($firstMsg->content)) {
                     $cleanContent = preg_replace('/--- SISTEM CONTEXT.*/s', '', $firstMsg->content);
-                    $conv->title = \Illuminate\Support\Str::limit(trim(strip_tags($cleanContent)), 30);
+                    $conv->title = Str::limit(trim(strip_tags($cleanContent)), 30);
                 } else {
-                    $conv->title = 'Obrolan ' . \Carbon\Carbon::parse($conv->updated_at)->diffForHumans();
+                    $conv->title = 'Obrolan '.Carbon::parse($conv->updated_at)->diffForHumans();
                 }
             }
+
             return $conv;
         });
 
@@ -137,21 +143,21 @@ class ChatbotController extends Controller
     public function loadConversation(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         // Verify ownership
-        $conversation = \Illuminate\Support\Facades\DB::table(config('ai.conversations.tables.conversations', 'agent_conversations'))
+        $conversation = DB::table(config('ai.conversations.tables.conversations', 'agent_conversations'))
             ->where('id', $id)
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             return response()->json(['error' => 'Conversation not found'], 404);
         }
 
-        $messages = \Illuminate\Support\Facades\DB::table(config('ai.conversations.tables.messages', 'agent_conversation_messages'))
+        $messages = DB::table(config('ai.conversations.tables.messages', 'agent_conversation_messages'))
             ->where('conversation_id', $id)
             ->orderBy('created_at', 'asc')
             ->get(['id', 'role', 'content', 'created_at']);
@@ -161,6 +167,7 @@ class ChatbotController extends Controller
                 $msg->content = preg_replace('/--- SISTEM CONTEXT.*/s', '', $msg->content);
                 $msg->content = trim($msg->content);
             }
+
             return $msg;
         });
 
@@ -177,25 +184,25 @@ class ChatbotController extends Controller
     public function destroyConversation(Request $request, $id)
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         $conversationsTable = config('ai.conversations.tables.conversations', 'agent_conversations');
         $messagesTable = config('ai.conversations.tables.messages', 'agent_conversation_messages');
 
-        $conversation = \Illuminate\Support\Facades\DB::table($conversationsTable)
+        $conversation = DB::table($conversationsTable)
             ->where('id', $id)
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             return response()->json(['error' => 'Conversation not found'], 404);
         }
 
         // Delete messages first, then conversation
-        \Illuminate\Support\Facades\DB::table($messagesTable)->where('conversation_id', $id)->delete();
-        \Illuminate\Support\Facades\DB::table($conversationsTable)->where('id', $id)->delete();
+        DB::table($messagesTable)->where('conversation_id', $id)->delete();
+        DB::table($conversationsTable)->where('id', $id)->delete();
 
         return response()->json(['success' => true]);
     }
@@ -205,7 +212,7 @@ class ChatbotController extends Controller
      */
     private function getUserRole($user): string
     {
-        if (!$user) {
+        if (! $user) {
             return 'guest';
         }
 
@@ -248,7 +255,7 @@ class ChatbotController extends Controller
             'staff' => "Halo, {$name}! Saya Aksara AI, asisten administrasi. Saya siap membantu dengan pengelolaan data sekolah, surat-menyurat, dan tugas administrasi lainnya.",
             'orang_tua' => "Halo, Bapak/Ibu {$name}! Saya Aksara AI. Saya bisa membantu Anda memantau perkembangan akademik anak, presensi, nilai, dan informasi sekolah lainnya.",
             'siswa' => "Halo, {$name}! Saya Aksara AI, asisten virtual sekolah. Saya bisa membantu kamu dengan jadwal, nilai, presensi, dan informasi sekolah lainnya. Mau tanya apa?",
-            default => "Halo! Saya Aksara AI, asisten virtual Aksara System. Ada yang bisa saya bantu?",
+            default => 'Halo! Saya Aksara AI, asisten virtual Aksara System. Ada yang bisa saya bantu?',
         };
     }
 
@@ -296,52 +303,52 @@ class ChatbotController extends Controller
         $name = $user->name ?? 'Pengguna';
         $roleName = $this->getRoleDisplayName($role);
 
-        $base = "Kamu adalah Aksara AI, asisten virtual cerdas untuk sistem manajemen sekolah bernama Aksara System. " .
-            "Jawab dengan ramah, ringkas, dan dalam Bahasa Indonesia. " .
-            "Kamu juga bisa menjawab pertanyaan umum di luar konteks sekolah seperti pengetahuan umum, sains, matematika, sejarah, coding, dan topik lainnya. " .
-            "Tetap ramah dan conversational layaknya AI chatbot modern. " .
+        $base = 'Kamu adalah Aksara AI, asisten virtual cerdas untuk sistem manajemen sekolah bernama Aksara System. '.
+            'Jawab dengan ramah, ringkas, dan dalam Bahasa Indonesia. '.
+            'Kamu juga bisa menjawab pertanyaan umum di luar konteks sekolah seperti pengetahuan umum, sains, matematika, sejarah, coding, dan topik lainnya. '.
+            'Tetap ramah dan conversational layaknya AI chatbot modern. '.
             "Nama pengguna saat ini: {$name}. Role: {$roleName}. ";
 
         $roleContext = match ($role) {
-            'admin' => "Pengguna ini adalah Administrator/Super Admin dengan akses penuh ke sistem. " .
-            "Kamu bisa membantu dengan: manajemen data siswa, guru, staff, dan orang tua; " .
-            "pengaturan tahun ajaran dan kelas; manajemen hak akses (roles & permissions via Filament Shield); " .
-            "melihat laporan dan statistik sekolah; pengaturan sistem secara keseluruhan. " .
-            "Admin mengakses sistem melalui panel Filament di /admin. " .
-            "Berikan jawaban yang detail dan teknis jika diperlukan.",
+            'admin' => 'Pengguna ini adalah Administrator/Super Admin dengan akses penuh ke sistem. '.
+            'Kamu bisa membantu dengan: manajemen data siswa, guru, staff, dan orang tua; '.
+            'pengaturan tahun ajaran dan kelas; manajemen hak akses (roles & permissions via Filament Shield); '.
+            'melihat laporan dan statistik sekolah; pengaturan sistem secara keseluruhan. '.
+            'Admin mengakses sistem melalui panel Filament di /admin. '.
+            'Berikan jawaban yang detail dan teknis jika diperlukan.',
 
-            'guru' => "Pengguna ini adalah Guru. " .
-            "Kamu bisa membantu dengan: melihat jadwal mengajar; menginput dan mengelola nilai siswa; " .
-            "melihat data presensi siswa di kelasnya; mengelola kelas perwalian (jika wali kelas); " .
-            "membuat catatan akademik. " .
-            "Guru mengakses sistem melalui panel Filament di /admin. " .
-            "Berikan jawaban yang profesional dan suportif.",
+            'guru' => 'Pengguna ini adalah Guru. '.
+            'Kamu bisa membantu dengan: melihat jadwal mengajar; menginput dan mengelola nilai siswa; '.
+            'melihat data presensi siswa di kelasnya; mengelola kelas perwalian (jika wali kelas); '.
+            'membuat catatan akademik. '.
+            'Guru mengakses sistem melalui panel Filament di /admin. '.
+            'Berikan jawaban yang profesional dan suportif.',
 
-            'staff' => "Pengguna ini adalah Staff Tata Usaha/Administrasi. " .
-            "Kamu bisa membantu dengan: pengelolaan data master (siswa, guru, kelas); " .
-            "administrasi surat-menyurat; rekap data presensi dan nilai; " .
-            "pengelolaan pengumuman dan informasi sekolah. " .
-            "Staff mengakses sistem melalui panel Filament di /admin. " .
-            "Berikan jawaban yang praktis dan jelas.",
+            'staff' => 'Pengguna ini adalah Staff Tata Usaha/Administrasi. '.
+            'Kamu bisa membantu dengan: pengelolaan data master (siswa, guru, kelas); '.
+            'administrasi surat-menyurat; rekap data presensi dan nilai; '.
+            'pengelolaan pengumuman dan informasi sekolah. '.
+            'Staff mengakses sistem melalui panel Filament di /admin. '.
+            'Berikan jawaban yang praktis dan jelas.',
 
-            'wali' => "Pengguna ini adalah Orang Tua/Wali Murid. " .
-            "Kamu bisa membantu dengan: memantau nilai akademik anak; " .
-            "melihat data presensi/kehadiran anak; mengunduh rapor digital anak; " .
-            "melihat jadwal pelajaran anak; menghubungi wali kelas. " .
-            "Orang tua mengakses portal di /dashboard. " .
-            "Berikan jawaban yang mudah dipahami dan menenangkan.",
+            'wali' => 'Pengguna ini adalah Orang Tua/Wali Murid. '.
+            'Kamu bisa membantu dengan: memantau nilai akademik anak; '.
+            'melihat data presensi/kehadiran anak; mengunduh rapor digital anak; '.
+            'melihat jadwal pelajaran anak; menghubungi wali kelas. '.
+            'Orang tua mengakses portal di /dashboard. '.
+            'Berikan jawaban yang mudah dipahami dan menenangkan.',
 
-            'siswa' => "Pengguna ini adalah Siswa. " .
-            "Kamu bisa membantu dengan: melihat jadwal pelajaran; melihat nilai dan rapor; " .
-            "melihat data presensi/kehadiran; informasi tentang kegiatan ekstrakurikuler; " .
-            "informasi umum tentang sekolah. " .
-            "Siswa mengakses portal di /dashboard. " .
-            "Berikan jawaban yang ramah dan mudah dipahami. Gunakan bahasa yang santai tapi tetap sopan.",
+            'siswa' => 'Pengguna ini adalah Siswa. '.
+            'Kamu bisa membantu dengan: melihat jadwal pelajaran; melihat nilai dan rapor; '.
+            'melihat data presensi/kehadiran; informasi tentang kegiatan ekstrakurikuler; '.
+            'informasi umum tentang sekolah. '.
+            'Siswa mengakses portal di /dashboard. '.
+            'Berikan jawaban yang ramah dan mudah dipahami. Gunakan bahasa yang santai tapi tetap sopan.',
 
-            default => "Berikan jawaban yang ramah dan informatif.",
+            default => 'Berikan jawaban yang ramah dan informatif.',
         };
 
-        return $base . $roleContext . " Aturan Penting: 1. Kamu HARUS mampu menjawab APAPUN terkait aplikasi ini asalkan sesuai dengan wewenang Role pengguna. 2. Jika kamu memerlukan data spesifik untuk menjawab pertanyaan (seperti nilai, jadwal, atau kehadiran), gunakan tool yang tersedia. 3. JANGAN MENEBAK DATA jika tidak ada. 4. Sesuaikan respon dengan Role, contoh: jika orang tua menanyakan nilai/rapor yang belum 'published' (is_published = false), beri tahu bahwa nilai tersebut belum dipublikasikan oleh guru/admin, jadi belum bisa diakses. 5. Jawablah langsung pada intinya.";
+        return $base.$roleContext." Aturan Penting: 1. Kamu HARUS mampu menjawab APAPUN terkait aplikasi ini asalkan sesuai dengan wewenang Role pengguna. 2. Jika kamu memerlukan data spesifik untuk menjawab pertanyaan (seperti nilai, jadwal, atau kehadiran), gunakan tool yang tersedia. 3. JANGAN MENEBAK DATA jika tidak ada. 4. Sesuaikan respon dengan Role, contoh: jika orang tua menanyakan nilai/rapor yang belum 'published' (is_published = false), beri tahu bahwa nilai tersebut belum dipublikasikan oleh guru/admin, jadi belum bisa diakses. 5. Jawablah langsung pada intinya.";
     }
 
     /**
@@ -451,11 +458,15 @@ class ChatbotController extends Controller
 
         if ($role === 'siswa') {
             $student = $user->student;
-            if (!$student) return ['error' => 'Data siswa tidak ditemukan.'];
+            if (! $student) {
+                return ['error' => 'Data siswa tidak ditemukan.'];
+            }
             $query->where('student_id', $student->id);
         } elseif ($role === 'orang_tua') {
             $parent = $user->parent;
-            if (!$parent) return ['error' => 'Data orang tua tidak ditemukan.'];
+            if (! $parent) {
+                return ['error' => 'Data orang tua tidak ditemukan.'];
+            }
             $childIds = $parent->students->pluck('id')->toArray();
             if ($studentId && in_array($studentId, $childIds)) {
                 $query->where('student_id', $studentId);
@@ -469,10 +480,12 @@ class ChatbotController extends Controller
                 return ['error' => 'Mohon tentukan ID siswa.'];
             }
         } elseif ($role === 'admin') {
-            if ($studentId) $query->where('student_id', $studentId);
+            if ($studentId) {
+                $query->where('student_id', $studentId);
+            }
         }
 
-        $grades = $query->latest()->limit(20)->get()->map(fn($g) => [
+        $grades = $query->latest()->limit(20)->get()->map(fn ($g) => [
             'subject' => $g->subject->nama_mapel ?? 'N/A',
             'tugas' => $g->nilai_tugas,
             'uts' => $g->nilai_uts,
@@ -481,9 +494,13 @@ class ChatbotController extends Controller
         ]);
 
         $attendanceQuery = Attendance::query();
-        if ($role === 'siswa') $attendanceQuery->where('student_id', $user->student->id);
-        elseif ($role === 'orang_tua') $attendanceQuery->whereIn('student_id', $user->parent->students->pluck('id')->toArray());
-        elseif ($studentId) $attendanceQuery->where('student_id', $studentId);
+        if ($role === 'siswa') {
+            $attendanceQuery->where('student_id', $user->student->id);
+        } elseif ($role === 'orang_tua') {
+            $attendanceQuery->whereIn('student_id', $user->parent->students->pluck('id')->toArray());
+        } elseif ($studentId) {
+            $attendanceQuery->where('student_id', $studentId);
+        }
 
         $attendance = $attendanceQuery->selectRaw('status, count(*) as count')->groupBy('status')->get();
 
@@ -500,7 +517,7 @@ class ChatbotController extends Controller
 
         if ($role === 'siswa') {
             $activeRombelId = $user->student->studyGroups()
-                ->whereHas('academicYear', fn($q) => $q->where('is_active', true))
+                ->whereHas('academicYear', fn ($q) => $q->where('is_active', true))
                 ->first()?->id ?? 0;
             $query->where('study_group_id', $activeRombelId);
         } elseif ($role === 'guru') {
@@ -509,7 +526,7 @@ class ChatbotController extends Controller
             $query->where('study_group_id', $studyGroupId);
         }
 
-        return $query->get()->map(fn($s) => [
+        return $query->get()->map(fn ($s) => [
             'hari' => $s->hari,
             'jam' => "{$s->jam_mulai} - {$s->jam_selesai}",
             'mapel' => $s->subject->nama_mapel ?? 'N/A',
@@ -521,9 +538,11 @@ class ChatbotController extends Controller
 
     private function fetchStudyGroupInfo(?int $studyGroupId, $user, string $role)
     {
-        if (!in_array($role, ['admin', 'guru', 'staff'])) return ['error' => 'Unauthorized'];
+        if (! in_array($role, ['admin', 'guru', 'staff'])) {
+            return ['error' => 'Unauthorized'];
+        }
 
-        $query = \App\Models\StudyGroup::with('students.user');
+        $query = StudyGroup::with('students.user');
 
         if ($role === 'guru') {
             $query->where('walikelas_id', $user->teacher->id ?? 0);
@@ -532,12 +551,14 @@ class ChatbotController extends Controller
         }
 
         $studyGroup = $query->first();
-        if (!$studyGroup) return ['error' => 'Rombel tidak ditemukan.'];
+        if (! $studyGroup) {
+            return ['error' => 'Rombel tidak ditemukan.'];
+        }
 
         return [
             'nama_rombel' => $studyGroup->nama_rombel,
             'total_siswa' => $studyGroup->students->count(),
-            'daftar_siswa' => $studyGroup->students->map(fn($s) => [
+            'daftar_siswa' => $studyGroup->students->map(fn ($s) => [
                 'id' => $s->id,
                 'nama' => $s->user->name,
                 'nisn' => $s->nisn,
@@ -563,7 +584,9 @@ class ChatbotController extends Controller
         }
 
         $report = $query->latest()->first();
-        if (!$report) return ['error' => 'Rapor tidak ditemukan.'];
+        if (! $report) {
+            return ['error' => 'Rapor tidak ditemukan.'];
+        }
 
         return [
             'semester' => $report->semester,
@@ -580,7 +603,7 @@ class ChatbotController extends Controller
             ->orderBy('kategori', 'asc')
             ->orderBy('nama_ekskul', 'asc')
             ->get()
-            ->map(fn($e) => [
+            ->map(fn ($e) => [
                 'nama_ekskul' => $e->nama_ekskul,
                 'kategori' => $e->kategori,
                 'min_nilai' => $e->nilai_minimum ?? 'N/A',
@@ -603,9 +626,9 @@ class ChatbotController extends Controller
     {
         // Keywords untuk trigger knowledge injection
         $knowledgeKeywords = [
-            'cara', 'bagaimana', 'gimana', 'bisa', 'bapa', 'rapor', 'nilai', 'presensi', 
+            'cara', 'bagaimana', 'gimana', 'bisa', 'bapa', 'rapor', 'nilai', 'presensi',
             'jadwal', 'ekstrakurikuler', 'ekskul', 'wali kelas', 'buku induk', 'login as',
-            'tips', 'bantuan', 'help', 'panduan', 'tutorial', 'fitur', 'sistem'
+            'tips', 'bantuan', 'help', 'panduan', 'tutorial', 'fitur', 'sistem',
         ];
 
         $messageLower = strtolower($message);
@@ -622,15 +645,15 @@ class ChatbotController extends Controller
         if ($hasKeyword) {
             $faq = AksaraKnowledgeBase::searchFaq($message);
             $tips = AksaraKnowledgeBase::getRoleTips($role);
-            
+
             $context = "\n\n--- SISTEM CONTEXT (Jangan tampilkan ke user) ---\n";
             if ($faq) {
                 $context .= "FAQ Terkait: Q: {$faq['q']}\nA: {$faq['a']}\n";
             }
             $context .= "Tips untuk role {$role}: {$tips}\n";
             $context .= "--- END CONTEXT ---\n";
-            
-            return $message . $context;
+
+            return $message.$context;
         }
 
         return $message;
@@ -662,14 +685,14 @@ class ChatbotController extends Controller
             } elseif ($role === 'orang_tua' && $user->parent) {
                 $contextData['children_count'] = $user->parent->students->count();
                 $contextData['children'] = $user->parent->students
-                    ->map(fn($s) => [
+                    ->map(fn ($s) => [
                         'name' => $s->user->name,
                         'class' => $s->currentStudyGroup()?->nama_rombel,
                     ])
                     ->toArray();
             }
         } catch (\Exception $e) {
-            Log::debug('Error building contextual data: ' . $e->getMessage());
+            Log::debug('Error building contextual data: '.$e->getMessage());
         }
 
         return $contextData;
@@ -736,11 +759,15 @@ class ChatbotController extends Controller
         ];
 
         foreach ($roleResponses as $keyword => $reply) {
-            if (str_contains($message, $keyword)) return $reply;
+            if (str_contains($message, $keyword)) {
+                return $reply;
+            }
         }
 
         foreach ($commonResponses as $keyword => $reply) {
-            if (str_contains($message, $keyword)) return $reply;
+            if (str_contains($message, $keyword)) {
+                return $reply;
+            }
         }
 
         return match ($role) {

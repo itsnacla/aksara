@@ -2,9 +2,6 @@
 
 namespace App\Filament\Resources\Teachers;
 
-use App\Filament\Resources\Teachers\Pages\CreateTeacher;
-use App\Filament\Resources\Teachers\Pages\EditTeacher;
-use App\Filament\Resources\Teachers\Pages\ViewTeacher;
 use App\Filament\Resources\Teachers\Pages\ListTeachers;
 use App\Filament\Resources\Teachers\Schemas\TeacherForm;
 use App\Filament\Resources\Teachers\Schemas\TeacherInfoList;
@@ -13,8 +10,9 @@ use App\Models\Teacher;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class TeacherResource extends Resource
@@ -35,7 +33,7 @@ class TeacherResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Guru';
 
-    public static function getRecordTitle(?\Illuminate\Database\Eloquent\Model $record): ?string
+    public static function getRecordTitle(?Model $record): ?string
     {
         return $record?->user?->name;
     }
@@ -62,7 +60,7 @@ class TeacherResource extends Resource
         return TeacherInfoList::configure($schema);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with('user');
     }

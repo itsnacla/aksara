@@ -3,24 +3,25 @@
 namespace App\Filament\Resources\Attendances\Pages;
 
 use App\Filament\Resources\Attendances\AttendanceResource;
+use App\Jobs\SendWhatsAppAttendanceNotification;
 use App\Models\Attendance;
+use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudyGroup;
-use App\Models\Schedule;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
-use pxlrbt\FilamentExcel\Actions\ExportAction;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Hidden;
-use Filament\Schemas\Components\Section;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use pxlrbt\FilamentExcel\Actions\ExportAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class ListAttendances extends ListRecords
 {
@@ -42,7 +43,7 @@ class ListAttendances extends ListRecords
                 ->exports([
                     ExcelExport::make()
                         ->fromTable()
-                        ->withFilename('Data_Presensi_' . date('Y-m-d'))
+                        ->withFilename('Data_Presensi_'.date('Y-m-d')),
                 ]),
             Action::make('cetak_laporan')
                 ->label('Cetak Laporan')
@@ -55,7 +56,8 @@ class ListAttendances extends ListRecords
                         'from' => $filters['tanggal']['from'] ?? null,
                         'until' => $filters['tanggal']['until'] ?? null,
                     ]);
-                    return route('reports.attendance') . '?' . $query;
+
+                    return route('reports.attendance').'?'.$query;
                 })
                 ->openUrlInNewTab(),
             Action::make('batch_input')
@@ -80,17 +82,17 @@ class ListAttendances extends ListRecords
                                 ->options(function () {
                                     $query = StudyGroup::whereHas('academicYear', fn ($q) => $q->where('is_active', true));
                                     $user = auth()->user();
-                                    
+
                                     if ($user && $user->hasRole('guru') && $user->teacher) {
                                         $waliKelasId = $user->teacher->id;
                                         $scheduledRombelIds = Schedule::where('teacher_id', $waliKelasId)->pluck('study_group_id')->toArray();
-                                        
-                                        $query->where(function($q) use ($waliKelasId, $scheduledRombelIds) {
+
+                                        $query->where(function ($q) use ($waliKelasId, $scheduledRombelIds) {
                                             $q->where('walikelas_id', $waliKelasId)
-                                              ->orWhereIn('id', $scheduledRombelIds);
+                                                ->orWhereIn('id', $scheduledRombelIds);
                                         });
                                     }
-                                    
+
                                     return $query->pluck('nama_rombel', 'id');
                                 })
                                 ->required()
@@ -98,7 +100,7 @@ class ListAttendances extends ListRecords
                                 ->live()
                                 ->afterStateUpdated(fn (Get $get, Set $set) => self::loadStudentsForModal($get, $set)),
                         ])->columns(2),
-                    
+
                     Section::make('Daftar Siswa')
                         ->schema([
                             Repeater::make('items')
@@ -146,10 +148,10 @@ class ListAttendances extends ListRecords
                         );
 
                         // Send WA Notification for manual batch input
-                        if (!$attendance->wa_sent_at) {
-                            \App\Jobs\SendWhatsAppAttendanceNotification::dispatch($attendance)
+                        if (! $attendance->wa_sent_at) {
+                            SendWhatsAppAttendanceNotification::dispatch($attendance)
                                 ->delay(now()->addSeconds($delay));
-                            
+
                             $delay += 2; // Progressive delay for batch
                         }
                     }
@@ -169,8 +171,9 @@ class ListAttendances extends ListRecords
         $studyGroupId = $get('study_group_id');
         $tanggal = $get('tanggal');
 
-        if (!$studyGroupId || !$tanggal) {
+        if (! $studyGroupId || ! $tanggal) {
             $set('items', []);
+
             return;
         }
 
@@ -184,7 +187,7 @@ class ListAttendances extends ListRecords
             ->keyBy('student_id');
 
         if (request()->query('missing_only')) {
-            $students = $students->filter(fn ($student) => !isset($existing[$student->id]))->values();
+            $students = $students->filter(fn ($student) => ! isset($existing[$student->id]))->values();
         }
 
         $items = $students->map(fn ($student) => [

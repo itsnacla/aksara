@@ -2,13 +2,14 @@
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class UserPolicy
 {
     use HandlesAuthorization;
-    
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:User');
@@ -72,15 +73,14 @@ class UserPolicy
     /**
      * Determine whether the user can impersonate the target user.
      */
-    public function impersonate(AuthUser $authUser, \App\Models\User $targetUser): bool
+    public function impersonate(AuthUser $authUser, User $targetUser): bool
     {
         // Must have 'Impersonate' permission
-        if (!$authUser->can('Impersonate')) {
+        if (! $authUser->can('Impersonate')) {
             return false;
         }
 
         // Prevent self-impersonation
         return $authUser->id !== $targetUser->id;
     }
-
 }

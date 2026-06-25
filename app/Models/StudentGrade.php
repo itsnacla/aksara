@@ -35,8 +35,8 @@ class StudentGrade extends Model
     protected static function booted()
     {
         static::saving(function ($model) {
-            if (!$model->academic_year_id) {
-                $model->academic_year_id = \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+            if (! $model->academic_year_id) {
+                $model->academic_year_id = AcademicYear::where('is_active', true)->first()?->id;
             }
         });
     }

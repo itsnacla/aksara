@@ -3,10 +3,9 @@
 namespace App\Filament\Resources\AcademicYears\Pages;
 
 use App\Filament\Resources\AcademicYears\AcademicYearResource;
-use Filament\Resources\Pages\ListRecords;
-use Filament\Actions\CreateAction;
-
 use App\Filament\Resources\AcademicYears\Widgets\ActiveAcademicYearPrintDates;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ListRecords;
 
 class ListAcademicYears extends ListRecords
 {

@@ -2,14 +2,12 @@
 
 namespace App\Filament\Resources\SchoolSettings;
 
-use App\Filament\Resources\SchoolSettings\Pages;
+use App\Filament\Resources\SchoolSettings\Schemas\SchoolSettingForm;
 use App\Models\SchoolSetting;
+use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use App\Filament\Resources\SchoolSettings\Schemas\SchoolSettingForm;
-use Filament\Support\Icons\Heroicon;
 use UnitEnum;
-use BackedEnum;
 
 class SchoolSettingResource extends Resource
 {
@@ -24,7 +22,7 @@ class SchoolSettingResource extends Resource
     protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Identitas Sekolah';
-    
+
     protected static ?string $modelLabel = 'Identitas Sekolah';
 
     protected static ?string $pluralModelLabel = 'Identitas Sekolah';

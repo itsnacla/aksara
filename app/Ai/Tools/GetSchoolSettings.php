@@ -26,13 +26,13 @@ class GetSchoolSettings implements Tool
      */
     public function handle(Request $request): Stringable|string
     {
-        if (!$this->user) {
+        if (! $this->user) {
             return 'Error: User context missing.';
         }
 
         $setting = SchoolSetting::first();
 
-        if (!$setting) {
+        if (! $setting) {
             return 'Data sekolah belum diatur di sistem.';
         }
 

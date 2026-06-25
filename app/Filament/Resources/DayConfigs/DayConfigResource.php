@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\DayConfigs;
 
-use App\Filament\Resources\DayConfigs\Pages;
 use App\Filament\Resources\DayConfigs\Schemas\DayConfigForm;
 use App\Models\DayConfig;
+use App\Models\Level;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -12,10 +12,11 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Arr;
 use UnitEnum;
 
 class DayConfigResource extends Resource
@@ -31,7 +32,7 @@ class DayConfigResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Aturan Hari';
-    
+
     protected static ?string $modelLabel = 'Aturan Hari';
 
     protected static ?string $pluralModelLabel = 'Aturan Hari';
@@ -49,14 +50,14 @@ class DayConfigResource extends Resource
                     ->label('Hari')
                     ->sortable()
                     ->badge(),
-                \Filament\Tables\Columns\IconColumn::make('is_closed')
+                IconColumn::make('is_closed')
                     ->label('Libur')
                     ->boolean()
                     ->sortable(),
                 TextColumn::make('level_ids')
                     ->label('Level')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => \App\Models\Level::whereIn('id', \Illuminate\Support\Arr::wrap($state))->pluck('nama_tingkatan')->toArray()),
+                    ->formatStateUsing(fn ($state) => Level::whereIn('id', Arr::wrap($state))->pluck('nama_tingkatan')->toArray()),
                 TextColumn::make('maxTimeSlot.nama_jam')
                     ->label('Maks Jam'),
                 TextColumn::make('mandatorySubject.nama_mapel')
@@ -80,8 +81,8 @@ class DayConfigResource extends Resource
                     ]),
                 SelectFilter::make('level_ids')
                     ->label('Level')
-                    ->options(fn() => \App\Models\Level::pluck('nama_tingkatan', 'id'))
-                    ->query(fn ($query, $data) => $query->when($data['value'], fn($q) => $q->whereJsonContains('level_ids', $data['value']))),
+                    ->options(fn () => Level::pluck('nama_tingkatan', 'id'))
+                    ->query(fn ($query, $data) => $query->when($data['value'], fn ($q) => $q->whereJsonContains('level_ids', $data['value']))),
             ])
             ->actions([
                 EditAction::make()->modal(),

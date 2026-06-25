@@ -2,21 +2,23 @@
 
 namespace App\Filament\Resources\GraduateProfile;
 
-use App\Filament\Resources\GraduateProfile\Pages;
+use App\Models\AcademicYear;
 use App\Models\GraduateProfile;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class GraduateProfileResource extends Resource
 {
@@ -43,7 +45,7 @@ class GraduateProfileResource extends Resource
         return $schema
             ->components([
                 Hidden::make('academic_year_id')
-                    ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
+                    ->default(fn () => AcademicYear::where('is_active', true)->first()?->id),
                 TextInput::make('dimensi')
                     ->label('Dimensi Profil Lulusan')
                     ->placeholder('Contoh: Keimanan dan Ketakwaan terhadap Tuhan YME')
@@ -62,7 +64,7 @@ class GraduateProfileResource extends Resource
                     ->minItems(1)
                     ->defaultItems(1)
                     ->collapsible()
-                    ->itemLabel(fn (array $state): ?string => $state['subdimensi'] ? \Illuminate\Support\Str::limit($state['subdimensi'], 50) : null),
+                    ->itemLabel(fn (array $state): ?string => $state['subdimensi'] ? Str::limit($state['subdimensi'], 50) : null),
             ]);
     }
 
@@ -90,7 +92,7 @@ class GraduateProfileResource extends Resource
             ->filters([
                 SelectFilter::make('dimensi')
                     ->label('Filter Dimensi')
-                    ->options(function() {
+                    ->options(function () {
                         return GraduateProfile::distinct()->pluck('dimensi', 'dimensi')->toArray();
                     }),
             ])
@@ -105,16 +107,16 @@ class GraduateProfileResource extends Resource
             ]);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // Filter by active academic year
-        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+        $activeYearId = AcademicYear::where('is_active', true)->value('id');
         if ($activeYearId) {
             $query->where('academic_year_id', $activeYearId);
         }
-        
+
         return $query;
     }
 

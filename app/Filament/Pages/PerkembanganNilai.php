@@ -3,13 +3,12 @@
 namespace App\Filament\Pages;
 
 use App\Models\StudyGroup;
-use App\Models\Student;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Schemas\Schema;
 use Filament\Pages\Page;
-use Filament\Forms\Get;
+use Filament\Schemas\Schema;
+use Illuminate\Contracts\Support\Htmlable;
 
 class PerkembanganNilai extends Page implements HasForms
 {
@@ -30,7 +29,7 @@ class PerkembanganNilai extends Page implements HasForms
         return 'Perkembangan Nilai';
     }
 
-    public function getTitle(): \Illuminate\Contracts\Support\Htmlable|string
+    public function getTitle(): Htmlable|string
     {
         return 'Grafik Perkembangan Rerata Nilai Rapor Siswa';
     }
@@ -48,6 +47,7 @@ class PerkembanganNilai extends Page implements HasForms
     protected string $view = 'filament.pages.perkembangan-nilai';
 
     public ?int $study_group_id = null;
+
     public ?string $student_id = 'all';
 
     public function mount()
@@ -57,11 +57,11 @@ class PerkembanganNilai extends Page implements HasForms
         });
 
         $user = auth()->user();
-        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+        if ($user && $user->hasRole('guru') && ! $user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
             $teacherId = $user->teacher->id;
             $query->where(function ($q) use ($teacherId) {
                 $q->where('walikelas_id', $teacherId)
-                  ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId));
+                    ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId));
             });
         }
 
@@ -89,16 +89,16 @@ class PerkembanganNilai extends Page implements HasForms
                         })->with('academicYear');
 
                         $user = auth()->user();
-                        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                        if ($user && $user->hasRole('guru') && ! $user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
                             $teacherId = $user->teacher->id;
                             $query->where(function ($q) use ($teacherId) {
                                 $q->where('walikelas_id', $teacherId)
-                                  ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId));
+                                    ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId));
                             });
                         }
 
                         return $query->get()->mapWithKeys(function ($sg) {
-                            return [$sg->id => $sg->nama_rombel . ' (' . ($sg->academicYear ? $sg->academicYear->tahun_ajaran : '-') . ')'];
+                            return [$sg->id => $sg->nama_rombel.' ('.($sg->academicYear ? $sg->academicYear->tahun_ajaran : '-').')'];
                         });
                     })
                     ->searchable()
@@ -112,17 +112,20 @@ class PerkembanganNilai extends Page implements HasForms
                     ->label('Pilih Siswa')
                     ->options(function ($get) {
                         $sgId = $get('study_group_id');
-                        if (!$sgId) {
+                        if (! $sgId) {
                             return ['all' => 'SEMUA SISWA'];
                         }
-                        
+
                         $sg = StudyGroup::with('students.user')->find($sgId);
-                        if (!$sg) return ['all' => 'SEMUA SISWA'];
+                        if (! $sg) {
+                            return ['all' => 'SEMUA SISWA'];
+                        }
 
                         $options = ['all' => 'SEMUA SISWA'];
                         foreach ($sg->students as $student) {
                             $options[$student->id] = $student->user->name ?? $student->nis;
                         }
+
                         return $options;
                     })
                     ->searchable()

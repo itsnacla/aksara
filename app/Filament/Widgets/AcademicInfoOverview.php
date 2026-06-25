@@ -3,9 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Models\AcademicYear;
-use App\Models\StudyGroup;
 use App\Models\Schedule;
 use App\Models\StudentLeave;
+use App\Models\StudyGroup;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -15,7 +15,7 @@ class AcademicInfoOverview extends BaseWidget
 {
     protected static ?int $sort = -2;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getColumns(): int
     {
@@ -29,7 +29,7 @@ class AcademicInfoOverview extends BaseWidget
 
         $activeYear = AcademicYear::where('is_active', true)->first();
         $totalRombel = StudyGroup::query()
-            ->when($activeYear, fn($q) => $q->where('academic_year_id', $activeYear->id))
+            ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
             ->count();
 
         $totalSchedules = Schedule::count();
@@ -38,7 +38,7 @@ class AcademicInfoOverview extends BaseWidget
 
         if ($isGuru) {
             $teacher = $user->teacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 return [
                     Stat::make('Info Akademik', 'Data tidak tersedia')
                         ->description('Hubungi admin untuk pengaturan.')
@@ -62,7 +62,7 @@ class AcademicInfoOverview extends BaseWidget
                 ->where('hari', $todayIndo)
                 ->with(['studyGroup', 'subject', 'startTimeSlot', 'endTimeSlot'])
                 ->get()
-                ->sortBy(fn($s) => $s->startTimeSlot?->urutan ?? 999);
+                ->sortBy(fn ($s) => $s->startTimeSlot?->urutan ?? 999);
 
             $totalSubjects = Schedule::where('teacher_id', $teacher->id)
                 ->distinct('subject_id')
@@ -71,6 +71,7 @@ class AcademicInfoOverview extends BaseWidget
             $scheduleSummary = $todaySchedules->map(function ($s) {
                 $start = $s->startTimeSlot?->start_time ?? '-';
                 $end = $s->endTimeSlot?->end_time ?? '-';
+
                 return "{$s->subject?->nama_mapel} ({$s->studyGroup?->nama_rombel}) {$start}-{$end}";
             })->join(', ');
 
@@ -79,7 +80,7 @@ class AcademicInfoOverview extends BaseWidget
 
             return [
                 Stat::make('Tahun Ajaran Aktif', $activeYear ? $activeYear->tahun_ajaran : 'Belum Diatur')
-                    ->description($activeYear ? 'Semester ' . $activeYear->semester : 'Silakan atur tahun ajaran')
+                    ->description($activeYear ? 'Semester '.$activeYear->semester : 'Silakan atur tahun ajaran')
                     ->descriptionIcon('heroicon-m-calendar-days')
                     ->icon('heroicon-o-calendar-days')
                     ->color('primary'),
@@ -106,7 +107,7 @@ class AcademicInfoOverview extends BaseWidget
 
         return [
             Stat::make('Tahun Ajaran Aktif', $activeYear ? $activeYear->tahun_ajaran : 'Belum Diatur')
-                ->description($activeYear ? 'Semester ' . $activeYear->semester : 'Silakan atur tahun ajaran')
+                ->description($activeYear ? 'Semester '.$activeYear->semester : 'Silakan atur tahun ajaran')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->icon('heroicon-o-calendar-days')
                 ->color('primary'),

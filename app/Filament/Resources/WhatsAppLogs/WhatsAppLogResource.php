@@ -8,11 +8,11 @@ use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class WhatsAppLogResource extends Resource
@@ -36,9 +36,13 @@ class WhatsAppLogResource extends Resource
                 //
             ]);
     }
+
     protected static \UnitEnum|string|null $navigationGroup = 'Sistem & Konfigurasi';
+
     protected static ?string $navigationLabel = 'Log WhatsApp';
+
     protected static ?string $modelLabel = 'Log WhatsApp';
+
     protected static ?int $navigationSort = 99;
 
     public static function canCreate(): bool
@@ -50,15 +54,15 @@ class WhatsAppLogResource extends Resource
     {
         return $table
             ->columns([
-                \Filament\Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Tanggal/Waktu')
                     ->dateTime('d M Y, H:i:s')
                     ->sortable()
                     ->searchable(),
-                \Filament\Tables\Columns\TextColumn::make('phone')
+                TextColumn::make('phone')
                     ->label('Nomor Tujuan')
                     ->searchable(),
-                \Filament\Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -66,17 +70,18 @@ class WhatsAppLogResource extends Resource
                         'failed' => 'danger',
                         default => 'gray',
                     }),
-                \Filament\Tables\Columns\TextColumn::make('message')
+                TextColumn::make('message')
                     ->label('Pesan')
                     ->limit(50)
-                    ->tooltip(function (\Filament\Tables\Columns\TextColumn $column): ?string {
+                    ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
                         if (strlen($state) <= 50) {
                             return null;
                         }
+
                         return $state;
                     }),
-                \Filament\Tables\Columns\TextColumn::make('response')
+                TextColumn::make('response')
                     ->label('Response API')
                     ->limit(50)
                     ->color('gray'),

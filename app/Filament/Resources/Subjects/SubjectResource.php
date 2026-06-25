@@ -11,7 +11,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use UnitEnum;
-use Filament\Support\Icons\Heroicon;
 
 class SubjectResource extends Resource
 {

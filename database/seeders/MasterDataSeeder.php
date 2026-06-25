@@ -1,14 +1,20 @@
 <?php
- 
+
 namespace Database\Seeders;
- 
+
 use App\Models\AcademicYear;
-use App\Models\Level;
-use App\Models\Subject;
+use App\Models\ChatbotSetting;
 use App\Models\Classroom;
+use App\Models\Cocurricular;
 use App\Models\Extracurricular;
+use App\Models\Level;
+use App\Models\P5Project;
+use App\Models\P5Theme;
+use App\Models\Subject;
+use App\Models\SubjectReportGroup;
+use App\Models\SubjectReportMapping;
 use Illuminate\Database\Seeder;
- 
+
 class MasterDataSeeder extends Seeder
 {
     /**
@@ -31,7 +37,7 @@ class MasterDataSeeder extends Seeder
 
     private function seedChatbotSettings(): void
     {
-        \App\Models\ChatbotSetting::updateOrCreate(
+        ChatbotSetting::updateOrCreate(
             ['id' => 1],
             [
                 'is_active' => true,
@@ -50,28 +56,28 @@ class MasterDataSeeder extends Seeder
                     'groq' => [
                         'key' => env('GROQ_API_KEY', ''),
                         'model' => 'llama-3.3-70b-versatile',
-                    ]
-                ]
+                    ],
+                ],
             ]
         );
     }
- 
+
     private function seedAcademicYears(): void
     {
         $startYear = 2025;
         for ($i = 0; $i < 5; $i++) {
-            $yearStr = ($startYear + $i) . '/' . ($startYear + $i + 1);
-            
+            $yearStr = ($startYear + $i).'/'.($startYear + $i + 1);
+
             AcademicYear::firstOrCreate(
                 ['tahun_ajaran' => $yearStr],
                 [
                     'semester' => 'ganjil',
-                    'is_active' => ($i === 0)
+                    'is_active' => ($i === 0),
                 ]
             );
         }
     }
- 
+
     private function seedRooms(): void
     {
         $rooms = ['A', 'B'];
@@ -79,7 +85,7 @@ class MasterDataSeeder extends Seeder
             Classroom::firstOrCreate(['nama_ruangan' => $roomName]);
         }
     }
- 
+
     private function seedLevels(): array
     {
         $levels = [
@@ -97,10 +103,11 @@ class MasterDataSeeder extends Seeder
                 ['nama_tingkatan' => $name],
                 [
                     'fase' => $data['fase'],
-                    'is_last_level' => ($data['sort'] === 6)
+                    'is_last_level' => ($data['sort'] === 6),
                 ]
             );
         }
+
         return $levelModels;
     }
 
@@ -117,14 +124,15 @@ class MasterDataSeeder extends Seeder
 
         $groupModels = [];
         foreach ($groups as $g) {
-            $groupModels[$g['kelompok']] = \App\Models\SubjectReportGroup::updateOrCreate(
+            $groupModels[$g['kelompok']] = SubjectReportGroup::updateOrCreate(
                 ['kelompok' => $g['kelompok']],
                 $g
             );
         }
+
         return $groupModels;
     }
- 
+
     private function seedSubjects(array $levelModels, array $groupModels): void
     {
         $subjects = [
@@ -145,7 +153,7 @@ class MasterDataSeeder extends Seeder
             ['nama_mapel' => 'Seni Budaya', 'is_umum' => true, 'total_jp' => 4, 'group' => 'B'],
             ['nama_mapel' => 'Upacara', 'is_umum' => true, 'total_jp' => 1, 'scheduling_priority' => 3, 'group' => null, 'is_graded' => false],
         ];
- 
+
         foreach ($subjects as $s) {
             $groupId = isset($s['group'], $groupModels[$s['group']]) ? $groupModels[$s['group']]->id : null;
             $data = [
@@ -159,15 +167,20 @@ class MasterDataSeeder extends Seeder
             ];
 
             $subject = Subject::updateOrCreate(['nama_mapel' => $s['nama_mapel']], $data);
-            
+
             $ids = collect($levelModels)
-                ->filter(function($model, $sort) use ($s) {
-                    if ($s['nama_mapel'] === 'Ilmu Pengetahuan Alam dan Sosial (IPAS)' && in_array($sort, [1, 2])) return false;
-                    if ($s['nama_mapel'] === 'Bahasa Using' && in_array($sort, [1, 2, 3])) return false;
+                ->filter(function ($model, $sort) use ($s) {
+                    if ($s['nama_mapel'] === 'Ilmu Pengetahuan Alam dan Sosial (IPAS)' && in_array($sort, [1, 2])) {
+                        return false;
+                    }
+                    if ($s['nama_mapel'] === 'Bahasa Using' && in_array($sort, [1, 2, 3])) {
+                        return false;
+                    }
+
                     return true;
                 })
                 ->pluck('id')->toArray();
- 
+
             $subject->levels()->sync($ids);
         }
     }
@@ -175,10 +188,10 @@ class MasterDataSeeder extends Seeder
     private function seedExtracurriculars(): void
     {
         $ekskuls = [
-              ['nama_ekskul' => 'Pramuka', 'kategori' => 'wajib', 'coordinator_name' => 'Imam Fahrudin', 'nilai_minimum' => 'B', 'deskripsi' => 'Kegiatan kepanduan wajib untuk melatih kedisiplinan dan kemandirian.'],
-              ['nama_ekskul' => 'Tari', 'kategori' => 'pilihan', 'coordinator_name' => 'Angger Wigunaning Aji', 'nilai_minimum' => 'B', 'deskripsi' => 'Melestarikan seni budaya melalui tarian daerah.'],
-              ['nama_ekskul' => 'Hadrah', 'kategori' => 'pilihan', 'coordinator_name' => 'Moh. Itqonur Risal', 'nilai_minimum' => 'B', 'deskripsi' => 'Seni musik islami dengan alat rebana dan hadrah.'],
-              ['nama_ekskul' => 'Renang', 'kategori' => 'pilihan', 'coordinator_name' => 'Beni Putra', 'nilai_minimum' => 'B', 'deskripsi' => 'Olahraga renang untuk melatih kesehatan dan ketahanan fisik.'],
+            ['nama_ekskul' => 'Pramuka', 'kategori' => 'wajib', 'coordinator_name' => 'Imam Fahrudin', 'nilai_minimum' => 'B', 'deskripsi' => 'Kegiatan kepanduan wajib untuk melatih kedisiplinan dan kemandirian.'],
+            ['nama_ekskul' => 'Tari', 'kategori' => 'pilihan', 'coordinator_name' => 'Angger Wigunaning Aji', 'nilai_minimum' => 'B', 'deskripsi' => 'Melestarikan seni budaya melalui tarian daerah.'],
+            ['nama_ekskul' => 'Hadrah', 'kategori' => 'pilihan', 'coordinator_name' => 'Moh. Itqonur Risal', 'nilai_minimum' => 'B', 'deskripsi' => 'Seni musik islami dengan alat rebana dan hadrah.'],
+            ['nama_ekskul' => 'Renang', 'kategori' => 'pilihan', 'coordinator_name' => 'Beni Putra', 'nilai_minimum' => 'B', 'deskripsi' => 'Olahraga renang untuk melatih kesehatan dan ketahanan fisik.'],
         ];
 
         foreach ($ekskuls as $e) {
@@ -279,8 +292,8 @@ class MasterDataSeeder extends Seeder
                     }
                 }
 
-                if (!empty($levelIds)) {
-                    \App\Models\SubjectReportMapping::updateOrCreate(
+                if (! empty($levelIds)) {
+                    SubjectReportMapping::updateOrCreate(
                         [
                             'kurikulum' => 'Kurikulum SD Merdeka',
                             'subject_id' => $subject->id,
@@ -304,7 +317,7 @@ class MasterDataSeeder extends Seeder
     //             if (!$subject->levels->contains($level->id)) {
     //                 continue;
     //             }
-    //             
+    //
     //             // Let's seed 4 TPs per subject-level combination
     //             $tpTemplates = [
     //                 1 => [
@@ -324,7 +337,7 @@ class MasterDataSeeder extends Seeder
     //                     'description' => "mempraktikkan proyek {$subject->nama_mapel}"
     //                 ],
     //             ];
-    //             
+    //
     //             foreach ($tpTemplates as $tp) {
     //                 \App\Models\LearningObjective::updateOrCreate(
     //                     [
@@ -347,30 +360,30 @@ class MasterDataSeeder extends Seeder
         $themes = [
             'Gaya Hidup Berkelanjutan' => [
                 'Sampahku, Tanggung Jawabku',
-                'Pilah dan Olah Sampah Plastik di Sekolah'
+                'Pilah dan Olah Sampah Plastik di Sekolah',
             ],
             'Kearifan Lokal' => [
                 'Melestarikan Permainan Tradisional Using',
-                'Eksplorasi Kuliner Nusantara Banyuwangi'
+                'Eksplorasi Kuliner Nusantara Banyuwangi',
             ],
             'Bhinneka Tunggal Ika' => [
                 'Indahnya Keberagaman di Sekolahku',
-                'Pakaian Adat dan Kebudayaan Nusantara'
+                'Pakaian Adat dan Kebudayaan Nusantara',
             ],
             'Kewirausahaan' => [
                 'Apotek Hidup dan Budidaya Tanaman Organik',
-                'Pasar Cilik SD Merdeka'
+                'Pasar Cilik SD Merdeka',
             ],
         ];
 
         foreach ($themes as $themeName => $projects) {
-            $theme = \App\Models\P5Theme::updateOrCreate(
+            $theme = P5Theme::updateOrCreate(
                 ['name' => $themeName],
                 ['is_active' => true]
             );
 
             foreach ($projects as $projectName) {
-                $project = \App\Models\P5Project::updateOrCreate(
+                $project = P5Project::updateOrCreate(
                     [
                         'p5_theme_id' => $theme->id,
                         'name' => $projectName,
@@ -382,14 +395,14 @@ class MasterDataSeeder extends Seeder
                             'Beriman dan Bertaqwa kepada Tuhan YME',
                             'Bergotong Royong',
                             'Bernalar Kritis',
-                            'Kreatif'
-                        ]
+                            'Kreatif',
+                        ],
                     ]
                 );
-                
+
                 // Attach levels for fase A (Level 1 and 2)
                 $levelIds = Level::where('fase', 'A')->pluck('id');
-                if($levelIds->isNotEmpty()) {
+                if ($levelIds->isNotEmpty()) {
                     $project->levels()->syncWithoutDetaching($levelIds);
                 }
             }
@@ -415,11 +428,11 @@ class MasterDataSeeder extends Seeder
                 'fase' => 'B',
                 'deskripsi' => 'Projek edukasi literasi digital dan keselamatan berinternet untuk murid Fase B.',
                 'tahun_ajaran' => $tahunAjaran,
-            ]
+            ],
         ];
 
         foreach ($projects as $p) {
-            \App\Models\Cocurricular::updateOrCreate(
+            Cocurricular::updateOrCreate(
                 ['nama_projek' => $p['nama_projek']],
                 $p
             );

@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\Staff\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Actions\DeleteAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
 
@@ -42,7 +44,7 @@ class StaffTable
             TextColumn::make('jabatan')
                 ->label('Jabatan')
                 ->searchable(),
-            \Filament\Tables\Columns\IconColumn::make('user.is_active')
+            IconColumn::make('user.is_active')
                 ->label('Akun Aktif')
                 ->boolean(),
             TextColumn::make('no_whatsapp')
@@ -59,7 +61,7 @@ class StaffTable
     protected static function getFilters(): array
     {
         return [
-            \Filament\Tables\Filters\SelectFilter::make('status')
+            SelectFilter::make('status')
                 ->label('Filter Status')
                 ->options([
                     'aktif' => 'Aktif',
@@ -82,6 +84,7 @@ class StaffTable
                         $data['user_email'] = $user->email;
                         $data['user_is_active'] = $user->is_active;
                     }
+
                     return $data;
                 }),
             EditAction::make()
@@ -94,6 +97,7 @@ class StaffTable
                         $data['user_email'] = $user->email;
                         $data['user_is_active'] = $user->is_active;
                     }
+
                     return $data;
                 })
                 ->mutateFormDataUsing(function (array $data, $record): array {
@@ -106,7 +110,7 @@ class StaffTable
                             'is_active' => $data['user_is_active'] ?? true,
                         ]);
 
-                        if (!empty($data['user_password'])) {
+                        if (! empty($data['user_password'])) {
                             $updateData['password'] = Hash::make($data['user_password']);
                         }
 

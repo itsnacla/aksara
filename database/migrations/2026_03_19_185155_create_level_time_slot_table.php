@@ -33,7 +33,7 @@ return new class extends Migration
         Schema::table('time_slots', function (Blueprint $table) {
             $table->foreignId('level_id')->nullable()->constrained()->onDelete('cascade');
         });
-        
+
         Schema::dropIfExists('level_time_slot');
     }
 };

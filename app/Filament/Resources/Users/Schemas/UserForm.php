@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Models\Classroom;
+use App\Models\StudentParent;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
@@ -87,14 +88,14 @@ class UserForm
                     ->maxLength(10),
                 Select::make('student_classroom_id')
                     ->label('Kelas Siswa')
-                    ->options(fn () => \App\Models\Classroom::pluck('nama_kelas', 'id'))
+                    ->options(fn () => Classroom::pluck('nama_kelas', 'id'))
                     ->searchable()
                     ->preload()
                     ->required(fn (Get $get): bool => $get('selected_role') === 'siswa')
                     ->visible(fn (Get $get): bool => $get('selected_role') === 'siswa'),
                 Select::make('student_parent_id')
                     ->label('Orang Tua / Wali')
-                    ->options(fn () => \App\Models\StudentParent::with('user')->get()->pluck('user.name', 'id'))
+                    ->options(fn () => StudentParent::with('user')->get()->pluck('user.name', 'id'))
                     ->searchable()
                     ->preload()
                     ->required(fn (Get $get): bool => $get('selected_role') === 'siswa')

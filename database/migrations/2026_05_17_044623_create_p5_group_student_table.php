@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('p5_group_id')->constrained('p5_groups')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
-            
+
             $table->unique(['p5_group_id', 'student_id']); // Prevent duplicate memberships
         });
     }

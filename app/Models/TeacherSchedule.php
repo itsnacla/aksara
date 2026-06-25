@@ -8,6 +8,4 @@ use Illuminate\Database\Eloquent\Attributes\Table;
  * @property int $id
  */
 #[Table('schedules')]
-class TeacherSchedule extends Schedule
-{
-}
+class TeacherSchedule extends Schedule {}

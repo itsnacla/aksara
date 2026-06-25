@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class P5ProjectTable
@@ -29,10 +30,10 @@ class P5ProjectTable
                     ->searchable(),
             ])
             ->filters([
-                \Filament\Tables\Filters\SelectFilter::make('p5_theme_id')
+                SelectFilter::make('p5_theme_id')
                     ->relationship('theme', 'name')
                     ->label('Tema'),
-                \Filament\Tables\Filters\SelectFilter::make('levels')
+                SelectFilter::make('levels')
                     ->relationship('levels', 'nama_tingkatan')
                     ->label('Tingkat'),
             ])

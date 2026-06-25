@@ -2,14 +2,21 @@
 
 namespace App\Filament\Resources\Schedules\Tables;
 
+use App\Models\AcademicYear;
+use App\Models\StudyGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SchedulesTable
 {
@@ -21,11 +28,11 @@ class SchedulesTable
                     ->sortable()
                     ->badge()
                     ->color('info'),
-                
+
                 TextColumn::make('startTimeSlot.nama_jam')
                     ->label('Dari')
                     ->description(fn ($record) => $record->startTimeSlot?->waktu_mulai?->format('H:i')),
-                
+
                 TextColumn::make('endTimeSlot.nama_jam')
                     ->label('Sampai')
                     ->description(fn ($record) => $record->endTimeSlot?->waktu_selesai?->format('H:i')),
@@ -49,57 +56,61 @@ class SchedulesTable
                     ->badge()
                     ->searchable()
                     ->sortable(),
-                
+
                 TextColumn::make('studyGroup.classroom.nama_ruangan')
                     ->label('Ruangan')
                     ->toggleable(),
             ])
             ->filters([
-                \Filament\Tables\Filters\Filter::make('rombel_filter')
+                Filter::make('rombel_filter')
                     ->form([
-                        \Filament\Forms\Components\Select::make('academic_year_id')
+                        Select::make('academic_year_id')
                             ->label('Tahun Ajaran')
-                            ->options(fn () => \App\Models\AcademicYear::all()->mapWithKeys(fn ($year) => [
-                                $year->id => "Tahun Ajaran {$year->tahun_ajaran}"
+                            ->options(fn () => AcademicYear::all()->mapWithKeys(fn ($year) => [
+                                $year->id => "Tahun Ajaran {$year->tahun_ajaran}",
                             ]))
-                            ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id)
+                            ->default(fn () => AcademicYear::where('is_active', true)->first()?->id)
                             ->live(),
-                        \Filament\Forms\Components\Select::make('study_group_id')
+                        Select::make('study_group_id')
                             ->label('Filter Rombel')
-                            ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                            ->options(function (Get $get) {
                                 $academicYearId = $get('academic_year_id');
-                                if (!$academicYearId) return \App\Models\StudyGroup::pluck('nama_rombel', 'id');
-                                return \App\Models\StudyGroup::where('academic_year_id', $academicYearId)->pluck('nama_rombel', 'id');
+                                if (! $academicYearId) {
+                                    return StudyGroup::pluck('nama_rombel', 'id');
+                                }
+
+                                return StudyGroup::where('academic_year_id', $academicYearId)->pluck('nama_rombel', 'id');
                             })
                             ->searchable(),
                     ])
-                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                    ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['academic_year_id'] ?? null,
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $value): \Illuminate\Database\Eloquent\Builder => $query->whereHas('studyGroup', fn ($q) => $q->where('academic_year_id', $value))
+                                fn (Builder $query, $value): Builder => $query->whereHas('studyGroup', fn ($q) => $q->where('academic_year_id', $value))
                             )
                             ->when(
                                 $data['study_group_id'] ?? null,
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $value): \Illuminate\Database\Eloquent\Builder => $query->where('study_group_id', $value)
+                                fn (Builder $query, $value): Builder => $query->where('study_group_id', $value)
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['academic_year_id'] ?? null) {
-                            $year = \App\Models\AcademicYear::find($data['academic_year_id']);
+                            $year = AcademicYear::find($data['academic_year_id']);
                             if ($year) {
-                                $indicators[] = \Filament\Tables\Filters\Indicator::make('Tahun Ajaran: ' . $year->tahun_ajaran)
+                                $indicators[] = Indicator::make('Tahun Ajaran: '.$year->tahun_ajaran)
                                     ->removeField('academic_year_id');
                             }
                         }
                         if ($data['study_group_id'] ?? null) {
-                            $rombel = \App\Models\StudyGroup::find($data['study_group_id']);
+                            $rombel = StudyGroup::find($data['study_group_id']);
                             if ($rombel) {
-                                $indicators[] = \Filament\Tables\Filters\Indicator::make('Rombel: ' . $rombel->nama_rombel)
+                                $indicators[] = Indicator::make('Rombel: '.$rombel->nama_rombel)
                                     ->removeField('study_group_id');
                             }
                         }
+
                         return $indicators;
                     }),
                 SelectFilter::make('hari')

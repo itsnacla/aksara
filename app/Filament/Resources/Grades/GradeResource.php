@@ -3,18 +3,32 @@
 namespace App\Filament\Resources\Grades;
 
 use App\Filament\Resources\Grades\Pages\ManageGrades;
+use App\Models\AcademicYear;
 use App\Models\Grade;
+use App\Models\LearningObjective;
+use App\Models\Schedule;
+use App\Models\Student;
+use App\Models\StudyGroup;
+use App\Models\Subject;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class GradeResource extends Resource
@@ -42,22 +56,22 @@ class GradeResource extends Resource
                 ->relationship('subject', 'nama_mapel', modifyQueryUsing: function ($query) {
                     $query->where('subjects.is_graded', true);
                     $user = auth()->user();
-                    if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                    if ($user && $user->hasRole('guru') && ! $user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
                         $teacherId = $user->teacher->id;
                         $isWaliKelas = $user->teacher->is_walikelas;
-                        
+
                         if ($isWaliKelas) {
                             // Wali kelas can see: is_umum subjects OR subjects from schedules OR subjects from teacher relationship
                             $query->where(function ($q) use ($teacherId) {
                                 $q->where('subjects.is_umum', true)
-                                  ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
-                                  ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
+                                    ->orWhereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
+                                    ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
                             });
                         } else {
                             // Guru mapel can see: subjects from schedules OR subjects from teacher relationship
                             $query->where(function ($q) use ($teacherId) {
                                 $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
-                                  ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
+                                    ->orWhereHas('teachers', fn ($tq) => $tq->where('teachers.id', $teacherId));
                             });
                         }
                     }
@@ -73,23 +87,25 @@ class GradeResource extends Resource
             Select::make('study_group_id')
                 ->relationship('studyGroup', 'nama_rombel', modifyQueryUsing: function ($query, callable $get) {
                     $subjectId = $get('subject_id');
-                    
+
                     // Get active academic year ID (automatic)
-                    $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
-                    if (!$activeYearId) return;
-                    
+                    $activeYearId = AcademicYear::where('is_active', true)->value('id');
+                    if (! $activeYearId) {
+                        return;
+                    }
+
                     // Base query: ALWAYS filter by active academic year
                     $query->where('academic_year_id', $activeYearId);
-                    
+
                     $user = auth()->user();
-                    if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                    if ($user && $user->hasRole('guru') && ! $user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
                         $teacherId = $user->teacher->id;
                         $isWaliKelas = $user->teacher->is_walikelas;
-                        
+
                         if ($isWaliKelas && $subjectId) {
                             // Get the subject to check if it's is_umum
-                            $subject = \App\Models\Subject::find($subjectId);
-                            
+                            $subject = Subject::find($subjectId);
+
                             if ($subject && $subject->is_umum) {
                                 // For is_umum subjects, wali kelas can see their managed classes
                                 $query->where('walikelas_id', $teacherId);
@@ -100,10 +116,10 @@ class GradeResource extends Resource
                         } else {
                             // Guru mapel: cek apakah punya schedules untuk subject ini
                             if ($subjectId) {
-                                $hasSchedules = \App\Models\Schedule::where('teacher_id', $teacherId)
+                                $hasSchedules = Schedule::where('teacher_id', $teacherId)
                                     ->where('subject_id', $subjectId)
                                     ->exists();
-                                
+
                                 if ($hasSchedules) {
                                     // Jika punya schedules, hanya lihat kelas dari jadwal mereka
                                     $query->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId)->where('subject_id', $subjectId));
@@ -127,10 +143,11 @@ class GradeResource extends Resource
                 ->label('Siswa')
                 ->options(function (callable $get) {
                     $studyGroupId = $get('study_group_id');
-                    if (!$studyGroupId) {
+                    if (! $studyGroupId) {
                         return [];
                     }
-                    return \App\Models\Student::whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
+
+                    return Student::whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
                         ->with('user')
                         ->get()
                         ->mapWithKeys(fn ($student) => [$student->id => "{$student->nisn} - {$student->user->name}"])
@@ -140,36 +157,41 @@ class GradeResource extends Resource
                 ->preload()
                 ->required()
                 ->live(),
-            \Filament\Forms\Components\Hidden::make('academic_year_id')
-                ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
+            Hidden::make('academic_year_id')
+                ->default(fn () => AcademicYear::where('is_active', true)->first()?->id),
 
-            \Filament\Schemas\Components\Section::make()
+            Section::make()
                 ->schema([
-                    \Filament\Forms\Components\Placeholder::make('tp_warning')
+                    Placeholder::make('tp_warning')
                         ->hiddenLabel()
-                        ->content(new \Illuminate\Support\HtmlString(
-                            '<div class="rounded-lg border border-danger-300 bg-danger-50 dark:bg-danger-950/30 dark:border-danger-800 p-4">' .
-                            '<div class="flex items-start gap-3">' .
-                            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20" style="flex-shrink:0;color:#dc2626;margin-top:2px;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>' .
-                            '<div class="text-sm text-danger-700 dark:text-danger-300">' .
-                            '<p class="font-semibold">Tujuan Pembelajaran (TP) belum tersedia</p>' .
-                            '<p class="mt-1">Belum ada TP aktif untuk mata pelajaran ini di tingkat kelas tersebut. Silakan tambahkan TP terlebih dahulu di menu <strong>Tujuan Pembelajaran</strong> sebelum melakukan input nilai.</p>' .
+                        ->content(new HtmlString(
+                            '<div class="rounded-lg border border-danger-300 bg-danger-50 dark:bg-danger-950/30 dark:border-danger-800 p-4">'.
+                            '<div class="flex items-start gap-3">'.
+                            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20" style="flex-shrink:0;color:#dc2626;margin-top:2px;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>'.
+                            '<div class="text-sm text-danger-700 dark:text-danger-300">'.
+                            '<p class="font-semibold">Tujuan Pembelajaran (TP) belum tersedia</p>'.
+                            '<p class="mt-1">Belum ada TP aktif untuk mata pelajaran ini di tingkat kelas tersebut. Silakan tambahkan TP terlebih dahulu di menu <strong>Tujuan Pembelajaran</strong> sebelum melakukan input nilai.</p>'.
                             '</div></div></div>'
                         )),
                 ])
                 ->visible(function (callable $get) {
                     $subjectId = $get('subject_id');
                     $studyGroupId = $get('study_group_id');
-                    if (!$subjectId || !$studyGroupId) return false;
-                    $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
-                    if (!$studyGroup) return false;
-                    return !\App\Models\LearningObjective::where('subject_id', $subjectId)
+                    if (! $subjectId || ! $studyGroupId) {
+                        return false;
+                    }
+                    $studyGroup = StudyGroup::find($studyGroupId);
+                    if (! $studyGroup) {
+                        return false;
+                    }
+
+                    return ! LearningObjective::where('subject_id', $subjectId)
                         ->where('level_id', $studyGroup->level_id)
                         ->where('is_active', true)
                         ->exists();
                 }),
 
-            \Filament\Schemas\Components\Grid::make(3)
+            Grid::make(3)
                 ->schema([
                     TextInput::make('nilai_tugas')->numeric()->minValue(0)->maxValue(100)->required(),
                     TextInput::make('nilai_uts')->numeric()->minValue(0)->maxValue(100)->required(),
@@ -178,30 +200,36 @@ class GradeResource extends Resource
                 ->visible(function (callable $get) {
                     $subjectId = $get('subject_id');
                     $studyGroupId = $get('study_group_id');
-                    if (!$subjectId || !$studyGroupId) return true;
-                    $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
-                    if (!$studyGroup) return true;
-                    return \App\Models\LearningObjective::where('subject_id', $subjectId)
+                    if (! $subjectId || ! $studyGroupId) {
+                        return true;
+                    }
+                    $studyGroup = StudyGroup::find($studyGroupId);
+                    if (! $studyGroup) {
+                        return true;
+                    }
+
+                    return LearningObjective::where('subject_id', $subjectId)
                         ->where('level_id', $studyGroup->level_id)
                         ->where('is_active', true)
                         ->exists();
                 }),
 
-            \Filament\Schemas\Components\Section::make('Capaian Kompetensi (Tujuan Pembelajaran)')
+            Section::make('Capaian Kompetensi (Tujuan Pembelajaran)')
                 ->schema([
-                    \Filament\Forms\Components\CheckboxList::make('optimal_tp_ids')
+                    CheckboxList::make('optimal_tp_ids')
                         ->label('TP Yang diukur dan Tercapai dengan Optimal')
                         ->options(function (callable $get) {
                             $subjectId = $get('subject_id');
                             $studyGroupId = $get('study_group_id');
-                            if (!$subjectId || !$studyGroupId) {
+                            if (! $subjectId || ! $studyGroupId) {
                                 return [];
                             }
-                            $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
-                            if (!$studyGroup) {
+                            $studyGroup = StudyGroup::find($studyGroupId);
+                            if (! $studyGroup) {
                                 return [];
                             }
-                            return \App\Models\LearningObjective::where('subject_id', $subjectId)
+
+                            return LearningObjective::where('subject_id', $subjectId)
                                 ->where('level_id', $studyGroup->level_id)
                                 ->where('is_active', true)
                                 ->get()
@@ -218,19 +246,20 @@ class GradeResource extends Resource
                         ->bulkToggleable()
                         ->columns(2),
 
-                    \Filament\Forms\Components\CheckboxList::make('improved_tp_ids')
+                    CheckboxList::make('improved_tp_ids')
                         ->label('TP yang diukur dan Perlu Peningkatan')
                         ->options(function (callable $get) {
                             $subjectId = $get('subject_id');
                             $studyGroupId = $get('study_group_id');
-                            if (!$subjectId || !$studyGroupId) {
+                            if (! $subjectId || ! $studyGroupId) {
                                 return [];
                             }
-                            $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
-                            if (!$studyGroup) {
+                            $studyGroup = StudyGroup::find($studyGroupId);
+                            if (! $studyGroup) {
                                 return [];
                             }
-                            return \App\Models\LearningObjective::where('subject_id', $subjectId)
+
+                            return LearningObjective::where('subject_id', $subjectId)
                                 ->where('level_id', $studyGroup->level_id)
                                 ->where('is_active', true)
                                 ->get()
@@ -250,10 +279,15 @@ class GradeResource extends Resource
                 ->visible(function (callable $get) {
                     $subjectId = $get('subject_id');
                     $studyGroupId = $get('study_group_id');
-                    if (!filled($subjectId) || !filled($studyGroupId)) return false;
-                    $studyGroup = \App\Models\StudyGroup::find($studyGroupId);
-                    if (!$studyGroup) return false;
-                    return \App\Models\LearningObjective::where('subject_id', $subjectId)
+                    if (! filled($subjectId) || ! filled($studyGroupId)) {
+                        return false;
+                    }
+                    $studyGroup = StudyGroup::find($studyGroupId);
+                    if (! $studyGroup) {
+                        return false;
+                    }
+
+                    return LearningObjective::where('subject_id', $subjectId)
                         ->where('level_id', $studyGroup->level_id)
                         ->where('is_active', true)
                         ->exists();
@@ -291,19 +325,19 @@ class GradeResource extends Resource
                     ->color(fn ($state) => $state >= 75 ? 'success' : ($state >= 60 ? 'warning' : 'danger')),
             ])
             ->filters([
-                \Filament\Tables\Filters\SelectFilter::make('academic_year_id')
+                SelectFilter::make('academic_year_id')
                     ->label('Tahun Ajaran')
                     ->relationship('academicYear', 'tahun_ajaran')
-                    ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->first()?->id),
-                \Filament\Tables\Filters\SelectFilter::make('study_group_id')
+                    ->default(fn () => AcademicYear::where('is_active', true)->first()?->id),
+                SelectFilter::make('study_group_id')
                     ->label('Rombel')
                     ->relationship('studyGroup', 'nama_rombel', modifyQueryUsing: function ($query) {
                         $user = auth()->user();
-                        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+                        if ($user && $user->hasRole('guru') && ! $user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
                             $teacherId = $user->teacher->id;
                             $query->where(function ($q) use ($teacherId) {
                                 $q->whereHas('schedules', fn ($sq) => $sq->where('teacher_id', $teacherId))
-                                  ->orWhere('walikelas_id', $teacherId);
+                                    ->orWhere('walikelas_id', $teacherId);
                             });
                         }
                     }),
@@ -321,20 +355,20 @@ class GradeResource extends Resource
             ]);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
         $user = auth()->user();
-        
+
         // Filter by active academic year by default
-        $activeYearId = \App\Models\AcademicYear::where('is_active', true)->value('id');
+        $activeYearId = AcademicYear::where('is_active', true)->value('id');
         if ($activeYearId) {
             $query->where('academic_year_id', $activeYearId);
         }
 
-        if ($user && $user->hasRole('guru') && !$user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
+        if ($user && $user->hasRole('guru') && ! $user->hasAnyRole(['super_admin', 'staff']) && $user->teacher) {
             $teacherId = $user->teacher->id;
-            
+
             $query->where(function ($q) use ($teacherId) {
                 // Guru Mapel: Only see grades for the specific subject and Rombel they teach in schedules
                 $q->whereExists(function ($subquery) use ($teacherId) {
@@ -345,7 +379,7 @@ class GradeResource extends Resource
                         ->whereColumn('schedules.subject_id', 'grades.subject_id');
                 })
                 // Wali Kelas: See all grades for their Rombel
-                ->orWhereHas('studyGroup', fn ($sq) => $sq->where('walikelas_id', $teacherId));
+                    ->orWhereHas('studyGroup', fn ($sq) => $sq->where('walikelas_id', $teacherId));
             });
         }
 
