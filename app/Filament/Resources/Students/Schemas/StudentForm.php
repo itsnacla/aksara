@@ -93,10 +93,19 @@ class StudentForm
 
                                 Select::make('parent_id')
                                     ->label('Pilih Akun Wali Murid yang Sudah Ada')
-                                    ->options(fn () => StudentParent::with('user')->get()->pluck('user.name', 'id'))
+                                    ->searchable()
+                                    ->getSearchResultsUsing(fn (string $search): array => StudentParent::query()
+                                        ->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                                        ->orWhere('father_name', 'like', "%{$search}%")
+                                        ->orWhere('mother_name', 'like', "%{$search}%")
+                                        ->limit(50)
+                                        ->get()
+                                        ->mapWithKeys(fn ($parent) => [$parent->id => ($parent->user?->name ?? $parent->father_name ?? 'Tanpa Nama')])
+                                        ->toArray()
+                                    )
+                                    ->getOptionLabelUsing(fn ($value): ?string => StudentParent::with('user')->find($value)?->user?->name ?? StudentParent::find($value)?->father_name)
                                     ->required(fn (Get $get, string $operation) => $operation === 'edit' || ! $get('create_new_parent'))
                                     ->visible(fn (Get $get, string $operation) => $operation === 'edit' || ! $get('create_new_parent'))
-                                    ->searchable()
                                     ->columnSpanFull(),
 
                                 TextInput::make('parent_name')

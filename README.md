@@ -275,15 +275,21 @@ php artisan migrate:fresh --seed
 php artisan shield:generate --all --panel=admin --no-interaction
 ```
 
-### 6. Integrasi TatetaGeo (Location Intelligence Service)
-Aksara terintegrasi secara mulus dengan **TatetaGeo**—sebuah layanan *Location Intelligence* berbasis mikroservis terpisah yang menyajikan data wilayah administrasi Indonesia secara lokal dan cepat.
+### 6. Integrasi TatetaGeo & Database Wilayah Lokal (100% Offline)
+Aksara terintegrasi dengan **TatetaGeo** untuk menyajikan data wilayah administrasi Indonesia secara dinamis dan cepat. Untuk performa terbaik dan kelancaran operasional tanpa hambatan jaringan, Aksara mendukung **sistem wilayah 100% offline (Local JSON Database)**.
 
 Cukup konfigurasikan variabel berikut pada file `.env` Aksara Anda untuk menghubungkan ke instance TatetaGeo Anda:
-- `TATETA_GEO_URL=https://geo.tateta.samastanuswantara.com/api/v1/geo` (URL/Port tempat TatetaGeo di-serve)
+- `TATETA_GEO_URL=https://geo.tateta.samastanuswantara.com/api/v1/geo` (URL tempat TatetaGeo di-serve)
 - `TATETA_GEO_TOKEN=` (Token API Sanctum Anda)
 
+Setelah `.env` terkonfigurasi, jalankan perintah Artisan berikut untuk mengunduh seluruh data wilayah ke dalam database JSON lokal proyek Anda:
+```bash
+php artisan geo:download-local
+```
+Perintah ini akan mengunduh data Provinsi, Kabupaten, Kecamatan, dan Desa se-Indonesia sekali saja, lalu membaginya per file provinsi ke dalam direktori `storage/app/geo/`. Setelah itu, `RegionService` secara otomatis akan melayani form alamat/wilayah secara instan (latency 0ms) dari lokal tanpa bergantung pada koneksi internet.
+
 > [!TIP]
-> **Mekanisme Failover Otomatis**: Jika layanan mikro TatetaGeo sedang offline atau dalam pemeliharaan, sistem Aksara secara otomatis mengaktifkan **fallback dinamis ke Emsifa CDN** demi menjaga kelancaran operasional pendaftaran dan pencarian wilayah tanpa mengganggu pengguna!
+> **Mekanisme Failover & Caching Otomatis**: Jika data lokal belum terunduh, sistem tetap memiliki fallback dinamis ke TatetaGeo API dan Emsifa CDN, lengkap dengan Circuit Breaker 5 menit di sisi server untuk mencegah delay timeout jika layanan API eksternal sedang mati.
 
 ---
 

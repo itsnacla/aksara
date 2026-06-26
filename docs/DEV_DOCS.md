@@ -38,11 +38,14 @@ Fokus pada fondasi sistem, integrasi eksternal (Kemendikbud/Wilayah), manajemen 
     *   **Fitur**: Pengelolaan hak akses dinamis dengan Filament Shield (Roles & Permissions), serta pengaturan identitas sekolah.
 *   **System Integrations (Sinkronisasi Eksternal)**:
     *   **Services**: `RegionService`, `SchoolRegionService`, `KemendikbudService`.
+    *   **Commands**: `DownloadGeoLocal` (`geo:download-local`).
     *   **Direktori/File Utama**:
         *   `app/Services/RegionService.php`
+        *   `app/Console/Commands/DownloadGeoLocal.php`
         *   `app/Services/SchoolRegionService.php`
         *   `app/Services/KemendikbudService.php`
-    *   **Fitur**: Menangani sinkronisasi data wilayah geografis dan standarisasi data referensi pendidikan.
+        *   `storage/app/geo/` (Database JSON Wilayah Lokal)
+    *   **Fitur**: Menangani pencarian & sinkronisasi data wilayah geografis secara instan berbasis **Local JSON Database** (terbagi per provinsi untuk optimasi memori) demi mendukung performa 100% offline (0ms latency), serta standarisasi data referensi pendidikan.
 *   **Intelligent Workspace (AI Brain & Chatbot)**:
     *   **Filament Resources**: `ChatbotSettings`.
     *   **Controllers/Services/Agents**: `ChatbotController`, `WaliKelasAgent`, `AksaraAssistant`, `DataScientistAssistant`, `AksaraKnowledgeBase`.

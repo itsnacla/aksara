@@ -14,7 +14,8 @@ Alur pertama kali saat sistem dijalankan. Administrator bertugas untuk menyiapka
 2. **Pengaturan Sekolah (School Settings) & Sinkronisasi Wilayah:**
    - Masuk ke menu **Pengaturan Sekolah**.
    - Isi kelengkapan data sekolah seperti Nama Sekolah, NPSN, Alamat Lengkap, Kepala Sekolah, NIP, dan logo.
-   - Sistem akan memanggil `KemendikbudService`, `RegionService`, dan `SchoolRegionService` untuk menstandarisasi referensi kode pos dan data wilayah secara otomatis ke database pusat.
+   - Sistem akan memanggil `KemendikbudService`, `RegionService`, dan `SchoolRegionService` untuk menstandarisasi referensi kode pos dan data wilayah secara otomatis.
+   - **Penting**: Jalankan perintah `php artisan geo:download-local` terlebih dahulu di terminal server/lokal Anda untuk mengunduh database wilayah secara lokal, sehingga proses pembukaan form alamat dan modal berjalan 100% offline secara instan (0ms delay).
 3. **Konfigurasi AI Brain & RAG Pipeline:**
    - Masuk ke **Chatbot Settings**.
    - Admin memasukkan API Key (Gemini/OpenAI) dan mengaktifkan fitur asisten.

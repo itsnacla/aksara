@@ -95,9 +95,17 @@ class UserForm
                     ->visible(fn (Get $get): bool => $get('selected_role') === 'siswa'),
                 Select::make('student_parent_id')
                     ->label('Orang Tua / Wali')
-                    ->options(fn () => StudentParent::with('user')->get()->pluck('user.name', 'id'))
                     ->searchable()
-                    ->preload()
+                    ->getSearchResultsUsing(fn (string $search): array => StudentParent::query()
+                        ->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                        ->orWhere('father_name', 'like', "%{$search}%")
+                        ->orWhere('mother_name', 'like', "%{$search}%")
+                        ->limit(50)
+                        ->get()
+                        ->mapWithKeys(fn ($parent) => [$parent->id => ($parent->user?->name ?? $parent->father_name ?? 'Tanpa Nama')])
+                        ->toArray()
+                    )
+                    ->getOptionLabelUsing(fn ($value): ?string => StudentParent::with('user')->find($value)?->user?->name ?? StudentParent::find($value)?->father_name)
                     ->required(fn (Get $get): bool => $get('selected_role') === 'siswa')
                     ->visible(fn (Get $get): bool => $get('selected_role') === 'siswa'),
 

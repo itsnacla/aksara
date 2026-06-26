@@ -89,31 +89,30 @@ class StudentParentForm
                             ->options(fn () => RegionService::getProvinces())
                             ->searchable()
                             ->live()
-                            ->formatStateUsing(fn ($state) => RegionService::findProvinceIdByName($state) ?? $state)
-                            ->afterStateUpdated(fn ($set) => $set('city', null)->set('district', null)->set('village', null))
-                            ->dehydrateStateUsing(fn ($state) => RegionService::getProvinceName($state)),
+                            ->afterStateUpdated(function ($set) {
+                                $set('city', null);
+                                $set('district', null);
+                                $set('village', null);
+                            }),
                         Select::make('city')
                             ->label('Kabupaten/Kota')
                             ->options(fn (Get $get) => RegionService::getRegencies($get('province')))
                             ->searchable()
                             ->live()
-                            ->formatStateUsing(fn ($state, Get $get) => RegionService::findRegencyIdByName($get('province'), $state) ?? $state)
-                            ->afterStateUpdated(fn ($set) => $set('district', null)->set('village', null))
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getRegencyName($state, $get('province'))),
+                            ->afterStateUpdated(function ($set) {
+                                $set('district', null);
+                                $set('village', null);
+                            }),
                         Select::make('district')
                             ->label('Kecamatan')
                             ->options(fn (Get $get) => RegionService::getDistricts($get('city')))
                             ->searchable()
                             ->live()
-                            ->formatStateUsing(fn ($state, Get $get) => RegionService::findDistrictIdByName($get('city'), $state) ?? $state)
-                            ->afterStateUpdated(fn ($set) => $set('village', null))
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getDistrictName($state, $get('city'))),
+                            ->afterStateUpdated(fn ($set) => $set('village', null)),
                         Select::make('village')
                             ->label('Kelurahan/Desa')
                             ->options(fn (Get $get) => RegionService::getVillages($get('district'), $get('city')))
-                            ->searchable()
-                            ->formatStateUsing(fn ($state, Get $get) => RegionService::findVillageIdByName($get('district'), $state) ?? $state)
-                            ->dehydrateStateUsing(fn ($state, Get $get) => RegionService::getVillageName($state, $get('district'))),
+                            ->searchable(),
                     ])
                     ->columns(1),
 
