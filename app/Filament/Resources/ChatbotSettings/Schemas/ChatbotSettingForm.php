@@ -83,6 +83,8 @@ class ChatbotSettingForm
                 );
         }
 
+
+
         return $schema->components($components);
     }
 }

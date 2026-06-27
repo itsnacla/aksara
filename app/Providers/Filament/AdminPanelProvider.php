@@ -127,9 +127,11 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::footer',
                 fn (): string => Blade::render('
-                    <div class="text-center py-3 text-[11px] text-gray-400 border-t border-gray-100 bg-white/50 dark:bg-gray-900/50 dark:border-gray-800">
-                        &copy; {{ date(\'Y\') }} {{ \App\Models\SchoolSetting::first()?->name ?? \'AKSARA\' }}. Powered by <span class="font-semibold text-primary">AKSARA | TATETA</span>.
-                    </div>
+                    <footer class="mx-auto w-full max-w-7xl px-4 md:px-8 shrink-0">
+                        <div class="border-t border-gray-200 dark:border-gray-800 py-6 text-center text-xs text-gray-500 dark:text-gray-400">
+                            &copy; {{ date(\'Y\') }} {{ \App\Models\SchoolSetting::first()?->name ?? \'AKSARA\' }}. Powered by <span class="font-semibold text-primary-600 dark:text-primary-400">AKSARA | TATETA</span>.
+                        </div>
+                    </footer>
                 '),
             );
     }

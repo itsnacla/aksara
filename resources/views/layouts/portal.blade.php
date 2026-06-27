@@ -179,7 +179,7 @@
                 </main>
 
                 <footer class="p-6 text-center text-gray-400 text-[11px] hidden md:block mt-auto shrink-0 border-t border-gray-100 bg-white/50">
-                    &copy; {{ date('Y') }} {{ $schoolName }}. Powered by <span class="font-semibold text-primary">Aksara Academic</span>.
+                    &copy; {{ date('Y') }} {{ $schoolName }}. Powered by <span class="font-semibold text-primary">AKSARA | TATETA</span>.
                 </footer>
             </div>
         </div>
@@ -241,11 +241,12 @@
                             @php 
                                 $uRole = $u->roles->first()?->name ?? 'User';
                                 $uRoleDisplay = match(strtolower($uRole)) {
-                                    'siswa' => '🎓 Siswa',
-                                    'orang_tua', 'wali' => '👥 Orang Tua',
-                                    'guru', 'teacher' => '👨‍🏫 Guru',
-                                    'staff' => '⚙️ Staff',
-                                    default => '' . $uRole
+                                    'super_admin', 'admin' => 'Super Admin',
+                                    'siswa' => 'Siswa',
+                                    'wali', 'orang_tua', 'orangtua', 'parent' => 'Wali Murid',
+                                    'guru', 'teacher' => 'Guru',
+                                    'staff' => 'Staff',
+                                    default => ucwords(str_replace('_', ' ', $uRole))
                                 };
                             @endphp
                             <div class="user-item flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition-colors" data-search="{{ strtolower($u->name) }} {{ strtolower($u->email) }} {{ strtolower($uRole) }}">

@@ -10,6 +10,8 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    private static array $aiStartTimes = [];
+
     /**
      * Register any application services.
      */
@@ -50,6 +52,47 @@ class AppServiceProvider extends ServiceProvider
             }
         } catch (\Exception $e) {
             // Silently fail if DB is not ready
+        }
+
+        // Global AI Request Logging
+        try {
+            \Illuminate\Support\Facades\Event::listen(\Laravel\Ai\Events\PromptingAgent::class, function ($event) {
+                self::$aiStartTimes[$event->invocationId] = microtime(true);
+
+                $provider = $event->prompt->provider;
+                if ($provider instanceof \BackedEnum) {
+                    $provider = $provider->value;
+                } elseif (is_object($provider)) {
+                    $provider = class_basename($provider);
+                }
+
+                \App\Models\ChatbotRequestLog::create([
+                    'invocation_id' => $event->invocationId,
+                    'user_id' => auth()->id(),
+                    'message' => $event->prompt->prompt,
+                    'status' => 'failed',
+                    'provider' => $provider,
+                    'model' => $event->prompt->model,
+                    'error_message' => 'AI Provider connection failed, overloaded, or timed out.',
+                ]);
+            });
+
+            \Illuminate\Support\Facades\Event::listen(\Laravel\Ai\Events\AgentPrompted::class, function ($event) {
+                $log = \App\Models\ChatbotRequestLog::where('invocation_id', $event->invocationId)->first();
+                if ($log) {
+                    $startTime = self::$aiStartTimes[$event->invocationId] ?? null;
+                    $latency = $startTime ? (microtime(true) - $startTime) : null;
+
+                    $log->update([
+                        'status' => 'success',
+                        'response' => $event->response->text,
+                        'error_message' => null,
+                        'latency_seconds' => $latency ? round($latency, 3) : null,
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            // Silently fail
         }
     }
 }

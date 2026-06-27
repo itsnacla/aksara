@@ -65,15 +65,14 @@ class LoginAs extends Page implements HasTable
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match (strtolower($state)) {
-                        'siswa' => '🎓 Siswa',
-                        'orang_tua', 'wali' => '👥 Orang Tua',
-                        'guru', 'teacher' => '👨‍🏫 Guru',
-                        'staff' => '⚙️ Staff',
-                        'super_admin' => '👑 Super Admin',
-                        'admin' => '🛡️ Admin',
+                        'siswa' => 'Siswa',
+                        'orang_tua', 'wali' => 'Orang Tua',
+                        'guru', 'teacher' => 'Guru',
+                        'staff' => 'Staff',
+                        'super_admin' => 'Super Admin',
+                        'admin' => 'Admin',
                         default => $state
-                    })
-                    ->limit(1),
+                    }),
             ])
             ->filters([
                 SelectFilter::make('roles')
