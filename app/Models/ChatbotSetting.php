@@ -23,7 +23,7 @@ class ChatbotSetting extends Model
 {
     protected $casts = [
         'is_active' => 'boolean',
-        'settings' => 'array',
+        'settings' => 'encrypted:array',
     ];
 
     /**
@@ -31,7 +31,28 @@ class ChatbotSetting extends Model
      */
     public static function current(): self
     {
-        return self::first() ?: self::create([
+        try {
+            $record = self::first();
+            if ($record) {
+                // Accessing settings to verify decryption
+                $record->settings;
+                return $record;
+            }
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            // If data is plain text, read it directly and encrypt it
+            $raw = \Illuminate\Support\Facades\DB::table('chatbot_settings')->first();
+            if ($raw && ! empty($raw->settings)) {
+                $plainSettings = json_decode($raw->settings, true);
+                $record = self::first();
+                if ($record) {
+                    $record->settings = $plainSettings;
+                    $record->save(); // This encrypts it
+                    return $record;
+                }
+            }
+        }
+
+        return self::create([
             'primary_provider' => 'google',
             'is_active' => true,
             'settings' => [],

@@ -19,6 +19,11 @@ class PrintController extends Controller
      */
     public function printPelengkapRapor(Student $student): View
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            abort(403, 'Akses ditolak. Pelengkap Rapor hanya dapat diakses oleh Admin, Staff, atau Guru.');
+        }
+
         $school = SchoolSetting::current();
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
 
@@ -38,9 +43,26 @@ class PrintController extends Controller
             abort(400, 'Tahun ajaran aktif tidak ditemukan.');
         }
 
-        // Security check for parents and students
         $user = auth()->user();
-        if ($user && ($user->hasRole('siswa') || $user->hasRole('wali'))) {
+        if (! $user) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Verify that students and parents can only see their own/their child's report
+        if (! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            if ($user->hasRole('siswa') && $student->user_id !== $user->id) {
+                abort(403, 'Akses ditolak. Anda hanya diperbolehkan melihat rapor Anda sendiri.');
+            }
+            if ($user->hasRole('wali') || $user->hasRole('orang_tua')) {
+                $childIds = $user->parent?->students()->pluck('id')->toArray() ?? [];
+                if (! in_array($student->id, $childIds)) {
+                    abort(403, 'Akses ditolak. Anda hanya diperbolehkan melihat rapor anak Anda sendiri.');
+                }
+            }
+        }
+
+        // Security check for parents and students (must be published)
+        if ($user->hasRole('siswa') || $user->hasRole('wali') || $user->hasRole('orang_tua')) {
             $isPublished = StudentRapor::where('student_id', $student->id)
                 ->where('academic_year_id', $academicYearId)
                 ->where('is_published', true)
@@ -61,6 +83,11 @@ class PrintController extends Controller
      */
     public function printRaporBulk(Request $request): View
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan cetak massal.');
+        }
+
         $studentIds = explode(',', $request->input('student_ids'));
         $academicYearId = (int) ($request->input('academic_year_id') ?: AcademicYear::where('is_active', true)->value('id'));
         if (! $academicYearId) {
@@ -87,6 +114,11 @@ class PrintController extends Controller
      */
     public function printPelengkapRaporBulk(Request $request): View
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan cetak massal.');
+        }
+
         $studentIds = explode(',', $request->input('student_ids'));
         $school = SchoolSetting::current();
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
@@ -116,6 +148,11 @@ class PrintController extends Controller
      */
     public function printBukuInduk(Student $student): View
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            abort(403, 'Akses ditolak. Buku Induk hanya dapat diakses oleh Admin, Staff, atau Guru.');
+        }
+
         $school = SchoolSetting::current();
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
 
@@ -143,6 +180,11 @@ class PrintController extends Controller
      */
     public function printBukuIndukBulk(Request $request): View
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melakukan cetak massal.');
+        }
+
         $studentIds = explode(',', $request->input('student_ids'));
         $school = SchoolSetting::current();
         $principal = Teacher::with('user')->where('is_kepalasekolah', true)->first();
@@ -165,7 +207,7 @@ class PrintController extends Controller
 
         return view('reports.buku-induk', [
             'isBulk' => true,
-            'records' => $reports, // The scaffold uses $records
+            'records' => $reports,
         ]);
     }
 }
