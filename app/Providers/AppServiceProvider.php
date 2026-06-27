@@ -47,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
                         if (isset($values['url'])) {
                             config(["ai.providers.{$provider}.url" => $values['url']]);
                         }
+                        
+                        $modelName = $settings->getModelFor($provider);
+                        if ($modelName) {
+                            config(["ai.providers.{$provider}.models.text.default" => $modelName]);
+                            config(["ai.providers.{$provider}.model" => $modelName]);
+                        }
                     }
                 }
             }
