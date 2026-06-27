@@ -14,6 +14,11 @@ class ReportController extends Controller
 {
     public function attendance(Request $request)
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melihat laporan ini.');
+        }
+
         $studyGroupId = $request->input('study_group_id');
         $from = $request->input('from');
         $until = $request->input('until');
@@ -21,8 +26,7 @@ class ReportController extends Controller
         $query = Attendance::with(['student.user']);
 
         // Check user role
-        $user = auth()->user();
-        if ($user && $user->hasRole('guru') && $user->teacher) {
+        if ($user->hasRole('guru') && $user->teacher) {
             $teacherId = $user->teacher->id;
             $query->where(function ($q) use ($teacherId) {
                 $q->whereHas('studyGroup', fn ($sq) => $sq->where('walikelas_id', $teacherId))
@@ -90,6 +94,11 @@ class ReportController extends Controller
 
     public function schedule(Request $request)
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'staff', 'guru'])) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki izin untuk melihat laporan ini.');
+        }
+
         $studyGroupId = $request->input('study_group_id');
         $showSubjectCode = $request->input('show_subject_code', 1);
         $showTeacherCode = $request->input('show_teacher_code', 0);
