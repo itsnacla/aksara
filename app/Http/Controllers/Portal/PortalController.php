@@ -204,9 +204,7 @@ class PortalController extends Controller
             'extracurriculars' => $student ? $student->extracurriculars()->with(['coordinator.teacher'])->orderBy('kategori', 'asc')->orderBy('nama_ekskul', 'asc')->get() : collect(),
             'attendance' => $student?->attendances()->where('tanggal', now()->toDateString())->first(),
             'recentLeaves' => StudentLeave::where('student_id', $studentId)->with(['student.user'])->latest()->take(3)->get(),
-            'p5Projects' => $student && $activeYear ? P5Group::whereHas('students', function ($q) use ($student) {
-                $q->where('p5_group_student.student_id', $student->id);
-            })->where('academic_year_id', $activeYear->id)->with('project.theme')->get() : collect(),
+            'p5Projects' => ($student && $activeYear) ? $student->p5Groups()->where('academic_year_id', $activeYear->id)->with('project.theme')->get() : collect(),
             'academicYear' => $activeYear,
         ];
     }

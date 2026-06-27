@@ -210,7 +210,7 @@
 
     <!-- Profile Modal -->
     <div id="profileModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 max-w-lg w-full mx-4 overflow-hidden transform scale-95 transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 {{ ($currentUser->student || $currentUser->parent) ? 'max-w-4xl' : 'max-w-lg' }} w-full mx-4 overflow-hidden transform scale-95 transition-all duration-300">
             <div class="px-6 py-4 bg-primary text-white flex justify-between items-center">
                 <h3 class="font-heading text-lg font-bold">Profil Akun Anda</h3>
                 <button id="closeProfileBtn" class="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer">
@@ -220,77 +220,203 @@
                 </button>
             </div>
             
-            <div class="p-6 space-y-4">
-                <div class="flex items-center gap-4 border-b border-gray-100 pb-4">
-                    <div class="w-14 h-14 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xl border border-primary/20">
-                        {{ $initials }}
+            @if($currentUser->student || $currentUser->parent)
+                <div class="flex flex-col lg:flex-row min-h-[400px]">
+                    <!-- Left: Profile Info -->
+                    <div class="w-full lg:w-80 p-6 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col justify-between shrink-0">
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4 border-b border-gray-100 pb-4">
+                                <div class="w-14 h-14 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xl border border-primary/20 shrink-0">
+                                    {{ $initials }}
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-800 text-base leading-tight truncate">{{ $currentUser->name }}</h4>
+                                    <p class="text-xs text-primary font-semibold uppercase tracking-wider mt-1">{{ $currentUser->roles->first()?->name ?? 'User' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 lg:grid-cols-1 gap-4 text-xs">
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Alamat Email</p>
+                                    <p class="font-medium text-gray-700 mt-0.5 truncate">{{ $currentUser->email }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status Akun</p>
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700 mt-0.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                                        Aktif
+                                    </span>
+                                </div>
+
+                                @if($currentUser->student)
+                                    @php $student = $currentUser->student; @endphp
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NISN</p>
+                                        <p class="font-medium text-gray-700 mt-0.5">{{ $student->nisn ?? 'N/A' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NIS</p>
+                                        <p class="font-medium text-gray-700 mt-0.5">{{ $student->nis ?? 'N/A' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tempat, Tanggal Lahir</p>
+                                        <p class="font-medium text-gray-700 mt-0.5">{{ $student->pob ?? '-' }}, {{ $student->dob ? $student->dob->format('d M Y') : '-' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rombel Aktif</p>
+                                        <p class="font-semibold text-primary mt-0.5 truncate">{{ $student->currentStudyGroup()?->nama_rombel ?? 'Tanpa Rombel' }}</p>
+                                    </div>
+                                @elseif($currentUser->parent)
+                                    @php $parent = $currentUser->parent; @endphp
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No. Whatsapp</p>
+                                        <p class="font-medium text-gray-700 mt-0.5">{{ $currentUser->phone ?? 'N/A' }}</p>
+                                    </div>
+                                    <div class="col-span-2 lg:col-span-1">
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Daftar Anak</p>
+                                        <p class="font-medium text-gray-700 mt-0.5 leading-relaxed">{{ $parent->students->pluck('user.name')->implode(', ') ?: 'N/A' }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <div class="hidden lg:block pt-6 border-t border-gray-100">
+                            <button id="closeProfileBtn3" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer text-center">
+                                Tutup Profil
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="font-bold text-gray-800 text-base leading-tight">{{ $currentUser->name }}</h4>
-                        <p class="text-xs text-primary font-semibold uppercase tracking-wider mt-1">{{ $currentUser->roles->first()?->name ?? 'User' }}</p>
+
+                    <!-- Right: Student Card(s) -->
+                    <div class="flex-1 p-6 bg-gray-50/50 flex flex-col justify-between">
+                        <div>
+                            @if($currentUser->student)
+                                @php $student = $currentUser->student; @endphp
+                                <div class="flex items-center gap-2 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                                    </svg>
+                                    <h4 class="font-heading text-sm font-bold text-gray-800">Kartu Tanda Pelajar Anda</h4>
+                                </div>
+                                
+                                <div class="overflow-x-auto w-full flex justify-center py-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                                    <div class="flex flex-col md:flex-row gap-6 justify-center items-center min-w-max px-6">
+                                        <div class="relative group">
+                                            <div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-emerald-500 rounded-[14px] blur opacity-15 group-hover:opacity-30 transition duration-300"></div>
+                                            <div class="relative bg-white rounded-[13px] p-0.5 shadow-sm">
+                                                <x-student-card :student="$student" :school="$school" side="front" />
+                                            </div>
+                                        </div>
+                                        <div class="relative group">
+                                            <div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-emerald-500 rounded-[14px] blur opacity-15 group-hover:opacity-30 transition duration-300"></div>
+                                            <div class="relative bg-white rounded-[13px] p-0.5 shadow-sm">
+                                                <x-student-card :student="$student" :school="$school" side="back" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+
+                            @elseif($currentUser->parent)
+                                @php $parent = $currentUser->parent; @endphp
+                                <div class="flex items-center gap-2 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                                    </svg>
+                                    <h4 class="font-heading text-sm font-bold text-gray-800">Kartu Tanda Pelajar Anak Anda</h4>
+                                </div>
+                                
+                                <div class="space-y-6 max-h-[50vh] overflow-y-auto pr-1">
+                                    @forelse($parent->students as $child)
+                                        <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3">
+                                            <div class="flex items-center justify-between border-b border-gray-50 pb-2">
+                                                <p class="text-xs font-bold text-gray-700 flex items-center gap-2">
+                                                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                                                    {{ $child->user->name }}
+                                                </p>
+                                                <span class="text-[10px] font-semibold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-lg">NISN: {{ $child->nisn }}</span>
+                                            </div>
+                                            
+                                            <div class="overflow-x-auto w-full flex justify-center py-2">
+                                                <div class="flex flex-col md:flex-row gap-6 justify-center items-center min-w-max px-2">
+                                                    <div class="relative group">
+                                                        <div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-emerald-500 rounded-[14px] blur opacity-15 group-hover:opacity-30 transition duration-300"></div>
+                                                        <div class="relative bg-white rounded-[13px] p-0.5 shadow-sm">
+                                                            <x-student-card :student="$child" :school="$school" side="front" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="relative group">
+                                                        <div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-emerald-500 rounded-[14px] blur opacity-15 group-hover:opacity-30 transition duration-300"></div>
+                                                        <div class="relative bg-white rounded-[13px] p-0.5 shadow-sm">
+                                                            <x-student-card :student="$child" :school="$school" side="back" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+
+                                        </div>
+                                    @empty
+                                        <div class="text-center py-8 text-gray-500">
+                                            Belum ada data siswa yang terhubung.
+                                        </div>
+                                    @endforelse
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <div class="block lg:hidden mt-6 pt-4 border-t border-gray-100 flex justify-end">
+                            <button id="closeProfileBtn4" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl font-bold text-xs transition-colors cursor-pointer">
+                                Tutup
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-y-4 gap-x-6 text-xs">
-                    <div>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Alamat Email</p>
-                        <p class="font-medium text-gray-700 mt-0.5 truncate">{{ $currentUser->email }}</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status Akun</p>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700 mt-0.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
-                            Aktif
-                        </span>
+            @else
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center gap-4 border-b border-gray-100 pb-4">
+                        <div class="w-14 h-14 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xl border border-primary/20">
+                            {{ $initials }}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-base leading-tight">{{ $currentUser->name }}</h4>
+                            <p class="text-xs text-primary font-semibold uppercase tracking-wider mt-1">{{ $currentUser->roles->first()?->name ?? 'User' }}</p>
+                        </div>
                     </div>
 
-                    @if($currentUser->student)
-                        @php $student = $currentUser->student; @endphp
+                    <div class="grid grid-cols-2 gap-y-4 gap-x-6 text-xs">
                         <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NISN</p>
-                            <p class="font-medium text-gray-700 mt-0.5">{{ $student->nisn ?? 'N/A' }}</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Alamat Email</p>
+                            <p class="font-medium text-gray-700 mt-0.5 truncate">{{ $currentUser->email }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NIS</p>
-                            <p class="font-medium text-gray-700 mt-0.5">{{ $student->nis ?? 'N/A' }}</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status Akun</p>
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700 mt-0.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                                Aktif
+                            </span>
                         </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tempat, Tanggal Lahir</p>
-                            <p class="font-medium text-gray-700 mt-0.5">{{ $student->pob ?? '-' }}, {{ $student->dob ? $student->dob->format('d M Y') : '-' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rombel Aktif</p>
-                            <p class="font-semibold text-primary mt-0.5">{{ $student->currentStudyGroup()?->nama_rombel ?? 'Tanpa Rombel' }}</p>
-                        </div>
-                    @elseif($currentUser->teacher)
-                        @php $teacher = $currentUser->teacher; @endphp
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NIP</p>
-                            <p class="font-medium text-gray-700 mt-0.5">{{ $teacher->nip ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status Guru</p>
-                            <p class="font-medium text-gray-700 mt-0.5">{{ strtoupper($teacher->status_guru ?? 'N/A') }}</p>
-                        </div>
-                    @elseif($currentUser->parent)
-                        @php $parent = $currentUser->parent; @endphp
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No. Whatsapp</p>
-                            <p class="font-medium text-gray-700 mt-0.5">{{ $currentUser->phone ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Daftar Anak</p>
-                            <p class="font-medium text-gray-700 mt-0.5">{{ $parent->students->pluck('user.name')->implode(', ') ?: 'N/A' }}</p>
-                        </div>
-                    @endif
+
+                        @if($currentUser->teacher)
+                            @php $teacher = $currentUser->teacher; @endphp
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NIP</p>
+                                <p class="font-medium text-gray-700 mt-0.5">{{ $teacher->nip ?? 'N/A' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status Guru</p>
+                                <p class="font-medium text-gray-700 mt-0.5">{{ strtoupper($teacher->status_guru ?? 'N/A') }}</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-            </div>
-            
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-                <button id="closeProfileBtn2" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg font-semibold text-xs transition-colors cursor-pointer">
-                    Tutup
-                </button>
-            </div>
+                
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                    <button id="closeProfileBtn2" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg font-semibold text-xs transition-colors cursor-pointer">
+                        Tutup
+                    </button>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -381,26 +507,32 @@
             });
 
             // Handle Profile Modal
-            openProfileBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            const openProfile = (e) => {
+                if (e) e.preventDefault();
                 profileModal.classList.remove('opacity-0', 'pointer-events-none');
                 profileModal.firstElementChild.classList.remove('scale-95');
-            });
+            };
+
+            window.openProfileModal = openProfile;
+
+            openProfileBtn.addEventListener('click', openProfile);
             
             if (openProfileBtn2) {
-                openProfileBtn2.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    profileModal.classList.remove('opacity-0', 'pointer-events-none');
-                    profileModal.firstElementChild.classList.remove('scale-95');
-                });
+                openProfileBtn2.addEventListener('click', openProfile);
             }
 
             const closeProfile = () => {
                 profileModal.classList.add('opacity-0', 'pointer-events-none');
                 profileModal.firstElementChild.classList.add('scale-95');
             };
-            closeProfileBtn.addEventListener('click', closeProfile);
-            closeProfileBtn2.addEventListener('click', closeProfile);
+            
+            if (closeProfileBtn) closeProfileBtn.addEventListener('click', closeProfile);
+            if (closeProfileBtn2) closeProfileBtn2.addEventListener('click', closeProfile);
+            
+            const closeProfileBtn3 = document.getElementById('closeProfileBtn3');
+            const closeProfileBtn4 = document.getElementById('closeProfileBtn4');
+            if (closeProfileBtn3) closeProfileBtn3.addEventListener('click', closeProfile);
+            if (closeProfileBtn4) closeProfileBtn4.addEventListener('click', closeProfile);
 
             // Handle Impersonate Modal
             @if($isSuperAdmin)

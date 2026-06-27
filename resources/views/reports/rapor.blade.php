@@ -46,7 +46,43 @@
             flex-direction: column;
             min-height: 297mm; /* Standard A4 height on screen */
             box-sizing: border-box;
+            position: relative;
         }
+        .watermark-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.035;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><text fill='%23000000' font-size='9' font-family='Arial' font-weight='bold' x='75' y='75' text-anchor='middle' transform='rotate(-30 75 75)'>{{ rawurlencode($school->name ?? 'SDN JOMIN TIMUR I') }}</text></svg>");
+            background-repeat: repeat;
+        }
+        .watermark-salinan {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.08;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='350' height='350' viewBox='0 0 350 350'><text fill='%23cc0000' font-size='18' font-family='Arial' font-weight='bold' x='175' y='175' text-anchor='middle' transform='rotate(-40 175 175)'>HANYA SALINAN - AKSARA PORTAL</text></svg>");
+            background-repeat: repeat;
+        }
+        @if(auth()->user()->hasRole('siswa') || auth()->user()->hasRole('wali'))
+            @media print {
+                body {
+                    display: none !important;
+                }
+            }
+        @endif
         .print-footer {
             margin-top: auto !important;
         }
@@ -130,17 +166,27 @@
                     <option value="none" {{ $selectedMargin === 'none' ? 'selected' : '' }}>Tanpa Margin</option>
                 </select>
             </div>
+            <!-- Watermark Setup -->
+            <div class="flex items-center gap-2">
+                <label for="watermark_status" class="text-xs font-bold text-gray-700 uppercase tracking-wide">Watermark:</label>
+                <select id="watermark_status" onchange="updatePageSetup()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded p-2 focus:ring-blue-500 focus:border-blue-500 font-semibold cursor-pointer">
+                    <option value="enable">Aktif (Tampilkan)</option>
+                    <option value="disable">Nonaktif (Sembunyikan)</option>
+                </select>
+            </div>
         </div>
         <div class="flex items-center gap-3">
             <button onclick="window.close()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-xs transition">
                 Tutup Halaman
             </button>
-            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded text-xs inline-flex items-center shadow-md transition">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                </svg>
-                Cetak Rapor
-            </button>
+            @if(!auth()->user()->hasRole('siswa') && !auth()->user()->hasRole('wali'))
+                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded text-xs inline-flex items-center shadow-md transition">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Cetak Rapor
+                </button>
+            @endif
         </div>
     </div>
 
@@ -179,8 +225,11 @@
             <div class="page-break"></div>
         @endif
 
-        <!-- PAGE 1 OF STUDENT REPORT -->
         <div class="max-w-4xl print:max-w-full print:w-full print:px-6 print:py-0 mx-auto bg-white p-10 shadow-lg print-container mb-6 page-block">
+            <div class="watermark-overlay"></div>
+            @if(auth()->user()->hasRole('siswa') || auth()->user()->hasRole('wali'))
+                <div class="watermark-salinan"></div>
+            @endif
 
         <!-- Detail Siswa & Sekolah -->
         <div class="flex justify-between items-start text-xs mb-0">
@@ -327,9 +376,9 @@
         <div class="print-footer w-full">
             <!-- Garis Atas -->
             <hr class="border-t border-black my-2">
-            <div class="flex justify-between text-black px-2" style="font-size: 8pt !important; font-style: italic !important; font-weight: bold !important;">
+            <div class="flex justify-between text-black px-2" style="font-size: 7.2pt !important; font-style: italic !important; font-weight: bold !important;">
                 <div>
-                    {{ $rombel ? $rombel->nama_rombel : '-' }} | {{ strtoupper($student->user->name) }} | {{ $student->nis ?? $student->nisn }}
+                    {{ $rombel ? $rombel->nama_rombel : '-' }} | {{ strtoupper($student->user->name) }} | {{ $student->nis ?? '-' }} | {{ $student->nisn ?? '-' }}
                 </div>
                 <div>
                     Halaman : 1
@@ -344,6 +393,10 @@
 
         <!-- PAGE 2 OF STUDENT REPORT -->
         <div class="max-w-4xl print:max-w-full print:w-full print:px-6 print:py-0 mx-auto bg-white p-10 shadow-lg print-container page-block">
+            <div class="watermark-overlay"></div>
+            @if(auth()->user()->hasRole('siswa') || auth()->user()->hasRole('wali'))
+                <div class="watermark-salinan"></div>
+            @endif
 
         <!-- Detail Siswa & Sekolah (Page 2 Header) -->
         <div class="flex justify-between items-start text-xs mb-0">
@@ -591,7 +644,7 @@
                     <p class="font-bold">_________________________</p>
                 </div>
                 <div class="text-center w-60">
-                    <p>................., {{ $activeYear && $activeYear->rapor_date ? \Carbon\Carbon::parse($activeYear->rapor_date)->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}</p>
+                    <p>{{ ucwords(strtolower($school->village ?? '................')) }}, {{ $activeYear && $activeYear->rapor_date ? \Carbon\Carbon::parse($activeYear->rapor_date)->translatedFormat('d F Y') : now()->translatedFormat('d F Y') }}</p>
                     <p class="mb-20">Wali Kelas</p>
                     <p class="font-bold underline">{{ $rombel->waliKelas?->nama_lengkap ?? '.........................................' }}</p>
                     <p>NIP. {{ $rombel->waliKelas?->nip ?? '.........................' }}</p>
@@ -612,9 +665,9 @@
         <div class="print-footer w-full">
             <!-- Garis Atas -->
             <hr class="border-t border-black my-2">
-            <div class="flex justify-between text-black px-2" style="font-size: 8pt !important; font-style: italic !important; font-weight: bold !important;">
+            <div class="flex justify-between text-black px-2" style="font-size: 7.2pt !important; font-style: italic !important; font-weight: bold !important;">
                 <div>
-                    {{ $rombel ? $rombel->nama_rombel : '-' }} | {{ strtoupper($student->user->name) }} | {{ $student->nis ?? $student->nisn }}
+                    {{ $rombel ? $rombel->nama_rombel : '-' }} | {{ strtoupper($student->user->name) }} | {{ $student->nis ?? '-' }} | {{ $student->nisn ?? '-' }}
                 </div>
                 <div>
                     Halaman : 2
@@ -674,7 +727,29 @@
                     container.style.minHeight = '297mm';
                 }
             });
+
+            // Toggle watermark overlays
+            const watermarkStatus = document.getElementById('watermark_status').value;
+            const overlays = document.querySelectorAll('.watermark-overlay');
+            overlays.forEach(el => {
+                if (watermarkStatus === 'disable') {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = 'block';
+                }
+            });
         }
+        
+        // Prevent printing shortcuts for student and parent roles
+        @if(auth()->user()->hasRole('siswa') || auth()->user()->hasRole('wali'))
+            window.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    alert('Unduh dan cetak rapor dinonaktifkan untuk akun portal.');
+                }
+            });
+        @endif
         
         // Run once on load to set up initial state
         document.addEventListener('DOMContentLoaded', updatePageSetup);

@@ -39,6 +39,83 @@
                         @endforelse
                     </div>
                 </div>
+
+                {{-- Transkrip Nilai Lengkap --}}
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                    <div class="flex items-center gap-4 mb-5">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-sm shadow-emerald-500/30">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-[15px] text-gray-800">Transkrip Nilai Akademik</h3>
+                            <p class="text-[11px] font-medium text-gray-500">Kumpulan riwayat nilai dari seluruh semester</p>
+                        </div>
+                    </div>
+                    
+                    @php
+                        $transcriptData = $studentSelf ? \App\Models\Grade::with(['subject', 'academicYear'])
+                            ->where('student_id', $studentSelf->id)
+                            ->get()
+                            ->groupBy(function($g) {
+                                return $g->academicYear->tahun_ajaran . ' - Semester ' . $g->academicYear->semester;
+                            })->sortKeysDesc() : collect();
+                    @endphp
+
+                    <div class="space-y-4" x-data="{ activeAccordion: null }">
+                        @forelse($transcriptData as $semesterName => $grades)
+                            @php
+                                $avgSemester = round($grades->avg(fn($g) => ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3), 1);
+                                $accordionId = Str::slug($semesterName);
+                            @endphp
+                            <div class="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/30">
+                                <button @click="activeAccordion = activeAccordion === '{{ $accordionId }}' ? null : '{{ $accordionId }}'"
+                                        class="w-full flex items-center justify-between p-4 font-bold text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-gray-800 font-heading text-xs">{{ $semesterName }}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] bg-primary/10 text-primary font-bold">Rata-rata: {{ $avgSemester }}</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="activeAccordion === '{{ $accordionId }}' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                                
+                                <div x-show="activeAccordion === '{{ $accordionId }}'" class="border-t border-gray-100 bg-white p-4">
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-[11px]">
+                                            <thead>
+                                                <tr class="text-gray-400 border-b border-gray-100 font-bold uppercase tracking-wider text-[9px]">
+                                                    <th class="py-2">Mata Pelajaran</th>
+                                                    <th class="py-2 text-center">Tugas</th>
+                                                    <th class="py-2 text-center">UTS</th>
+                                                    <th class="py-2 text-center">UAS</th>
+                                                    <th class="py-2 text-center font-bold text-primary">Akhir</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-50 font-medium">
+                                                @foreach($grades as $g)
+                                                    @php
+                                                        $finalGrade = round(($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3);
+                                                    @endphp
+                                                    <tr class="text-gray-700 hover:bg-gray-50/50">
+                                                        <td class="py-3 font-bold text-gray-800">{{ $g->subject->nama_mapel }}</td>
+                                                        <td class="py-3 text-center text-gray-500">{{ $g->nilai_tugas }}</td>
+                                                        <td class="py-3 text-center text-gray-500">{{ $g->nilai_uts }}</td>
+                                                        <td class="py-3 text-center text-gray-500">{{ $g->nilai_uas }}</td>
+                                                        <td class="py-3 text-center font-black text-xs text-primary bg-primary/5 rounded-lg">{{ $finalGrade }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-6 bg-white/50 rounded-2xl border border-white">
+                                <p class="text-[11px] text-gray-400 font-medium">Belum ada transkrip nilai.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
 
             <div class="space-y-6 md:space-y-8">

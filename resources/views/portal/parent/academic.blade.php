@@ -49,6 +49,75 @@
                                         <p class="col-span-full text-[11px] text-gray-400 font-medium py-2">Belum ada rapor yang dipublikasikan.</p>
                                     @endforelse
                                 </div>
+
+                                <!-- Transkrip Nilai -->
+                                <div class="mt-5 pt-4 border-t border-gray-100">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <span class="text-xs font-bold text-gray-800">Transkrip Nilai Akademik</span>
+                                    </div>
+                                    @php
+                                        $childTranscript = \App\Models\Grade::with(['subject', 'academicYear'])
+                                            ->where('student_id', $child->id)
+                                            ->get()
+                                            ->groupBy(function($g) {
+                                                return $g->academicYear->tahun_ajaran . ' - Semester ' . $g->academicYear->semester;
+                                            })->sortKeysDesc();
+                                    @endphp
+                                    
+                                    <div class="space-y-3" x-data="{ activeAccordion: null }">
+                                        @forelse($childTranscript as $semesterName => $grades)
+                                            @php
+                                                $avgSemester = round($grades->avg(fn($g) => ($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3), 1);
+                                                $accordionId = 'child_' . $child->id . '_' . Str::slug($semesterName);
+                                            @endphp
+                                            <div class="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/20">
+                                                <button @click="activeAccordion = activeAccordion === '{{ $accordionId }}' ? null : '{{ $accordionId }}'"
+                                                        class="w-full flex items-center justify-between p-3 font-semibold text-[11px] text-gray-600 hover:bg-gray-50 transition-colors">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-gray-800 font-bold">{{ $semesterName }}</span>
+                                                        <span class="px-2 py-0.5 rounded-full text-[9px] bg-primary/10 text-primary font-bold">Rata-rata: {{ $avgSemester }}</span>
+                                                    </div>
+                                                    <svg class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" :class="activeAccordion === '{{ $accordionId }}' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                    </svg>
+                                                </button>
+                                                
+                                                <div x-show="activeAccordion === '{{ $accordionId }}'" class="border-t border-gray-100 bg-white p-3">
+                                                    <div class="overflow-x-auto">
+                                                        <table class="w-full text-left text-[10px]">
+                                                            <thead>
+                                                                <tr class="text-gray-400 border-b border-gray-100 font-bold uppercase tracking-wider text-[8px]">
+                                                                    <th class="py-1.5">Mata Pelajaran</th>
+                                                                    <th class="py-1.5 text-center">Tugas</th>
+                                                                    <th class="py-1.5 text-center">UTS</th>
+                                                                    <th class="py-1.5 text-center">UAS</th>
+                                                                    <th class="py-1.5 text-center font-bold text-primary">Akhir</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody class="divide-y divide-gray-50 font-medium">
+                                                                @foreach($grades as $g)
+                                                                    @php
+                                                                        $finalGrade = round(($g->nilai_tugas + $g->nilai_uts + $g->nilai_uas) / 3);
+                                                                    @endphp
+                                                                    <tr class="text-gray-700 hover:bg-gray-50/50">
+                                                                        <td class="py-2 font-bold text-gray-800">{{ $g->subject->nama_mapel }}</td>
+                                                                        <td class="py-2 text-center text-gray-500">{{ $g->nilai_tugas }}</td>
+                                                                        <td class="py-2 text-center text-gray-500">{{ $g->nilai_uts }}</td>
+                                                                        <td class="py-2 text-center text-gray-500">{{ $g->nilai_uas }}</td>
+                                                                        <td class="py-2 text-center font-black text-primary bg-primary/5 rounded-[6px]">{{ $finalGrade }}</td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <p class="text-[10px] text-gray-400 font-medium py-1">Belum ada transkrip nilai.</p>
+                                        @endforelse
+                                    </div>
+                                </div>
                             </div>
                             @endforeach
                         </div>

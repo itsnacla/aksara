@@ -32,23 +32,29 @@
                     @endif
                 </div>
 
-                {{-- Anak Aktif --}}
+                {{-- Anak Anda --}}
                 <div>
                     <h2 class="text-[15px] font-bold text-gray-800 mb-3 px-1">Anak Anda</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         @foreach($children as $child)
-                        <div class="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden shrink-0 ring-4 ring-primary/5">
-                                @if($child->user->photo)
-                                    <img src="{{ asset('storage/' . $child->user->photo) }}" class="w-full h-full object-cover">
-                                @else
-                                    <span class="font-bold text-sm">{{ strtoupper(substr($child->user->name, 0, 2)) }}</span>
-                                @endif
+                        <div class="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden shrink-0 ring-4 ring-primary/5">
+                                    @if($child->user->photo)
+                                        <img src="{{ asset('storage/' . $child->user->photo) }}" class="w-full h-full object-cover">
+                                    @else
+                                        <span class="font-bold text-sm">{{ strtoupper(substr($child->user->name, 0, 2)) }}</span>
+                                    @endif
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-sm text-gray-800 truncate">{{ $child->user->name }}</h3>
+                                    <p class="text-[11px] font-medium text-gray-400 mt-0.5">{{ $child->currentStudyGroup()?->nama_rombel ?? 'Tanpa Rombel' }}</p>
+                                </div>
                             </div>
-                            <div class="min-w-0">
-                                <h3 class="font-bold text-sm text-gray-800 truncate">{{ $child->user->name }}</h3>
-                                <p class="text-[11px] font-medium text-gray-400 mt-0.5">{{ $child->currentStudyGroup()?->nama_rombel ?? 'Tanpa Rombel' }}</p>
-                            </div>
+                            <!-- View student card icon button -->
+                            <button onclick="window.openProfileModal()" class="shrink-0 bg-primary/5 hover:bg-primary/10 text-primary p-2.5 rounded-xl transition-all cursor-pointer" title="Lihat Kartu Pelajar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                            </button>
                         </div>
                         @endforeach
                     </div>
@@ -70,6 +76,15 @@
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                         </a>
+                        <button onclick="window.openProfileModal()" class="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 p-4 rounded-2xl transition-all group text-left cursor-pointer">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                                </div>
+                                <span class="text-sm font-bold">Kartu Pelajar Anak</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                        </button>
                         <button @click="tab = 'academic'" class="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 p-4 rounded-2xl transition-all group text-left cursor-pointer">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform">
