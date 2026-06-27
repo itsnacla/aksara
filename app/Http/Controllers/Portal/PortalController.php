@@ -24,14 +24,17 @@ class PortalController extends Controller
 {
     public function index()
     {
+        /** @var User $user */
         $user = Auth::user();
         $data = [];
 
         if ($user->can('AccessStudentPortal')) {
+            $user->loadMissing(['student.studyGroups', 'student.user']);
             $data = array_merge($data, $this->getStudentDashboardData($user));
         }
 
         if ($user->can('AccessParentPortal')) {
+            $user->loadMissing(['parent.students.studyGroups', 'parent.students.user']);
             $data = array_merge($data, $this->getParentDashboardData($user));
         }
 
@@ -61,14 +64,17 @@ class PortalController extends Controller
      */
     public function realtimeData(Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
         $data = [];
 
         if ($user->can('AccessStudentPortal')) {
+            $user->loadMissing(['student.user']);
             $data = $this->getStudentRealtimeData($user);
         }
 
         if ($user->can('AccessParentPortal')) {
+            $user->loadMissing(['parent.students.user']);
             $data = array_merge($data, $this->getParentRealtimeData($user));
         }
 

@@ -200,6 +200,12 @@ class RaporService
             return $subjectsData;
         }
 
+        // Pre-fetch all grades for the student and academic year in one query
+        $grades = Grade::where('student_id', $student->id)
+            ->where('academic_year_id', $academicYearId)
+            ->get()
+            ->keyBy('subject_id');
+
         $mappings = SubjectReportMapping::with('subject.subjectReportGroup')
             ->whereJsonContains('level_ids', $level->id)
             ->orderBy('no_urut')
@@ -217,10 +223,7 @@ class RaporService
                     continue;
                 }
 
-                $grade = Grade::where('student_id', $student->id)
-                    ->where('subject_id', $subject->id)
-                    ->where('academic_year_id', $academicYearId)
-                    ->first();
+                $grade = $grades->get($subject->id);
 
                 // Sembunyikan mata pelajaran Agama yang tidak ada nilainya (berarti bukan agama siswa tersebut)
                 if (! $grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
@@ -249,10 +252,7 @@ class RaporService
                     continue;
                 }
 
-                $grade = Grade::where('student_id', $student->id)
-                    ->where('subject_id', $subject->id)
-                    ->where('academic_year_id', $academicYearId)
-                    ->first();
+                $grade = $grades->get($subject->id);
 
                 // Sembunyikan mata pelajaran Agama yang tidak ada nilainya (berarti bukan agama siswa tersebut)
                 if (! $grade && str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
@@ -275,19 +275,48 @@ class RaporService
             }
         }
 
+        // Collect all learning objective IDs to fetch descriptions in one query
+        $allTpIds = [];
+        foreach ($subjectsData as $sub) {
+            if (! empty($sub['optimal_tp_ids'])) {
+                $allTpIds = array_merge($allTpIds, $sub['optimal_tp_ids']);
+            }
+            if (! empty($sub['improved_tp_ids'])) {
+                $allTpIds = array_merge($allTpIds, $sub['improved_tp_ids']);
+            }
+        }
+        $allTpIds = array_unique(array_filter($allTpIds));
+
+        $tpsMap = [];
+        if (! empty($allTpIds)) {
+            $tpsMap = LearningObjective::whereIn('id', $allTpIds)
+                ->pluck('description', 'id')
+                ->toArray();
+        }
+
         foreach ($subjectsData as &$sub) {
             $optimalDesc = '';
             $improvedDesc = '';
 
             if (! empty($sub['optimal_tp_ids'])) {
-                $tps = LearningObjective::whereIn('id', $sub['optimal_tp_ids'])->pluck('description')->toArray();
+                $tps = [];
+                foreach ($sub['optimal_tp_ids'] as $id) {
+                    if (isset($tpsMap[$id])) {
+                        $tps[] = $tpsMap[$id];
+                    }
+                }
                 if (! empty($tps)) {
                     $optimalDesc = 'Menunjukkan penguasaan yang sangat baik dalam '.implode(', ', $tps).'.';
                 }
             }
 
             if (! empty($sub['improved_tp_ids'])) {
-                $tps = LearningObjective::whereIn('id', $sub['improved_tp_ids'])->pluck('description')->toArray();
+                $tps = [];
+                foreach ($sub['improved_tp_ids'] as $id) {
+                    if (isset($tpsMap[$id])) {
+                        $tps[] = $tpsMap[$id];
+                    }
+                }
                 if (! empty($tps)) {
                     $improvedDesc = 'Perlu bimbingan dalam '.implode(', ', $tps).'.';
                 }
@@ -346,11 +375,17 @@ class RaporService
             $q->where('study_groups.id', $rombel->id);
         })->get();
 
+        $studentIds = $studentsInRombel->pluck('id')->toArray();
+
+        // Fetch all grades for all students in the rombel in one query
+        $allGrades = Grade::whereIn('student_id', $studentIds)
+            ->where('academic_year_id', $academicYearId)
+            ->get()
+            ->groupBy('student_id');
+
         $studentAverages = [];
         foreach ($studentsInRombel as $s) {
-            $grades = Grade::where('student_id', $s->id)
-                ->where('academic_year_id', $academicYearId)
-                ->get();
+            $grades = $allGrades->get($s->id) ?? collect();
 
             if ($grades->isEmpty()) {
                 $studentAverages[$s->id] = 0;
