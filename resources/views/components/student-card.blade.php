@@ -69,10 +69,10 @@
     .student-photo { width: 100%; height: 100%; border-radius: 0.5mm; overflow: hidden; }
     .student-photo img { width: 100%; height: 100%; object-fit: cover; }
     
-    .student-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .display-name { font-size: 11.5pt; font-weight: 800; color: #004d4d; margin-bottom: 3mm; text-transform: uppercase; border-bottom: 1.5pt solid #f0f0f0; padding-bottom: 1mm; }
-    .info-value-only { font-size: 9pt; font-weight: 600; color: #444; margin-bottom: 1.2mm; }
-    .validity-label { font-size: 6.5pt; font-weight: 800; color: #cc0000; background: #ffeeee; padding: 0.5mm 1.5mm; border-radius: 0.5mm; margin-top: 2.5mm; width: fit-content; border: 0.1mm solid #ffcccc; }
+    .student-info { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 1mm; }
+    .display-name { font-size: 11.5pt; font-weight: 800; color: #004d4d; margin-bottom: 1.2mm; text-transform: uppercase; border-bottom: 1.5pt solid #f0f0f0; padding-bottom: 0.5mm; line-height: 1.1; }
+    .info-value-only { font-size: 9pt; font-weight: 600; color: #444; margin-bottom: 0.5mm; line-height: 1.1; }
+    .validity-label { font-size: 6.5pt; font-weight: 800; color: #cc0000; background: #ffeeee; padding: 0.5mm 1.5mm; border-radius: 0.5mm; margin-top: 1.2mm; width: fit-content; border: 0.1mm solid #ffcccc; line-height: 1; }
 
     /* BACK BODY */
     .card-body-back {

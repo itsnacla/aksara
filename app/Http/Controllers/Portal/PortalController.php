@@ -13,6 +13,7 @@ use App\Models\Schedule;
 use App\Models\StudentLeave;
 use App\Models\StudentRapor;
 use App\Models\User;
+use App\Models\SchoolSetting;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -493,6 +494,31 @@ class PortalController extends Controller
 
             return $trend;
         });
+    }
+
+    public function profile()
+    {
+        $user = Auth::user();
+        $school = SchoolSetting::current();
+        
+        $student = null;
+        $children = collect();
+        
+        if ($user->can('AccessStudentPortal')) {
+            $student = $user->student;
+        }
+        
+        if ($user->can('AccessParentPortal')) {
+            $children = $user->parent?->students()->with('user')->get() ?? collect();
+        }
+        
+        return view('portal.profile', [
+            'currentUser' => $user,
+            'school' => $school,
+            'student' => $student,
+            'children' => $children,
+            'academicYear' => AcademicYear::where('is_active', true)->first(),
+        ]);
     }
 
     public function logout(Request $request)
