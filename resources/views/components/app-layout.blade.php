@@ -26,6 +26,9 @@
     }
 
     $initials = strtoupper(substr($currentUser->name, 0, 2));
+
+    $school = \Illuminate\Support\Facades\Schema::hasTable('school_settings') ? \App\Models\SchoolSetting::first() : null;
+    $schoolName = $school->name ?? 'Aksara.';
 @endphp
 <body class="bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-primary/20">
     <!-- Impersonation Warning Banner -->
@@ -167,8 +170,8 @@
                 @yield('content')
             </main>
 
-            <footer class="p-6 text-center text-gray-400 text-xs hidden md:block mt-auto">
-                &copy; {{ date('Y') }} Samasta Teknologi Nuswantara. Built with Intellectual Calm.
+            <footer class="p-6 text-center text-gray-400 text-[11px] hidden md:block mt-auto border-t border-gray-100 bg-white/50">
+                &copy; {{ date('Y') }} {{ $schoolName }}. Powered by <span class="font-semibold text-primary">Aksara Academic</span>.
             </footer>
         </div>
 

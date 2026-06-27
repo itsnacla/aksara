@@ -178,8 +178,8 @@
                     @yield('content')
                 </main>
 
-                <footer class="p-6 text-center text-gray-400 text-xs hidden md:block mt-auto shrink-0">
-                    &copy; {{ date('Y') }} Samasta Teknologi Nuswantara. Built with Intellectual Calm.
+                <footer class="p-6 text-center text-gray-400 text-[11px] hidden md:block mt-auto shrink-0 border-t border-gray-100 bg-white/50">
+                    &copy; {{ date('Y') }} {{ $schoolName }}. Powered by <span class="font-semibold text-primary">Aksara Academic</span>.
                 </footer>
             </div>
         </div>

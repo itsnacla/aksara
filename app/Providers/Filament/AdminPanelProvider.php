@@ -123,6 +123,14 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::body.end',
                 fn (): string => auth()->check() ? Blade::render('<x-chatbot />') : '',
+            )
+            ->renderHook(
+                'panels::footer',
+                fn (): string => Blade::render('
+                    <div class="text-center py-3 text-[11px] text-gray-400 border-t border-gray-100 bg-white/50 dark:bg-gray-900/50 dark:border-gray-800">
+                        &copy; {{ date(\'Y\') }} {{ \App\Models\SchoolSetting::first()?->name ?? \'AKSARA\' }}. Powered by <span class="font-semibold text-primary">AKSARA | TATETA</span>.
+                    </div>
+                '),
             );
     }
 }

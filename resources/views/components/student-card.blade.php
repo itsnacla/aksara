@@ -71,7 +71,7 @@
     
     .student-info { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 1mm; }
     .display-name { font-size: 11.5pt; font-weight: 800; color: #004d4d; margin-bottom: 1.2mm; text-transform: uppercase; border-bottom: 1.5pt solid #f0f0f0; padding-bottom: 0.5mm; line-height: 1.1; }
-    .info-value-only { font-size: 9pt; font-weight: 600; color: #444; margin-bottom: 0.5mm; line-height: 1.1; }
+    .info-value-only { font-size: 9pt; font-weight: 600; color: #444; margin-bottom: 0.5mm; line-height: 1.1; white-space: nowrap; }
     .validity-label { font-size: 6.5pt; font-weight: 800; color: #cc0000; background: #ffeeee; padding: 0.5mm 1.5mm; border-radius: 0.5mm; margin-top: 1.2mm; width: fit-content; border: 0.1mm solid #ffcccc; line-height: 1; }
 
     /* BACK BODY */
@@ -155,7 +155,11 @@
                     @if($student->user->photo)
                         <img src="{{ asset('storage/' . $student->user->photo) }}" alt="Photo">
                     @else
-                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 20pt;"></div>
+                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #cbd5e1; background: #f8fafc;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14mm; height: 14mm;">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -164,7 +168,7 @@
                 <div class="display-name">{{ $student->user->name }}</div>
                 
                 <div class="info-value-only">{{ $student->nisn }}</div>
-                <div class="info-value-only">{{ $student->pob ?? '-' }}, {{ $student->dob ? $student->dob->translatedFormat('d F Y') : '-' }}</div>
+                <div class="info-value-only">{{ $student->pob ?? '-' }}, {{ $student->dob ? $student->dob->locale('id')->translatedFormat('d F Y') : '-' }}</div>
                 
                 <div class="validity-label">BERLAKU SELAMA MENJADI SISWA</div>
             </div>
