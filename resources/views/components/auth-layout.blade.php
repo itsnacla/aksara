@@ -1,6 +1,6 @@
 @props(['subtitle' => 'Silakan masuk ke akun Anda'])
 
-<div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h-screen bg-gray-50 dark:bg-gray-950">
     <!-- Left Side: Visual / Illustration -->
     <div wire:ignore class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-blue-900 items-center justify-center">
         <!-- Background Image with Overlay -->
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Right Side: Content -->
-    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-white/80 backdrop-blur-xl">
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <div class="w-full max-w-md">
             @php
                 $school = \App\Models\SchoolSetting::first();
@@ -40,21 +40,21 @@
 
             <div wire:ignore class="text-center mb-10">
                 <img src="{{ $logoUrl }}" alt="Logo {{ $schoolName }}" class="h-24 mx-auto mb-6 object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300">
-                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ $schoolName }}</h2>
-                <p class="text-gray-500 mt-2 font-medium">{{ $subtitle }}</p>
+                <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{{ $schoolName }}</h2>
+                <p class="text-gray-500 dark:text-gray-400 mt-2 font-medium">{{ $subtitle }}</p>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-xl ring-1 ring-gray-900/5 p-8">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10 p-8">
                 {{ $slot }}
             </div>
 
-            <div wire:ignore class="mt-10 text-center text-sm font-medium text-gray-500">
-                Mengalami kendala? <a href="mailto:{{ $schoolEmail }}" class="text-blue-600 hover:text-blue-800 transition-colors border-b border-transparent hover:border-blue-800 pb-0.5">Hubungi Admin</a>
+            <div wire:ignore class="mt-10 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                Mengalami kendala? <a href="mailto:{{ $schoolEmail }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors border-b border-transparent hover:border-blue-800 pb-0.5">Hubungi Admin</a>
             </div>
             
-            <div wire:ignore class="mt-8 text-center text-xs text-gray-400">
+            <div wire:ignore class="mt-8 text-center text-xs text-gray-400 dark:text-gray-500">
                 <p>&copy; {{ date('Y') }} {{ $schoolName }}. Hak Cipta Dilindungi.</p>
-                <p class="mt-1">Developed & Maintained by <a href="https://samastanuswantara.com" target="_blank" class="text-blue-600 hover:text-blue-800 transition-colors font-medium">Tateta</a></p>
+                <p class="mt-1">Developed & Maintained by <a href="https://samastanuswantara.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-medium">Tateta</a></p>
             </div>
         </div>
     </div>

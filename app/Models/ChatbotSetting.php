@@ -23,36 +23,56 @@ class ChatbotSetting extends Model
 {
     protected $casts = [
         'is_active' => 'boolean',
-        'settings' => 'encrypted:array',
+        'settings' => 'array',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Decrypt keys when retrieving from database
+        static::retrieved(function ($model) {
+            if (is_array($model->settings)) {
+                $settings = $model->settings;
+                foreach ($settings as $provider => $config) {
+                    if (isset($config['key']) && ! empty($config['key'])) {
+                        try {
+                            $settings[$provider]['key'] = decrypt($config['key']);
+                        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                            // If it fails, keep it as is (it was already plain text)
+                        }
+                    }
+                }
+                $model->attributes['settings'] = json_encode($settings);
+            }
+        });
+
+        // Encrypt keys before saving to database
+        static::saving(function ($model) {
+            if (is_array($model->settings)) {
+                $settings = $model->settings;
+                foreach ($settings as $provider => $config) {
+                    if (isset($config['key']) && ! empty($config['key'])) {
+                        try {
+                            // Verify if it's already encrypted
+                            decrypt($config['key']);
+                        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                            // If it fails, it means it is a new plain-text key, so encrypt it!
+                            $settings[$provider]['key'] = encrypt($config['key']);
+                        }
+                    }
+                }
+                $model->attributes['settings'] = json_encode($settings);
+            }
+        });
+    }
 
     /**
      * Get the current chatbot settings (singleton).
      */
     public static function current(): self
     {
-        try {
-            $record = self::first();
-            if ($record) {
-                // Accessing settings to verify decryption
-                $record->settings;
-                return $record;
-            }
-        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-            // If data is plain text, read it directly and encrypt it
-            $raw = \Illuminate\Support\Facades\DB::table('chatbot_settings')->first();
-            if ($raw && ! empty($raw->settings)) {
-                $plainSettings = json_decode($raw->settings, true);
-                $record = self::first();
-                if ($record) {
-                    $record->settings = $plainSettings;
-                    $record->save(); // This encrypts it
-                    return $record;
-                }
-            }
-        }
-
-        return self::create([
+        return self::first() ?: self::create([
             'primary_provider' => 'google',
             'is_active' => true,
             'settings' => [],
