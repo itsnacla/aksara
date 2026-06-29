@@ -250,7 +250,7 @@ class AksaraAssistant implements Agent, Conversational, HasMiddleware, HasTools
     }
 
     /**
-     * Override prompt to use dynamic model from DB.
+     * Override prompt to use dynamic model and provider failover.
      */
     public function prompt(
         string $prompt,
@@ -259,8 +259,49 @@ class AksaraAssistant implements Agent, Conversational, HasMiddleware, HasTools
         ?string $model = null,
         ?int $timeout = null
     ): AgentResponse {
-        $model = $model ?: $this->activeModel;
+        // If a specific provider and model are explicitly passed, use them directly
+        if ($provider && $model) {
+            return $this->traitPrompt($prompt, $attachments, $provider, $model, $timeout);
+        }
 
-        return $this->traitPrompt($prompt, $attachments, $provider, $model, $timeout);
+        $settings = ChatbotSetting::current();
+        
+        $primaryProvider = $settings->primary_provider ?: 'gemini';
+        $fallbackList = $settings->getFallbackProvidersArray();
+        
+        // Build the sequence of providers to try
+        $providersToTry = array_unique(array_merge([$primaryProvider], $fallbackList));
+        
+        $lastException = null;
+        
+        foreach ($providersToTry as $prov) {
+            // Check if API key is configured for this provider in DB or config/env
+            $apiKey = $settings->getApiKeyFor($prov) ?: config("ai.providers.{$prov}.key");
+            if (empty($apiKey)) {
+                // Skip if no API key is configured
+                continue;
+            }
+            
+            $provModel = $settings->getModelFor($prov);
+            
+            $lab = match ($prov) {
+                'gemini', 'google' => Lab::Gemini,
+                'openai' => Lab::OpenAI,
+                'groq' => Lab::Groq,
+                'anthropic' => Lab::Anthropic,
+                default => $prov,
+            };
+            
+            try {
+                // Try executing the prompt with the specific provider and model
+                return $this->traitPrompt($prompt, $attachments, $lab, $provModel, $timeout);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Aksara Chatbot - Provider {$prov} failed: " . $e->getMessage());
+                $lastException = $e;
+            }
+        }
+        
+        // If all providers fail, throw the last exception
+        throw $lastException ?: new \Exception("No configured AI providers succeeded.");
     }
 }
