@@ -17,10 +17,17 @@ window.Pusher = Pusher;
 const broadcaster = document.querySelector('meta[name="broadcaster"]')?.getAttribute('content') || import.meta.env.VITE_BROADCAST_CONNECTION || 'reverb';
 
 function createMockEcho() {
+    const mockChannel = {
+        listen: () => mockChannel,
+        notification: () => mockChannel,
+        listenToAll: () => mockChannel,
+        whisper: () => mockChannel,
+    };
+
     window.Echo = {
-        private: () => ({ listen: () => ({}) }),
-        channel: () => ({ listen: () => ({}) }),
-        join: () => ({ listen: () => ({}) }),
+        private: () => mockChannel,
+        channel: () => mockChannel,
+        join: () => mockChannel,
         leave: () => {}
     };
 }
