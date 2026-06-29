@@ -28,7 +28,9 @@ function createMockEcho() {
         private: () => mockChannel,
         channel: () => mockChannel,
         join: () => mockChannel,
-        leave: () => {}
+        leave: () => {},
+        socketId: () => '',
+        options: {}
     };
 }
 
