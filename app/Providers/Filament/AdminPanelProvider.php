@@ -99,7 +99,16 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 'panels::head.end',
-                fn (): string => Blade::render("@vite(['resources/css/app.css', 'resources/css/chatbot.css', 'resources/js/app.js', 'resources/js/chatbot.js'])"),
+                fn (): string => Blade::render('
+                    <meta name="broadcaster" content="{{ config("broadcasting.default") }}">
+                    <meta name="reverb-key" content="{{ config("reverb.apps.apps.0.key") }}">
+                    <meta name="reverb-host" content="{{ config("reverb.apps.apps.0.options.host") }}">
+                    <meta name="reverb-port" content="{{ config("reverb.apps.apps.0.options.port") }}">
+                    <meta name="reverb-scheme" content="{{ config("reverb.apps.apps.0.options.scheme") }}">
+                    <meta name="pusher-key" content="{{ config("broadcasting.connections.pusher.key") }}">
+                    <meta name="pusher-cluster" content="{{ config("broadcasting.connections.pusher.options.cluster") }}">
+                    @vite(["resources/css/app.css", "resources/css/chatbot.css", "resources/js/app.js", "resources/js/chatbot.js"])
+                '),
             )
             ->renderHook(
                 'panels::body.start',
