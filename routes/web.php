@@ -59,7 +59,7 @@ Route::middleware(['auth'])->group(function () {
     // Standalone QR Scan
     Route::get('/scan-presensi', QrScanStandalone::class)
         ->name('scan-presensi')
-        ->middleware(['auth', 'can:scan_attendance']);
+        ->middleware(['auth', 'can:ScanAttendance']);
 
     // Download Template Multi-Format untuk Impor Massal (CSV, XLSX, XLS)
     Route::get('/download-template/{type}/{format?}', function (string $type, string $format = 'csv') {
