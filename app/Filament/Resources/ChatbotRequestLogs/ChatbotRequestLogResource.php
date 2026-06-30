@@ -11,8 +11,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Grid;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -43,14 +43,10 @@ class ChatbotRequestLogResource extends Resource
     {
         return $schema
             ->components([
-                Grid::make(3)
+                Fieldset::make('Detail Request')
                     ->schema([
                         TextInput::make('created_at')
                             ->label('Waktu')
-                            ->disabled(),
-                        TextInput::make('user_name')
-                            ->label('Pengguna')
-                            ->state(fn ($record) => $record?->user?->name ?? 'System / Anonymous')
                             ->disabled(),
                         TextInput::make('status')
                             ->label('Status')
@@ -61,11 +57,8 @@ class ChatbotRequestLogResource extends Resource
                         TextInput::make('model')
                             ->label('Model')
                             ->disabled(),
-                        TextInput::make('latency_seconds')
-                            ->label('Latency')
-                            ->state(fn ($record) => $record?->latency_seconds ? number_format($record->latency_seconds, 2) . 's' : '-')
-                            ->disabled(),
-                    ]),
+                    ])
+                    ->columns(2),
                 Textarea::make('message')
                     ->label('Pesan Request (Prompt)')
                     ->disabled()
@@ -160,3 +153,4 @@ class ChatbotRequestLogResource extends Resource
         ];
     }
 }
+

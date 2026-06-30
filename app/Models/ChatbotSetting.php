@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -23,48 +25,65 @@ class ChatbotSetting extends Model
 {
     protected $casts = [
         'is_active' => 'boolean',
-        'settings' => 'array',
     ];
 
-    protected static function boot()
+    /**
+     * Accessor/Mutator for settings with per-key encryption.
+     *
+     * GET: Decodes JSON from DB, decrypts each provider API key.
+     * SET: Encrypts each provider API key, then encodes to JSON for DB.
+     *
+     * This replaces the old boot() events which directly manipulated
+     * $model->attributes['settings'], conflicting with the 'array' cast
+     * and causing SQLSTATE[22P02] errors on PostgreSQL jsonb columns.
+     */
+    protected function settings(): Attribute
     {
-        parent::boot();
+        return Attribute::make(
+            get: function (mixed $value) {
+                $settings = is_string($value) ? json_decode($value, true) : $value;
 
-        // Decrypt keys when retrieving from database
-        static::retrieved(function ($model) {
-            if (is_array($model->settings)) {
-                $settings = $model->settings;
+                if (! is_array($settings)) {
+                    return $settings ?? [];
+                }
+
+                // Decrypt each provider's API key on read
                 foreach ($settings as $provider => $config) {
                     if (isset($config['key']) && ! empty($config['key'])) {
                         try {
                             $settings[$provider]['key'] = decrypt($config['key']);
-                        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-                            // If it fails, keep it as is (it was already plain text)
+                        } catch (DecryptException $e) {
+                            // Already plaintext or invalid — keep as-is
                         }
                     }
                 }
-                $model->attributes['settings'] = json_encode($settings);
-            }
-        });
 
-        // Encrypt keys before saving to database
-        static::saving(function ($model) {
-            if (is_array($model->settings)) {
-                $settings = $model->settings;
+                return $settings;
+            },
+            set: function (mixed $value) {
+                if (! is_array($value)) {
+                    return $value;
+                }
+
+                $settings = $value;
+
+                // Encrypt each provider's API key on write
                 foreach ($settings as $provider => $config) {
                     if (isset($config['key']) && ! empty($config['key'])) {
                         try {
-                            // Verify if it's already encrypted
+                            // Test if already encrypted
                             decrypt($config['key']);
-                        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-                            // If it fails, it means it is a new plain-text key, so encrypt it!
+                            // If decrypt succeeds, it's already encrypted — keep as-is
+                        } catch (DecryptException $e) {
+                            // Plaintext key — encrypt it
                             $settings[$provider]['key'] = encrypt($config['key']);
                         }
                     }
                 }
-                $model->attributes['settings'] = json_encode($settings);
+
+                return json_encode($settings);
             }
-        });
+        );
     }
 
     /**
