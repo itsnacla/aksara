@@ -22,6 +22,19 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class Staff extends Model
 {
+    protected static function booted()
+    {
+        static::addGlobalScope(new \App\Models\Scopes\ActiveScope);
+
+        static::updated(function ($staff) {
+            // Auto-sync is_active on User model
+            if ($staff->isDirty('status') && $staff->user) {
+                $isActive = $staff->status === 'aktif';
+                $staff->user->update(['is_active' => $isActive]);
+            }
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

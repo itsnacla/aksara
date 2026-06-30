@@ -122,7 +122,7 @@ class ScheduleForm
                                     return []; // Kembalikan kosong jika walikelas tidak aktif
                                 }
 
-                                return Teacher::where('status', 'aktif')
+                                return Teacher::query()
                                     ->whereHas('user', fn ($q) => $q->where('is_active', true))
                                     ->whereHas('subjects', function ($query) use ($subjectId) {
                                         $query->where('subjects.id', $subjectId);

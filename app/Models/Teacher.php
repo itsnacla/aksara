@@ -34,6 +34,8 @@ class Teacher extends Model
 
     protected static function booted()
     {
+        static::addGlobalScope(new \App\Models\Scopes\ActiveScope);
+
         static::creating(function ($model) {
             if (empty($model->kode_guru)) {
                 $name = $model->user->name ?? 'Guru';
@@ -81,7 +83,15 @@ class Teacher extends Model
 
         static::saving(function ($teacher) {
             if ($teacher->is_kepalasekolah) {
-                static::where('id', '!=', $teacher->id)->update(['is_kepalasekolah' => false]);
+                static::where('id', '!=', $teacher->id)->withoutGlobalScope(\App\Models\Scopes\ActiveScope::class)->update(['is_kepalasekolah' => false]);
+            }
+        });
+
+        static::updated(function ($teacher) {
+            // Auto-sync is_active on User model
+            if ($teacher->isDirty('status') && $teacher->user) {
+                $isActive = $teacher->status === 'aktif';
+                $teacher->user->update(['is_active' => $isActive]);
             }
         });
     }

@@ -64,7 +64,6 @@ class AttendanceResource extends Resource
                     }
 
                     return Student::with('user')
-                        ->where('status', 'aktif')
                         ->whereHas('studyGroups', fn ($q) => $q->where('study_groups.id', $studyGroupId))
                         ->get()
                         ->pluck('user.name', 'id');

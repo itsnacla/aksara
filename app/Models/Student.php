@@ -100,6 +100,8 @@ class Student extends Model
 
     protected static function booted()
     {
+        static::addGlobalScope(new \App\Models\Scopes\ActiveScope);
+
         static::created(function ($student) {
             event(new StatsUpdated('student'));
 
@@ -118,6 +120,12 @@ class Student extends Model
                 if ($wajibEkskuls->isNotEmpty()) {
                     $student->extracurriculars()->syncWithoutDetaching($wajibEkskuls);
                 }
+            }
+            
+            // Auto-sync is_active on User model
+            if ($student->isDirty('status') && $student->user) {
+                $isActive = $student->status === 'aktif';
+                $student->user->update(['is_active' => $isActive]);
             }
         });
     }

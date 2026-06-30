@@ -90,6 +90,7 @@ class RaporResource extends Resource
         $activeYearId = AcademicYear::where('is_active', true)->value('id');
 
         $query = parent::getEloquentQuery()
+            ->withoutGlobalScope(\App\Models\Scopes\ActiveScope::class)
             ->with(['user', 'studyGroups.level'])
             ->whereHas('studyGroups')
             ->whereHas('studentRapors', function ($q) use ($activeYearId) {

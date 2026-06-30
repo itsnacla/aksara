@@ -100,7 +100,7 @@ class StudentsRelationManager extends RelationManager
 
                                 return Student::query()
                                     ->with('user')
-                                    ->where('status', 'aktif')
+                                    ->whereHas('user', fn ($q) => $q->where('is_active', true))
                                     ->whereDoesntHave('studyGroups', function ($q) use ($rombel) {
                                         $q->where('study_groups.id', $rombel->id);
                                     })

@@ -41,6 +41,7 @@ class PelengkapRaporResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
+            ->withoutGlobalScope(\App\Models\Scopes\ActiveScope::class)
             ->with(['user', 'studyGroups.level']);
 
         $user = auth()->user();

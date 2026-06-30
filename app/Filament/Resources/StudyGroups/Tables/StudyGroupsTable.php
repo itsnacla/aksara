@@ -233,7 +233,6 @@ class StudyGroupsTable
 
                                     return Teacher::with('user')
                                         ->where('is_walikelas', true)
-                                        ->where('status', 'aktif')
                                         ->whereHas('user', fn ($q) => $q->where('is_active', true))
                                         ->whereDoesntHave('studyGroups', function ($query) use ($academicYearId) {
                                             $query->where('academic_year_id', $academicYearId);

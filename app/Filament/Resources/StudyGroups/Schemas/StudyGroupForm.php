@@ -42,7 +42,6 @@ class StudyGroupForm
                     ->options(function (Get $get, $record) {
                         $academicYearId = $get('academic_year_id');
                         $query = Teacher::with('user')
-                            ->where('status', 'aktif')
                             ->where('is_walikelas', true)
                             ->whereHas('user', fn ($q) => $q->where('is_active', true));
 

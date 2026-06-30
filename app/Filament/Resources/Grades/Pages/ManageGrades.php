@@ -18,8 +18,8 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
@@ -86,7 +86,7 @@ class ManageGrades extends ManageRecords
                             ->live(),
                         Select::make('study_group_id')
                             ->label('Pilih Rombel')
-                            ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                            ->options(function (Get $get) {
                                 $subjectId = $get('subject_id');
                                 if (! $subjectId) {
                                     return [];
