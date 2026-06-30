@@ -233,9 +233,9 @@ return [
     */
 
     'custom_permissions' => [
-        'scan_attendance',
-        'access_parent_portal',
-        'access_student_portal',
+        'ScanAttendance',
+        'AccessParentPortal',
+        'AccessStudentPortal',
     ],
 
     /*
