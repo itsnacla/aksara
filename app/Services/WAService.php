@@ -73,7 +73,14 @@ class WAService
 
             $response = Http::withHeaders($headers)->post($url, $payload);
 
-            $status = $response->successful() ? 'success' : 'failed';
+            // Parse response body if it's JSON to get accurate status (especially for Fonnte which returns 200 OK even on error)
+            $responseData = $response->json();
+            $isSuccess = $response->successful();
+            if ($isSuccess && is_array($responseData) && isset($responseData['status']) && $responseData['status'] === false) {
+                $isSuccess = false;
+            }
+
+            $status = $isSuccess ? 'success' : 'failed';
 
             WhatsAppLog::create([
                 'phone' => $phone,
@@ -82,7 +89,7 @@ class WAService
                 'response' => $response->body(),
             ]);
 
-            if ($response->successful()) {
+            if ($isSuccess) {
                 return true;
             }
 
