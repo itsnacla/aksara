@@ -61,6 +61,18 @@ class SendWhatsAppAttendanceNotification implements ShouldQueue
 
         $sent = WAService::sendMessage($parent->no_whatsapp, $message);
 
+        // Fallback: Jika gagal mengirim pesan biasa (kemungkinan Jendela 24 jam tertutup), gunakan Template
+        if (!$sent) {
+            $parameters = [
+                $schoolName,
+                $name,
+                $date,
+                $time,
+                strtoupper($status)
+            ];
+            $sent = WAService::sendTemplateMessage($parent->no_whatsapp, 'notifikasi_presensi', $parameters);
+        }
+
         if ($sent) {
             $this->attendance->update(['wa_sent_at' => now()]);
         }

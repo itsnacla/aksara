@@ -33,7 +33,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $wa_gateway_phone_number_id
  */
 #[Fillable([
-    'id', // Diperlukan agar updateOrCreate di seeder/migration tidak error
+    'id', 
     'name',
     'school_level',
     'npsn',

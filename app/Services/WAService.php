@@ -104,6 +104,93 @@ class WAService
     }
 
     /**
+     * Send a WhatsApp message using a pre-approved Template (For Kirimdev mostly)
+     */
+    public static function sendTemplateMessage(string $phone, string $templateName, array $parameters, string $language = 'id'): bool
+    {
+        $settings = SchoolSetting::current();
+
+        if (! $settings->is_wa_enabled || ! $settings->wa_gateway_token) {
+            Log::warning('WA Service: Template sending skipped (Disabled or missing token).');
+            return false;
+        }
+
+        $phone = self::formatPhoneNumber($phone);
+        $provider = $settings->wa_gateway_provider;
+
+        if ($provider !== 'kirimdev') {
+            // Jika bukan kirimdev (misal fonnte), kita tidak punya API khusus template, 
+            // jadi kita coba fallback dengan menyusun string manual, 
+            // atau bisa kembalikan false.
+            // Di sini kita return false agar tidak error, tapi di sistem yang ideal 
+            // Anda bisa merge string parameter untuk provider selain kirimdev.
+            return false; 
+        }
+
+        try {
+            $token = $settings->wa_gateway_token;
+            $phoneId = $settings->wa_gateway_phone_number_id;
+            $url = "https://api.kirimdev.com/v1/{$phoneId}/messages";
+            
+            $headers = ['Authorization' => $token];
+            if (!str_starts_with($token, 'Bearer ')) {
+                $headers['Authorization'] = 'Bearer ' . $token;
+            }
+
+            // Format parameter untuk body template (text)
+            $formattedParams = array_map(function($param) {
+                return ['type' => 'text', 'text' => (string) $param];
+            }, $parameters);
+
+            $payload = [
+                'messaging_product' => 'whatsapp',
+                'to' => $phone,
+                'type' => 'template',
+                'template' => [
+                    'name' => $templateName,
+                    'language' => [
+                        'code' => $language
+                    ],
+                    'components' => [
+                        [
+                            'type' => 'body',
+                            'parameters' => $formattedParams,
+                        ],
+                    ],
+                ],
+            ];
+
+            $response = Http::withHeaders($headers)->post($url, $payload);
+            $status = $response->successful() ? 'success' : 'failed';
+
+            WhatsAppLog::create([
+                'phone' => $phone,
+                'message' => "Template: $templateName | Params: " . implode(', ', $parameters),
+                'status' => $status,
+                'response' => $response->body(),
+            ]);
+
+            if ($response->successful()) {
+                return true;
+            }
+
+            Log::error('WA Service Template Error: '.$response->body());
+            return false;
+
+        } catch (\Exception $e) {
+            WhatsAppLog::create([
+                'phone' => $phone,
+                'message' => "Template: $templateName",
+                'status' => 'failed',
+                'response' => $e->getMessage(),
+            ]);
+            Log::error('WA Service Template Exception: '.$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Dispatch a WhatsApp message to the background queue worker.
      */
     public static function sendMessageAsync(string $phone, string $message): void

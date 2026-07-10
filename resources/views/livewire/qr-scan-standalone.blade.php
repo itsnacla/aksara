@@ -55,7 +55,7 @@
                     </div>
 
                     <!-- Scanner Container with wire:ignore -->
-                    <div wire:ignore class="relative aspect-[16/9] rounded-xl bg-black overflow-hidden ring-1 ring-gray-950/10 shadow-inner">
+                    <div wire:ignore class="relative aspect-[3/4] md:aspect-[16/9] rounded-xl bg-black overflow-hidden ring-1 ring-gray-950/10 shadow-inner">
                         <div id="reader" class="w-full h-full"></div>
                     </div>
 
@@ -256,10 +256,19 @@
                 html5QrCode = new Html5Qrcode("reader");
                 window.scannerInitialized = true;
                 
+                // Ukuran kotak disesuaikan dengan layar HP agar tidak overflow
+                const screenWidth = window.innerWidth;
+                const screenHeight = window.innerHeight;
+                const qrboxSize = screenWidth < 400 ? 250 : 300;
+                
+                // Set aspectRatio dinamis: jika layar HP (portrait), width/height. Jika laptop, landscape.
+                // Ini mencegah kamera terdistorsi / "gepeng" di HP
+                const aspectRatio = screenWidth / screenHeight;
+
                 const config = { 
-                    fps: 20, 
-                    qrbox: { width: 300, height: 300 },
-                    aspectRatio: 1.777778
+                    fps: 10, // Turunkan sedikit fps agar HP tidak cepat panas
+                    qrbox: { width: qrboxSize, height: qrboxSize },
+                    aspectRatio: aspectRatio
                 };
 
                 try {
@@ -289,7 +298,8 @@
                                 lastToken = decodedText;
                                 lastTokenTime = now;
 
-                                @this.call('processScan', decodedText);
+                                // Panggil method livewire
+                                @this.processScan(decodedText);
                                 if (navigator.vibrate) navigator.vibrate(100);
                                 
                                 if (statusEl) {

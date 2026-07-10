@@ -33,7 +33,25 @@ class WhatsAppLogResource extends Resource
     {
         return $schema
             ->components([
-                //
+                \Filament\Infolists\Components\TextEntry::make('phone')
+                    ->label('Nomor Tujuan'),
+                \Filament\Infolists\Components\TextEntry::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'success' => 'success',
+                        'failed' => 'danger',
+                        default => 'gray',
+                    }),
+                \Filament\Infolists\Components\TextEntry::make('created_at')
+                    ->label('Waktu')
+                    ->dateTime('d M Y, H:i:s'),
+                \Filament\Infolists\Components\TextEntry::make('message')
+                    ->label('Isi Pesan')
+                    ->columnSpanFull(),
+                \Filament\Infolists\Components\TextEntry::make('response')
+                    ->label('Response API')
+                    ->columnSpanFull(),
             ]);
     }
 

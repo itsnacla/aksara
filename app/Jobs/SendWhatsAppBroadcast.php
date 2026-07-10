@@ -34,6 +34,15 @@ class SendWhatsAppBroadcast implements ShouldQueue
 
         $finalMessage = $this->message."\n\n--- _Powered by Aksara | Tateta_ ---";
 
-        WAService::sendMessage($this->phone, $finalMessage);
+        $sent = WAService::sendMessage($this->phone, $finalMessage);
+
+        // Fallback: Jika gagal mengirim pesan biasa (Jendela 24 jam tertutup), gunakan Template
+        if (!$sent) {
+            // Kita memasukkan seluruh isi pesan admin ke dalam parameter {{1}} pada template
+            $parameters = [
+                $this->message
+            ];
+            WAService::sendTemplateMessage($this->phone, 'pengumuman_sekolah', $parameters);
+        }
     }
 }
