@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Jobs\SendWhatsAppAttendanceNotification;
+use App\Jobs\SendWhatsAppCheckoutNotification;
 use App\Models\Attendance;
 use App\Models\SchoolSetting;
 use App\Models\Student;
@@ -74,11 +75,33 @@ class QrScanStandalone extends Component
                 ->first();
 
             if ($attendance) {
-                $attendance->update([
-                    'status' => 'hadir',
-                    'check_in' => $attendance->check_in ?? now()->format('H:i:s'),
-                    'catatan' => $attendance->catatan.' | Scan ulang pada '.now()->format('H:i:s'),
-                ]);
+                $checkInTime = \Carbon\Carbon::parse($attendance->check_in);
+                $now = now();
+                
+                // Jika sudah lewat 60 menit sejak check-in, anggap sebagai check-out (pulang)
+                if ($now->diffInMinutes($checkInTime) >= 60) {
+                    if (is_null($attendance->check_out)) {
+                        $attendance->update([
+                            'check_out' => $now->format('H:i:s'),
+                            'catatan' => $attendance->catatan.' | Scan Pulang pada '.$now->format('H:i:s'),
+                        ]);
+                        $this->status_message = 'Presensi Pulang Berhasil: '.$student->user->name;
+                        
+                        // Dispatch Checkout WA Job
+                        SendWhatsAppCheckoutNotification::dispatch($attendance);
+                    } else {
+                        // Sudah pernah check out hari ini
+                        $attendance->update([
+                            'catatan' => $attendance->catatan.' | Scan Pulang ulang pada '.$now->format('H:i:s'),
+                        ]);
+                        $this->status_message = 'Anda sudah melakukan presensi pulang: '.$student->user->name;
+                    }
+                } else {
+                    $attendance->update([
+                        'catatan' => $attendance->catatan.' | Scan ulang pada '.$now->format('H:i:s'),
+                    ]);
+                    $this->status_message = 'Presensi Berhasil (Ulang): '.$student->user->name;
+                }
             } else {
                 $attendance = Attendance::create([
                     'student_id' => $student->id,
@@ -88,11 +111,13 @@ class QrScanStandalone extends Component
                     'check_in' => now()->format('H:i:s'),
                     'catatan' => 'Scan QR pada '.now()->format('H:i:s'),
                 ]);
-            }
-
-            // Dispatch WA Notification Job ONLY if not already sent today
-            if (! $attendance->wa_sent_at) {
-                SendWhatsAppAttendanceNotification::dispatch($attendance);
+                
+                // Dispatch WA Notification Job ONLY if not already sent today
+                if (! $attendance->wa_sent_at) {
+                    SendWhatsAppAttendanceNotification::dispatch($attendance);
+                }
+                
+                $this->status_message = 'Presensi Masuk Berhasil: '.$student->user->name;
             }
 
             $this->last_scanned = [
@@ -101,7 +126,6 @@ class QrScanStandalone extends Component
                 'avatar' => $student->user->photo ? asset('storage/'.$student->user->photo) : null,
             ];
 
-            $this->status_message = 'Presensi Berhasil: '.$student->user->name;
             $this->status_type = 'success';
 
         } catch (\Exception $e) {
