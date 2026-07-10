@@ -91,6 +91,7 @@ class ManageWhatsApp extends Page implements HasForms
                             ->label('Provider / Penyedia Layanan')
                             ->options([
                                 'fonnte' => 'Fonnte (Rekomendasi)',
+                                'kirimdev' => 'Kirimdev (Official WhatsApp)',
                                 'custom' => 'Custom API Gateway',
                             ])
                             ->required()
@@ -102,6 +103,12 @@ class ManageWhatsApp extends Page implements HasForms
                             ->required()
                             ->visible(fn ($get) => $get('wa_gateway_provider') === 'custom')
                             ->url(),
+
+                        TextInput::make('wa_gateway_phone_number_id')
+                            ->label('Phone Number ID (Kirimdev)')
+                            ->placeholder('10850xxxxxxxxxx')
+                            ->required()
+                            ->visible(fn ($get) => $get('wa_gateway_provider') === 'kirimdev'),
 
                         TextInput::make('wa_gateway_token')
                             ->label('API Token / Key')

@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $wa_gateway_message_param
  * @property bool $wa_notify_attendance
  * @property bool $wa_notify_announcement
+ * @property string|null $wa_gateway_phone_number_id
  */
 #[Fillable([
     'id', // Diperlukan agar updateOrCreate di seeder/migration tidak error
@@ -52,6 +53,7 @@ use Illuminate\Database\Eloquent\Model;
     'is_wa_enabled',
     'wa_gateway_url',
     'wa_gateway_token',
+    'wa_gateway_phone_number_id',
     'wa_gateway_provider',
     'wa_gateway_phone_param',
     'wa_gateway_message_param',

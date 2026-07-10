@@ -28,26 +28,50 @@ class WAService
 
         try {
             $provider = $settings->wa_gateway_provider;
-            $url = $provider === 'custom' ? $settings->wa_gateway_url : 'https://api.fonnte.com/send';
             $token = $settings->wa_gateway_token;
+            
+            $url = '';
+            $payload = [];
+            $headers = ['Authorization' => $token];
 
-            $phoneParam = $provider === 'custom' ? $settings->wa_gateway_phone_param : 'target';
-            $messageParam = $provider === 'custom' ? $settings->wa_gateway_message_param : 'message';
+            if ($provider === 'kirimdev') {
+                $phoneId = $settings->wa_gateway_phone_number_id;
+                $url = "https://api.kirimdev.com/v1/{$phoneId}/messages";
+                
+                // Ensure Bearer prefix if missing
+                if (!str_starts_with($token, 'Bearer ')) {
+                    $headers['Authorization'] = 'Bearer ' . $token;
+                }
+                
+                $payload = [
+                    'messaging_product' => 'whatsapp',
+                    'recipient_type' => 'individual',
+                    'to' => $phone,
+                    'type' => 'text',
+                    'text' => [
+                        'preview_url' => false,
+                        'body' => $message,
+                    ],
+                ];
+            } else {
+                $url = $provider === 'custom' ? $settings->wa_gateway_url : 'https://api.fonnte.com/send';
 
-            $payload = [
-                $phoneParam => $phone,
-                $messageParam => $message,
-            ];
+                $phoneParam = $provider === 'custom' ? $settings->wa_gateway_phone_param : 'target';
+                $messageParam = $provider === 'custom' ? $settings->wa_gateway_message_param : 'message';
 
-            // Fonnte specific additional params
-            if ($provider === 'fonnte') {
-                $payload['delay'] = '2';
-                $payload['countryCode'] = '62'; // Default to Indonesia
+                $payload = [
+                    $phoneParam => $phone,
+                    $messageParam => $message,
+                ];
+
+                // Fonnte specific additional params
+                if ($provider === 'fonnte') {
+                    $payload['delay'] = '2';
+                    $payload['countryCode'] = '62'; // Default to Indonesia
+                }
             }
 
-            $response = Http::withHeaders([
-                'Authorization' => $token,
-            ])->post($url, $payload);
+            $response = Http::withHeaders($headers)->post($url, $payload);
 
             $status = $response->successful() ? 'success' : 'failed';
 
