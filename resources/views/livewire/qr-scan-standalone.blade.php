@@ -55,8 +55,8 @@
                     </div>
 
                     <!-- Scanner Container with wire:ignore -->
-                    <div wire:ignore class="relative aspect-[3/4] md:aspect-[16/9] rounded-xl bg-black overflow-hidden ring-1 ring-gray-950/10 shadow-inner">
-                        <div id="reader" class="w-full h-full"></div>
+                    <div wire:ignore class="relative aspect-square md:aspect-video rounded-xl bg-black overflow-hidden ring-1 ring-gray-950/10 shadow-inner">
+                        <div id="reader" class="w-full h-full flex items-center justify-center overflow-hidden"></div>
                     </div>
 
                     <input type="text" id="qr_input" class="absolute opacity-0 pointer-events-none" autofocus>
@@ -189,6 +189,7 @@
         .animate-scan {
             animation: scan 2s linear infinite;
         }
+        /* Memaksa video dari library untuk memotong sisa ruang agar tidak pernah gepeng */
         #reader video {
             object-fit: cover !important;
             width: 100% !important;
@@ -256,19 +257,14 @@
                 html5QrCode = new Html5Qrcode("reader");
                 window.scannerInitialized = true;
                 
-                // Ukuran kotak disesuaikan dengan layar HP agar tidak overflow
+                // Buat kotak target scan (qrbox)
                 const screenWidth = window.innerWidth;
-                const screenHeight = window.innerHeight;
-                const qrboxSize = screenWidth < 400 ? 250 : 300;
-                
-                // Set aspectRatio dinamis: jika layar HP (portrait), width/height. Jika laptop, landscape.
-                // Ini mencegah kamera terdistorsi / "gepeng" di HP
-                const aspectRatio = screenWidth / screenHeight;
+                const qrboxSize = screenWidth < 400 ? 250 : 250;
 
                 const config = { 
-                    fps: 10, // Turunkan sedikit fps agar HP tidak cepat panas
+                    fps: 10, 
                     qrbox: { width: qrboxSize, height: qrboxSize },
-                    aspectRatio: aspectRatio
+                    aspectRatio: 1.0 // Paksa ratio 1:1, CSS object-fit yang akan handle sisanya agar tidak gepeng
                 };
 
                 try {
