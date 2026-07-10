@@ -57,7 +57,11 @@ Untuk pemahaman sistem yang lebih mendalam, silakan pelajari dokumen internal be
 | **Styling**         | Tailwind CSS           | 4.0      |
 | **RBAC**            | Filament Shield        | ^4.2     |
 | **Runtime**         | PHP                    | 8.3+     |
-| **Dev Tool**        | Laravel IDE Helper     |## 📊 Arsitektur & Alur Sistem (Mermaid Diagrams)
+| **Dev Tool**        | Laravel IDE Helper     | ^3.7     |
+
+---
+
+## 📊 Arsitektur & Alur Sistem (Mermaid Diagrams)
 
 ### 1. Arsitektur Komponen Utama
 ```mermaid
@@ -335,14 +339,16 @@ Aplikasi dapat diakses di `http://localhost:8000/admin` (Admin) atau `http://loc
 
 ---
 
-## 👥 Authors
+## 👥 Kontributor
 
 Proyek ini dikembangkan dengan dedikasi oleh:
 
--   [![septiandwica](https://img.shields.io/badge/GitHub-septiandwica-181717?style=flat&logo=github)](https://github.com/septiandwica)
--   [![itsnacla](https://img.shields.io/badge/GitHub-itsnacla-181717?style=flat&logo=github)](https://github.com/itsnacla)
--   [![nadakmlia](https://img.shields.io/badge/GitHub-nadakmlia-181717?style=flat&logo=github)](https://github.com/nadakmlia)
+- [![septiandwica](https://img.shields.io/badge/GitHub-septiandwica-181717?style=flat&logo=github)](https://github.com/septiandwica)
+- [![itsnacla](https://img.shields.io/badge/GitHub-itsnacla-181717?style=flat&logo=github)](https://github.com/itsnacla)
+- [![nadakmlia](https://img.shields.io/badge/GitHub-nadakmlia-181717?style=flat&logo=github)](https://github.com/nadakmlia)
 
 ---
 
-Developed for **Samasta Teknologi Nuswantara**.
+<div align="center">
+    <strong>Developed for Samasta Teknologi Nuswantara</strong>
+</div>

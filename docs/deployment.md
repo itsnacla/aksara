@@ -86,6 +86,15 @@ cPanel menyediakan fitur Git bawaan yang mempermudah deployment dan pembaruan ko
    php artisan migrate --force
    ```
 
+4. **Menjalankan Queue Worker (Background Jobs WhatsApp) di cPanel:**
+   Karena cPanel biasanya tidak mengizinkan daemon berjalan selamanya (Supervisor), kita harus menggunakan **Cron Jobs** agar notifikasi WhatsApp tetap terkirim:
+   * Masuk ke menu **Cron Jobs** di cPanel.
+   * Tambahkan Cron baru dengan jadwal **Once Per Minute (* * * * *)**.
+   * Masukkan perintah berikut (sesuaikan versi PHP dan username Anda):
+     ```bash
+     /usr/local/bin/php /home/username/aksara_app/artisan queue:work --stop-when-empty > /dev/null 2>&1
+     ```
+
 ---
 
 ## 🖥️ BAGIAN 2: Deployment ke VPS Server (Ubuntu Server + Nginx)
@@ -226,6 +235,31 @@ Aktifkan konfigurasi dan restart Nginx:
 sudo ln -s /etc/nginx/sites-available/aksara /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
+```
+
+### 4. Konfigurasi Supervisor (Untuk Queue Worker & Reverb)
+VPS memungkinkan kita menjalankan proses *background* secara permanen. Instal Supervisor untuk menjaga agar pengirim pesan WhatsApp (`queue:work`) dan WebSocket (`reverb`) terus menyala:
+```bash
+sudo apt install supervisor -y
+```
+Buat file konfigurasi worker `/etc/supervisor/conf.d/aksara-worker.conf`:
+```ini
+[program:aksara-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/aksara/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+stdout_logfile=/var/www/aksara/storage/logs/worker.log
+```
+Aktifkan supervisor:
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start aksara-worker:*
 ```
 
 ---

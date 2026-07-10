@@ -10,13 +10,13 @@ Pembagian ini dipetakan secara **Konseptual (Domain-Driven)** berdasarkan seluru
 
 Berdasarkan struktur *codebase* saat ini, spesifikasi teknologi yang digunakan adalah:
 
-*   **Core Framework**: Laravel 13 & PHP 8.3+
-*   **Database**: PostgreSQL 17 dengan ekstensi **PG Vector** (mendukung kapabilitas RAG dan AI Knowledge Base).
-*   **Admin Panel / Backoffice**: **Filament ~5.0** (Resource-based UI & TALL Stack).
-*   **Frontend & Asset Bundler**: Vite & Tailwind CSS 4.
-*   **Realtime Communication**: Laravel Reverb (^1.0) & Echo untuk *realtime updates*.
-*   **Role-Based Access Control (RBAC)**: Filament Shield (Spatie Permission).
-*   **AI Engine**: *Native* terintegrasi melalui *package* `laravel/ai` (menghapus dependensi pada *microservice* FastAPI terpisah), memanfaatkan model Gemini/OpenAI untuk sistem *Agent* (`WaliKelasAgent`) dan RAG (`AksaraKnowledgeBase`).
+-   **Core Framework**: Laravel 13 & PHP 8.3+
+-   **Database**: PostgreSQL 17 dengan ekstensi **PG Vector** (mendukung kapabilitas RAG dan AI Knowledge Base).
+-   **Admin Panel / Backoffice**: **Filament ~5.0** (Resource-based UI & TALL Stack).
+-   **Frontend & Asset Bundler**: Vite & Tailwind CSS 4.
+-   **Realtime Communication**: Laravel Reverb (^1.0) & Echo untuk *realtime updates*.
+-   **Role-Based Access Control (RBAC)**: Filament Shield (Spatie Permission).
+-   **AI Engine**: *Native* terintegrasi melalui *package* `laravel/ai` (menghapus dependensi pada *microservice* FastAPI terpisah), memanfaatkan model Gemini/OpenAI untuk sistem *Agent* (`WaliKelasAgent`) dan RAG (`AksaraKnowledgeBase`).
 
 ---
 
@@ -194,8 +194,8 @@ Kita mengadopsi pendekatan **"Contract-First Development"** agar tim dapat beker
 ## 🛠️ 5. Deployment & Verification Plan
 
 ### Automated Checks
-*   **Testing Suite**: Jalankan `php artisan test` pada fitur-fitur kritikal seperti kalkulasi nilai rata-rata, *rate-limiter* absensi, dan konektivitas API pihak ketiga.
-*   **Linting**: Menjalankan Laravel Pint (`./vendor/bin/pint`) terintegrasi pada Git Hook untuk menjaga konsistensi format kode tim (*PSR-12/Laravel Style*).
+-   **Testing Suite**: Jalankan `php artisan test` pada fitur-fitur kritikal seperti kalkulasi nilai rata-rata, *rate-limiter* absensi, dan konektivitas API pihak ketiga.
+-   **Linting**: Menjalankan Laravel Pint (`./vendor/bin/pint`) terintegrasi pada Git Hook untuk menjaga konsistensi format kode tim (*PSR-12/Laravel Style*).
 
 ### Manual QA
-*   **Role-Based Validation**: Menggunakan fungsi *Impersonate* (Login As) untuk menguji limitasi visual. Memastikan Guru SD Kelas 1 tidak bisa mengedit nilai Siswa Kelas 2, dan memastikan Siswa X tidak bisa melihat absen Siswa Y di Portal Mandiri.
+-   **Role-Based Validation**: Menggunakan fungsi *Impersonate* (Login As) untuk menguji limitasi visual. Memastikan Guru SD Kelas 1 tidak bisa mengedit nilai Siswa Kelas 2, dan memastikan Siswa X tidak bisa melihat absen Siswa Y di Portal Mandiri.
