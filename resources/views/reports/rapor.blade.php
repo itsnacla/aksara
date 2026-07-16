@@ -132,7 +132,6 @@
             'izin' => $izin,
             'alpha' => $alpha,
             'ekskuls' => $ekskuls,
-            'cocurriculars' => $cocurriculars,
             'p5Project' => $p5Project,
             'graduateProfiles' => $graduateProfiles,
             'rank' => $rank,
@@ -202,7 +201,6 @@
             $izin = $report['izin'];
             $alpha = $report['alpha'];
             $ekskuls = $report['ekskuls'];
-            $cocurriculars = $report['cocurriculars'];
             $p5Project = $report['p5Project'];
             $graduateProfiles = $report['graduateProfiles'];
             $rank = $report['rank'];
@@ -340,13 +338,10 @@
                 <tbody>
                     <tr>
                         <td class="p-2 text-justify leading-normal text-xs space-y-0.5">
-                            @php
-                                $cocurricularName = $p5Project ? $p5Project->name : 'Lingkungan Sekitar';
-                            @endphp
-                            <p>
-                                Pada semester ini, ananda menunjukkan capaian yang baik dalam penguatan profil lulusan, yang ditunjukkan melalui kegiatan kokurikuler {{ $cocurricularName }}.
-                            </p>
-                            @if(!empty($graduateProfiles))
+                            @if($p5Project && !empty($graduateProfiles))
+                                <p>
+                                    Pada semester ini, ananda menunjukkan capaian yang baik dalam penguatan profil lulusan, yang ditunjukkan melalui kegiatan kokurikuler <strong>{{ $p5Project->name }}</strong>.
+                                </p>
                                 @foreach($graduateProfiles as $dimensi => $subdimensis)
                                     <p>
                                         Pada dimensi {{ $dimensi }}, ananda cakap dalam subdimensi {{ implode(', ', $subdimensis) }}.

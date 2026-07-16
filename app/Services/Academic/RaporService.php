@@ -120,7 +120,7 @@ class RaporService
         $result['izin'] = $attendanceData['izin'];
         $result['alpha'] = $attendanceData['alpha'];
         $result['ekskuls'] = $this->getEkskulsRecap($student, $academicYearId);
-        $result['cocurriculars'] = $this->getCocurricularData($level, $activeYear);
+
         $result['p5Project'] = $p5Data['p5Project'];
         $result['graduateProfiles'] = $p5Data['graduateProfiles'];
         $result['rank'] = $this->getStudentRank($student, $academicYearId, $rombel);
@@ -130,21 +130,6 @@ class RaporService
         $result['isGenerated'] = $attendanceData['isGenerated'];
 
         return $result;
-    }
-
-    /**
-     * Get cocurricular projects based on the active level and year.
-     */
-    private function getCocurricularData(?Level $level, ?AcademicYear $activeYear): array
-    {
-        if (! $level) {
-            return [];
-        }
-
-        return Cocurricular::where('fase', $level->fase)
-            ->where('tahun_ajaran', $activeYear?->tahun_ajaran)
-            ->get()
-            ->toArray();
     }
 
     /**
@@ -176,10 +161,13 @@ class RaporService
         if ($p5Project && is_array($p5Project->graduate_profile)) {
             foreach ($p5Project->graduate_profile as $profileString) {
                 $parts = explode(': ', $profileString);
-                if (count($parts) === 2) {
+                if (count($parts) >= 2) {
                     $dimensi = trim($parts[0]);
                     $subdimensi = trim($parts[1]);
                     $graduateProfiles[$dimensi][] = $subdimensi;
+                } else {
+                    $dimensi = trim($profileString);
+                    $graduateProfiles[$dimensi][] = 'pencapaian karakter dasar';
                 }
             }
         }

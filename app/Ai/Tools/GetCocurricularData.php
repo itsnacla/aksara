@@ -2,7 +2,7 @@
 
 namespace App\Ai\Tools;
 
-use App\Models\Cocurricular;
+use App\Models\P5Project;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -18,7 +18,7 @@ class GetCocurricularData implements Tool
      */
     public function description(): Stringable|string
     {
-        return 'Mendapatkan data program kokurikuler yang tersedia (seperti kegiatan pendalaman materi, proyek luar kelas non-P5).';
+        return 'Mendapatkan data kegiatan Kokurikuler (P5) yang sedang aktif di sekolah, termasuk tema dan profil lulusan yang ditargetkan.';
     }
 
     /**
@@ -33,31 +33,31 @@ class GetCocurricularData implements Tool
         $args = $request->all();
         $fase = isset($args['fase']) ? (string) $args['fase'] : null;
 
-        $query = Cocurricular::query();
+        $query = P5Project::with('theme');
 
         if ($fase) {
             $query->where('fase', 'like', "%{$fase}%");
         }
 
-        $cocurriculars = $query->limit(20)->get();
+        $projects = $query->limit(20)->get();
 
-        if ($cocurriculars->isEmpty()) {
-            return 'Data kokurikuler tidak ditemukan.';
+        if ($projects->isEmpty()) {
+            return 'Data kokurikuler/P5 tidak ditemukan.';
         }
 
-        $result = $cocurriculars->map(function ($c) {
-            /** @var Cocurricular $c */
+        $result = $projects->map(function ($p) {
+            /** @var P5Project $p */
             return [
-                'tema' => $c->tema,
-                'nama_projek' => $c->nama_projek,
-                'fase' => $c->fase,
-                'deskripsi' => $c->deskripsi ?? 'N/A',
-                'tahun_ajaran' => $c->tahun_ajaran ?? 'N/A',
+                'tema' => $p->theme ? $p->theme->name : 'N/A',
+                'nama_projek' => $p->name,
+                'fase' => $p->fase ?? 'N/A',
+                'tujuan_akhir' => $p->target_description ?? 'N/A',
+                'profil_lulusan' => $p->graduate_profile ?? [],
             ];
         });
 
         return json_encode([
-            'total_data' => $cocurriculars->count(),
+            'total_data' => $projects->count(),
             'kegiatan_kokurikuler' => $result->toArray(),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
