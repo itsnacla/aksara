@@ -157,7 +157,7 @@ Fokus pada asesmen/evaluasi siswa (termasuk Kurikulum Merdeka P5), pelaporan has
         *   `app/Jobs/SendWhatsAppBroadcast.php`
         *   `app/Jobs/SendWhatsAppNotification.php`
         *   `app/Models/WhatsAppLog.php`, `app/Models/Notification.php`
-    *   **Fitur**: *WhatsApp Gateway Hub* terpusat untuk mengirim notifikasi absensi (*realtime* melalui *Jobs*), pesan *broadcast* (tagihan, nilai), serta portal monitoring *realtime* untuk Siswa & Orang Tua.
+    *   **Fitur**: *WhatsApp Gateway Hub* terpusat dengan dukungan multi-provider (Kirimdev, Fonnte, Custom API) untuk mengirim notifikasi absensi (*realtime* melalui *Jobs*), pesan *broadcast* (tagihan, nilai), serta portal monitoring *realtime* untuk Siswa & Orang Tua.
 
 ---
 
@@ -186,8 +186,8 @@ Kita mengadopsi pendekatan **"Contract-First Development"** agar tim dapat beker
 > *   **Justifikasi**: Ekosistem tunggal (Monolith) ini menghilangkan kompleksitas *networking*, mempermudah otentikasi (Auth), dan memungkinkan AI mengakses relasi Eloquent ORM secara langsung dan efisien. Dukungan **PG Vector** pada PostgreSQL 17 membuat RAG (Retrieval-Augmented Generation) bisa berjalan *Self-Hosted*.
 
 > [!NOTE]
-> **WhatsApp Gateway Integration**:
-> Gateway komunikasi resmi disiapkan untuk mengirim notifikasi/pesan *broadcast* ke pengguna (tagihan, nilai, dll) secara terpusat, tanpa menggunakan layanan Fonnte.
+> **WhatsApp Gateway Integration (Multi-Provider)**:
+> Sistem mendukung pengiriman pesan dan notifikasi *broadcast* ke pengguna melalui berbagai layanan *gateway* pihak ketiga secara dinamis. Provider yang secara bawaan (native) didukung di dalam sistem saat ini mencakup **Kirimdev** (dengan dukungan *Template Messages*), **Fonnte**, serta kustomisasi melalui **Custom API** untuk fleksibilitas integrasi.
 
 ---
 
