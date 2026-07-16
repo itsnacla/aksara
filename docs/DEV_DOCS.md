@@ -24,8 +24,8 @@ Berdasarkan struktur *codebase* saat ini, spesifikasi teknologi yang digunakan a
 
 Untuk mencegah *overlap* pekerjaan, seluruh modul diisolasi berdasarkan domain bisnis sekolah. Berikut adalah pemetaan presisi untuk setiap *developer*:
 
-### 🧠 A. Najla (System Core, Integrations & Intelligent Workspace)
-Fokus pada fondasi sistem, integrasi eksternal (Kemendikbud/Wilayah), manajemen hak akses, dan ekosistem Kecerdasan Buatan (AI).
+### 🧠 A. Najla (System Core, Integrations, Registry & Intelligent Workspace)
+Fokus pada fondasi sistem, tata kelola SDM & siswa, integrasi eksternal (Kemendikbud/Wilayah), manajemen hak akses, dan ekosistem Kecerdasan Buatan (AI).
 
 *   **Core Admin & Security (Manajemen Hak Akses)**:
     *   **Filament Resources**: `Users`, `SchoolSettings`.
@@ -58,20 +58,6 @@ Fokus pada fondasi sistem, integrasi eksternal (Kemendikbud/Wilayah), manajemen 
         *   `app/Ai/AksaraKnowledgeBase.php`
         *   `app/Models/ChatbotSetting.php`
     *   **Fitur**: Mengelola RAG Pipeline dengan PG Vector, *chatbot* pintar di *dashboard*, analisis *Data Science* melalui Assistant, dan mengatur *provider* model AI (Gemini/OpenAI).
-
-### 🏫 B. Nada (Academic Registry, KBM Operations & Attendance)
-Fokus pada tata kelola entitas fisik (manusia & ruangan), data referensi kurikulum, dan operasional harian Kegiatan Belajar Mengajar (KBM).
-
-*   **Academic Master Data (Data Referensi Kurikulum)**:
-    *   **Filament Resources**: `AcademicYears`, `Levels`, `Subjects`, `SubjectReportGroup`, `SubjectReportMapping`.
-    *   **Direktori/File Utama**:
-        *   `app/Filament/Resources/AcademicYearResource/`
-        *   `app/Filament/Resources/LevelResource/`
-        *   `app/Filament/Resources/SubjectResource/`
-        *   `app/Filament/Resources/SubjectReportGroupResource/`
-        *   `app/Filament/Resources/SubjectReportMappingResource/`
-        *   `app/Models/AcademicYear.php`, `app/Models/Level.php`, `app/Models/Subject.php`, `app/Models/SubjectReportGroup.php`, `app/Models/SubjectReportMapping.php`
-    *   **Fitur**: Struktur dasar tahun ajaran, tingkat kelas, dan pemetaan mata pelajaran umum vs muatan lokal.
 *   **Registry & SDM (Manajemen Entitas Manusia)**:
     *   **Filament Resources**: `Teachers`, `Staff`, `Students`, `StudentParents`, `BukuInduk`.
     *   **Controllers/Services**: `BukuIndukService`, `BukuIndukDataBuilder`, `PromotionService`, `StudentCardController`.
@@ -87,6 +73,20 @@ Fokus pada tata kelola entitas fisik (manusia & ruangan), data referensi kurikul
         *   `app/Http/Controllers/StudentCardController.php`
         *   `app/Models/Teacher.php`, `app/Models/Staff.php`, `app/Models/Student.php`, `app/Models/StudentParent.php`
     *   **Fitur**: Pendataan riwayat hidup siswa (Buku Induk), proses kenaikan kelas, dan fitur cetak Kartu Pelajar.
+
+### 🏫 B. Nada (Academic Master Data, KBM Operations & Attendance)
+Fokus pada data referensi kurikulum, tata kelola ruangan, dan operasional harian Kegiatan Belajar Mengajar (KBM).
+
+*   **Academic Master Data (Data Referensi Kurikulum)**:
+    *   **Filament Resources**: `AcademicYears`, `Levels`, `Subjects`, `SubjectReportGroup`, `SubjectReportMapping`.
+    *   **Direktori/File Utama**:
+        *   `app/Filament/Resources/AcademicYearResource/`
+        *   `app/Filament/Resources/LevelResource/`
+        *   `app/Filament/Resources/SubjectResource/`
+        *   `app/Filament/Resources/SubjectReportGroupResource/`
+        *   `app/Filament/Resources/SubjectReportMappingResource/`
+        *   `app/Models/AcademicYear.php`, `app/Models/Level.php`, `app/Models/Subject.php`, `app/Models/SubjectReportGroup.php`, `app/Models/SubjectReportMapping.php`
+    *   **Fitur**: Struktur dasar tahun ajaran, tingkat kelas, dan pemetaan mata pelajaran umum vs muatan lokal.
 *   **KBM Operations (Penjadwalan & Rombel)**:
     *   **Filament Resources**: `Classrooms`, `StudyGroups` (Rombel), `DayConfigs`, `TimeSlots`, `Schedules`, `TeacherSchedules`.
     *   **Direktori/File Utama**:
@@ -157,7 +157,7 @@ Fokus pada asesmen/evaluasi siswa (termasuk Kurikulum Merdeka P5), pelaporan has
         *   `app/Jobs/SendWhatsAppBroadcast.php`
         *   `app/Jobs/SendWhatsAppNotification.php`
         *   `app/Models/WhatsAppLog.php`, `app/Models/Notification.php`
-    *   **Fitur**: *WhatsApp Gateway Hub* terpusat (Fonnte) untuk mengirim notifikasi absensi (*realtime* melalui *Jobs*), pesan *broadcast* (tagihan, nilai), serta portal monitoring *realtime* untuk Siswa & Orang Tua.
+    *   **Fitur**: *WhatsApp Gateway Hub* terpusat untuk mengirim notifikasi absensi (*realtime* melalui *Jobs*), pesan *broadcast* (tagihan, nilai), serta portal monitoring *realtime* untuk Siswa & Orang Tua.
 
 ---
 
@@ -186,8 +186,8 @@ Kita mengadopsi pendekatan **"Contract-First Development"** agar tim dapat beker
 > *   **Justifikasi**: Ekosistem tunggal (Monolith) ini menghilangkan kompleksitas *networking*, mempermudah otentikasi (Auth), dan memungkinkan AI mengakses relasi Eloquent ORM secara langsung dan efisien. Dukungan **PG Vector** pada PostgreSQL 17 membuat RAG (Retrieval-Augmented Generation) bisa berjalan *Self-Hosted*.
 
 > [!NOTE]
-> **WhatsApp Gateway Integration (Sementara)**:
-> Untuk sementara waktu, gateway komunikasi resmi menggunakan layanan pihak ketiga **Fonnte**. Integrasi dilakukan menggunakan API Fonnte untuk mengirim notifikasi/pesan *broadcast* ke pengguna (tagihan, nilai, dll) tanpa memerlukan setup *Meta Business Platform* mandiri pada tahap awal.
+> **WhatsApp Gateway Integration**:
+> Gateway komunikasi resmi disiapkan untuk mengirim notifikasi/pesan *broadcast* ke pengguna (tagihan, nilai, dll) secara terpusat, tanpa menggunakan layanan Fonnte.
 
 ---
 
