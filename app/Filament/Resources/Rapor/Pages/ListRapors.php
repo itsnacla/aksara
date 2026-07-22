@@ -220,6 +220,11 @@ class ListRapors extends ListRecords
                                 ->where('academic_year_id', $activeYearId)
                                 ->exists();
                             if (! $gradeExists) {
+                                // Sembunyikan/abaikan mata pelajaran Agama yang tidak ada nilainya
+                                // (berarti bukan mata pelajaran agama yang diambil oleh siswa tersebut)
+                                if (str_contains(strtolower($subject->nama_mapel), 'pendidikan agama')) {
+                                    continue;
+                                }
                                 $missingSubjects[] = $subject->nama_mapel;
                             }
                         }
